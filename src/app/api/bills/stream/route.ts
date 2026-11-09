@@ -1,18 +1,16 @@
 import type { NextRequest } from "next/server";
-import { billsChangedSince } from "@/lib/bills/service";
+import { billsChangedSince, listOpenBills } from "@/lib/bills/service";
 import { errorResponse } from "@/lib/security/http";
 import { enforceRateLimit } from "@/lib/security/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const POLL_MS = 3000;
-const MAX_LIFETIME_MS = 5 * 60_000; // client EventSource auto-reconnects
-
 /**
- * Server-Sent Events: pushes public bill changes (paid amounts / status) in real time.
- * Implemented as DB polling so it works across multiple instances without a
- * replica set. Swap for MongoDB change streams / Redis pub-sub when scaling.
+ * Serverless-compatible Server-Sent Events (SSE) endpoint.
+ * Sends any recent bill updates (or current open bills) and closes cleanly with `retry: 8000`
+ * so serverless platforms (Netlify / Vercel) never buffer or hit Lambda execution timeouts,
+ * while the browser's native EventSource automatically polls every 8 seconds.
  */
 export async function GET(req: NextRequest): Promise<Response> {
   try {
@@ -22,60 +20,28 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
 
   const encoder = new TextEncoder();
-  let since = new Date(Date.now() - 2000);
-  let timer: ReturnType<typeof setInterval> | undefined;
-  let closed = false;
+  const since = new Date(Date.now() - 12_000);
+  let changed: Awaited<ReturnType<typeof listOpenBills>> = [];
+  try {
+    changed = await billsChangedSince(since);
+  } catch {
+    /* ignore transient db errors */
+  }
 
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      const send = (event: string, data: unknown) => {
-        if (!closed) controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
-      };
-      const close = () => {
-        if (closed) return;
-        closed = true;
-        if (timer) clearInterval(timer);
-        try {
-          controller.close();
-        } catch {
-          /* already closed */
-        }
-      };
+  const chunks: string[] = [
+    `retry: 8000\n\n`,
+    `event: ready\ndata: ${JSON.stringify({ at: Date.now() })}\n\n`,
+  ];
+  if (changed.length > 0) {
+    chunks.push(`event: bills\ndata: ${JSON.stringify(changed)}\n\n`);
+  }
 
-      controller.enqueue(encoder.encode(`retry: 3000\n\n`));
-      send("ready", { at: Date.now() });
-      const started = Date.now();
+  const body = encoder.encode(chunks.join(""));
 
-      timer = setInterval(async () => {
-        if (closed) return;
-        if (Date.now() - started > MAX_LIFETIME_MS) return close();
-        try {
-          const changed = await billsChangedSince(since);
-          if (changed.length > 0) {
-            const last = changed[changed.length - 1];
-            if (last) since = new Date(last.updatedAt);
-            send("bills", changed);
-          } else {
-            controller.enqueue(encoder.encode(`: ping\n\n`));
-          }
-        } catch (err) {
-          console.warn("[sse] poll failed", err);
-        }
-      }, POLL_MS);
-
-      req.signal.addEventListener("abort", close);
-    },
-    cancel() {
-      closed = true;
-      if (timer) clearInterval(timer);
-    },
-  });
-
-  return new Response(stream, {
+  return new Response(body, {
     headers: {
       "content-type": "text/event-stream; charset=utf-8",
       "cache-control": "no-cache, no-transform",
-      connection: "keep-alive",
       "x-accel-buffering": "no",
     },
   });

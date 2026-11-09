@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
  */
 export const POST = handler(async (req: NextRequest) => {
   await enforceRateLimit(req, "paymentConfirm");
-  const { paymentId, outcome, signature, receiptRaw, skipLeaderboard } = await readJson(req, confirmPaymentSchema);
+  const { paymentId, outcome, signature, receiptRaw, skipLeaderboard, soliqRelayResult } = await readJson(req, confirmPaymentSchema);
 
   if (!safeEqual(signature, paymentSignature(paymentId))) throw new HttpError(401, "bad_signature");
 
@@ -36,7 +36,7 @@ export const POST = handler(async (req: NextRequest) => {
     return NextResponse.json({ ok: true, status: cancelled.status });
   }
 
-  const verified = await verifyAndLockReceipt(skipLeaderboard ? null : receiptRaw, payment.amount);
+  const verified = await verifyAndLockReceipt(skipLeaderboard ? null : receiptRaw, payment.amount, soliqRelayResult);
   const creditLeaderboard = !skipLeaderboard && verified.verifiedForLeaderboard;
 
   const result = await markPaid(payment._id, {
