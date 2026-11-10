@@ -41,6 +41,7 @@ async function ensureIndexes(db: Db): Promise<void> {
     db.collection<VerdictDoc>("verdicts").createIndexes([
       // One verdict per visitor per bill.
       { key: { billId: 1, voterHash: 1 }, unique: true, name: "one_verdict_per_voter" },
+      { key: { billId: 1, ipHash: 1 } },
       { key: { accountKey: 1, createdAt: -1 } },
     ]),
     db.collection<AccountDoc>("accounts").createIndexes([{ key: { blocked: 1 } }, { key: { lastSeenAt: -1 } }]),

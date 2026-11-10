@@ -62,13 +62,37 @@ export interface VerdictOutcome {
   hidden: boolean;
 }
 
+/**
+ * Who may vote. A vote can hide a family's request, so it must cost something:
+ * only a donor who opened a payment on THIS bill (they reached the step where
+ * they look the account up in their app), never the family that posted it, and
+ * one vote per network — otherwise one person with a few free nicknames could
+ * take down any genuine request alone.
+ */
+export async function assertCanVote(args: {
+  bill: BillDoc;
+  donorId: ObjectId | null;
+  ipHash: string;
+  isOwner: boolean;
+}): Promise<void> {
+  const { bill, donorId, ipHash, isOwner } = args;
+  if (isOwner || ipHash === bill.ipHash) throw new HttpError(403, "verdict_not_allowed");
+  if (!donorId) throw new HttpError(401, "donor_required");
+  const { payments, verdicts } = await collections();
+  const paid = await payments.findOne({ billId: bill._id, donorId }, { projection: { _id: 1 } });
+  if (!paid) throw new HttpError(403, "verdict_not_allowed");
+  const sameNetwork = await verdicts.findOne({ billId: bill._id, ipHash }, { projection: { _id: 1 } });
+  if (sameNetwork) throw new HttpError(409, "already_voted");
+}
+
 export async function recordVerdict(args: {
   bill: BillDoc;
   kind: VerdictKind;
   seenAmount: number | null;
   voterKey: string;
+  ipHash: string;
 }): Promise<VerdictOutcome> {
-  const { bill, kind, seenAmount, voterKey } = args;
+  const { bill, kind, seenAmount, voterKey, ipHash } = args;
   const { bills, verdicts, accounts } = await collections();
   const now = new Date();
   const accountKey = accountKeyOf(bill.utilityType, bill.accountNumber);
@@ -80,6 +104,7 @@ export async function recordVerdict(args: {
     kind,
     seenAmount,
     voterHash: voterHashOf(voterKey),
+    ipHash,
     createdAt: now,
   };
   try {
@@ -186,11 +211,4 @@ export async function markAccountProven(args: {
     ),
     bills.updateOne({ _id: args.billId }, { $set: { "trust.level": "proven", updatedAt: now } }),
   ]);
-}
-
-/** Has this visitor already voted on this bill? Used to render the UI state. */
-export async function hasVoted(billId: ObjectId, voterKey: string): Promise<boolean> {
-  const { verdicts } = await collections();
-  const found = await verdicts.findOne({ billId, voterHash: voterHashOf(voterKey) }, { projection: { _id: 1 } });
-  return found !== null;
 }

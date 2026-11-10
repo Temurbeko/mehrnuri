@@ -37,6 +37,10 @@ export function errorText(code: string | undefined, dict: Dictionary): string {
       return dict.errors.phone_limit_reached;
     case "already_voted":
       return dict.errors.already_voted;
+    case "verdict_not_allowed":
+      return dict.errors.verdict_not_allowed;
+    case "donor_required":
+      return dict.errors.donor_required;
     case "account_not_found":
       return dict.ask.notFound;
     case "nickname_taken":

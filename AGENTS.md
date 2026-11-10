@@ -31,6 +31,7 @@ Read this section **before** running broad file searches to save tokens and time
 4. **No Manual Approval of Family Requests**:
    - Requests publish immediately (`reviewStatus: "approved"` in `createBill`). **Never reintroduce a human approval step in the normal path.**
    - Verification is done by donors: they see the real debt in Click/Payme/Uzum/Paynet before paying and answer `match` / `amount_differs` / `no_debt` (`src/lib/bills/verdicts.ts`). Reports auto-hide a bill (`flagged`); a Soliq-verified payment marks the account `proven` so its future requests publish as trusted.
+   - Only a donor with a payment on the bill may vote, never its owner, one vote per donor and per network (`assertCanVote`). **Never loosen this**: free votes let one person hide any genuine request.
    - Reputation lives on the **account number** (`accounts` collection, `accountKeyOf`), never on a name or phone.
    - The admin panel holds only exceptions: `reported`, `pending` (implausible amount), `payouts`.
 5. **Zero-Media Receipt Storage & Server-Only Soliq Verification**:

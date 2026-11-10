@@ -109,8 +109,10 @@ export interface VerdictDoc {
   kind: VerdictKind;
   /** What the payment app actually showed, when the donor reported a difference. */
   seenAmount: number | null;
-  /** Hashed donor id, or hashed IP for visitors without a nickname. One vote each. */
+  /** Hashed donor id. One vote per donor per bill. */
   voterHash: string;
+  /** Hashed IP: one network cannot cast two votes on the same bill via several nicknames. */
+  ipHash: string;
   createdAt: Date;
 }
 

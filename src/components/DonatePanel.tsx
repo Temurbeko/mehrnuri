@@ -8,7 +8,7 @@ import { findDistrict, meterUnitFor } from "@/lib/uzbekistan";
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { StatusBadge, UTILITY_THEMES } from "./BillCard";
-import { DebtCheck, TrustBadge } from "./DebtCheck";
+import { TrustBadge } from "./DebtCheck";
 import { api, errorText } from "./api";
 
 const PRESET_AMOUNTS = [10_000, 25_000, 50_000, 100_000];
@@ -218,9 +218,6 @@ export function DonatePanel({
           </button>
         </div>
 
-        {/* Anyone can look this account up in their payment app and tell us what it showed. */}
-        {initialReviewStatus !== "rejected" && <DebtCheck billId={bill.id} dict={dict} onUpdated={setBill} />}
-
         {bill.story && (
           <div className="rounded-2xl bg-amber-50/70 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-700 italic">
             “{bill.story}”
@@ -327,7 +324,7 @@ export function DonatePanel({
       {initialReviewStatus !== "approved" ? (
         <div className="card text-center text-sm font-bold text-slate-600 p-5">
           {initialReviewStatus === "pending_review"
-            ? dict.ask.successText
+            ? dict.ask.heldText
             : initialReviewStatus === "flagged"
               ? dict.check.flaggedNotice
               : dict.status.rejected}

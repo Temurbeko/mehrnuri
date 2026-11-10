@@ -18,7 +18,8 @@
 
 ### A2. Donor-Side Verification (`POST /api/bills/[id]/verdict`)
 MehrNuri cannot read anybody's utility debt — that needs a supplier/aggregator contract. **Every donor can**: pasting the account number into Click / Payme / Uzum / Paynet shows the real balance before paying. So the donors are the verifiers (`src/lib/bills/verdicts.ts`, `src/components/DebtCheck.tsx`):
-- The donor answers `match`, `amount_differs` (with the amount their app showed) or `no_debt`. One verdict per visitor per bill (unique index `one_verdict_per_voter`; signed-in donors vote by donor id, visitors by hashed IP).
+- The donor answers `match`, `amount_differs` (with the amount their app showed) or `no_debt`, on the payment page (step 2).
+- **Who may vote** (`assertCanVote`): a vote can hide a family's request, so it must cost something. Only a donor who opened a payment on that bill (`401 donor_required` / `403 verdict_not_allowed`), never the family that posted it (owner cookie or same network as the request → `403`), and one vote per donor and per network on each bill (`409 already_voted`). Without this, one person with a free nickname could hide any real request alone.
 - One `match` promotes the bill to `trustLevel: "donor_checked"`. `MISMATCH_LIMIT_BILL` (2) reports flip it to `reviewStatus: "flagged"`, which takes it off the feed and into the admin's reported queue. A `proven` bill needs double that, since its real debt can legitimately differ from the claim.
 - A Soliq-verified payment marks the account `proven` in the `accounts` ledger, so **future requests on that account publish as trusted instantly**. `MISMATCH_LIMIT_ACCOUNT` (3) reports block the account for good — reputation follows the account number, not a name or phone.
 - This is safe because MehrNuri never holds funds: a false request can only waste a donor's attention, and it dies the moment they open their app.
@@ -149,7 +150,7 @@ MehrNuri/
 | `GET` | `/api/bills` | Rate limit (`read`) | Lists approved, open bills (`?utilityType=&region=&limit=`). |
 | `POST` | `/api/bills` | Same-origin + `billCreate` | Creates a bill, published immediately (`approved`), and sets `mn_owner` cookie. |
 | `GET` | `/api/bills/[id]` | Rate limit (`read`) | Returns a single public bill + `reviewStatus`. |
-| `POST` | `/api/bills/[id]/verdict` | Same-origin + `verdict` | Donor reports what their payment app showed (`match` / `amount_differs` + `seenAmount` / `no_debt`). One per visitor per bill (`409 already_voted`). |
+| `POST` | `/api/bills/[id]/verdict` | Same-origin + `verdict` + `mn_donor` with a payment on this bill | Donor reports what their payment app showed (`match` / `amount_differs` + `seenAmount` / `no_debt`). Not the bill's owner; one per donor and per network per bill (`409 already_voted`). |
 | `POST` | `/api/bills/[id]/react` | `mn_owner` or `mn_admin` | Toggles a thank-you reaction (`thank_you`, `blessing`, `warm_home`, `accepted`). |
 | `GET` | `/api/bills/stream` | Rate limit (`stream`) | Serverless SSE endpoint (`retry: 8000`) pushing recent bill updates. |
 | `GET` | `/api/donors` | Rate limit (`read`) | Returns current donor from `mn_donor` cookie. |

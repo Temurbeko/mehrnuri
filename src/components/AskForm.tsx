@@ -35,7 +35,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [created, setCreated] = useState<{ id: string; code: string } | null>(null);
+  const [created, setCreated] = useState<{ id: string; code: string; held: boolean } | null>(null);
 
   const districts = DISTRICTS_BY_REGION[region];
   const currentDistrict = findDistrict(region, district);
@@ -56,7 +56,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
       return;
     }
     setSubmitting(true);
-    const res = await api<{ id?: string; code?: string }>("/api/bills", {
+    const res = await api<{ id?: string; code?: string; reviewStatus?: string }>("/api/bills", {
       body: {
         utilityType,
         region,
@@ -87,7 +87,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
       }
       return;
     }
-    setCreated({ id: res.data.id, code: res.data.code });
+    setCreated({ id: res.data.id, code: res.data.code, held: res.data.reviewStatus === "pending_review" });
   }
 
   if (created) {
@@ -98,7 +98,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
         </div>
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-slate-900">{dict.ask.successTitle}</h2>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{dict.ask.successText}</p>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{created.held ? dict.ask.heldText : dict.ask.successText}</p>
         </div>
         <div className="rounded-2xl border border-dashed border-amber-400 bg-amber-50/70 p-3.5">
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">{dict.ask.yourCode}</div>

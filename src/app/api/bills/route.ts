@@ -35,7 +35,7 @@ export const POST = handler(async (req: NextRequest) => {
   if (input.website) throw new HttpError(400, "validation_error"); // honeypot
   const bill = await createBill(input, clientIp(req));
   const billId = bill._id.toHexString();
-  const res = NextResponse.json({ ok: true, id: billId, code: bill.code }, { status: 201 });
+  const res = NextResponse.json({ ok: true, id: billId, code: bill.code, reviewStatus: bill.reviewStatus }, { status: 201 });
   res.cookies.set("mn_owner", signPayload({ billId, iat: Date.now() }), {
     httpOnly: true,
     sameSite: "lax",
