@@ -1,11 +1,12 @@
 "use client";
 
-import { Sparkles, MapPin } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { REGIONS, UTILITY_ICONS, UTILITY_TYPES, type PublicBill, type Region, type UtilityType } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n";
 import { BillCard } from "./BillCard";
+import { Combobox } from "./Combobox";
 
 export function LiveFeed({
   initialBills,
@@ -119,19 +120,21 @@ export function LiveFeed({
         <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 -right-4 w-10 bg-gradient-to-r from-transparent to-[#f4f6fb] sm:hidden" />
         </div>
 
-        <select
+        <Combobox
+          id="regionFilter"
+          hideLabel
+          label={dict.ask.region}
           value={regionFilter}
-          onChange={(e) => setRegionFilter(e.target.value as Region | "all")}
-          aria-label={dict.ask.region}
-          className="h-10 w-full min-w-0 cursor-pointer sm:w-auto rounded-2xl border border-slate-200/90 bg-white px-3.5 text-xs font-bold text-slate-700 outline-none focus:border-amber-500"
-        >
-          <option value="all">{dict.ask.region}: —</option>
-          {REGIONS.map((r) => (
-            <option key={r} value={r}>
-              {dict.region[r]}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setRegionFilter(v as Region | "all")}
+          options={[
+            { value: "all", label: `${dict.ask.region}: —` },
+            ...REGIONS.map((r) => ({ value: r, label: dict.region[r] })),
+          ]}
+          placeholder={dict.ask.region}
+          searchPlaceholder={dict.common.search}
+          emptyText={dict.common.nothingFound}
+          className="w-full sm:w-64"
+        />
       </div>
 
       {/* Cards Grid */}

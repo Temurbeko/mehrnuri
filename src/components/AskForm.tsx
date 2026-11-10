@@ -16,6 +16,7 @@ import { DISTRICTS_BY_REGION, findDistrict, meterUnitFor, officialSupplierName }
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { UTILITY_THEMES } from "./BillCard";
+import { Combobox } from "./Combobox";
 import { api, errorText } from "./api";
 
 export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) {
@@ -26,7 +27,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
   const [accountNumber, setAccountNumber] = useState<string>("");
 
   const [amountOwed, setAmountOwed] = useState("");
-  const [phone, setPhone] = useState("+998 ");
+  const [phone, setPhone] = useState("+998");
   const [showExtra, setShowExtra] = useState(false);
   const [paymentPurpose, setPaymentPurpose] = useState<PaymentPurpose>("main");
   const [meterReading, setMeterReading] = useState<string>("");
@@ -196,16 +197,20 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 key={u}
                 type="button"
                 onClick={() => setUtilityType(u)}
-                className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 py-2.5 px-1.5 text-center transition-all active:scale-95 ${
+                aria-pressed={active}
+                className={`relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 px-1.5 py-3 text-center transition-all duration-150 active:scale-95 ${
                   active
-                    ? "border-slate-900 bg-slate-900 text-white shadow-xs"
-                    : "border-slate-200/80 bg-white text-slate-700 hover:border-slate-300"
+                    ? "border-amber-500 bg-amber-50 text-slate-900 ring-4 ring-amber-500/20"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                 }`}
               >
+                {active && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
+                    <Check size={13} strokeWidth={3} aria-hidden="true" />
+                  </span>
+                )}
                 <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg ${
-                    active ? "bg-white/15" : `${theme.bg} ${theme.text}`
-                  }`}
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg ${theme.bg} ${theme.text}`}
                   aria-hidden="true"
                 >
                   {UTILITY_ICONS[u]}
@@ -217,46 +222,33 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
         </div>
 
         <div className="space-y-1.5">
-          <div className="grid grid-cols-2 gap-2.5">
-            <div>
-              <label className="label" htmlFor="region">
-                <MapPin size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.region}
-              </label>
-              <select
-                id="region"
-                value={region}
-                onChange={(e) => {
-                  const nextRegion = e.target.value as Region;
-                  setRegion(nextRegion);
-                  setDistrict(DISTRICTS_BY_REGION[nextRegion][0]!.id);
-                }}
-                className="input cursor-pointer py-2.5 text-xs sm:text-sm font-bold"
-              >
-                {REGIONS.map((r) => (
-                  <option key={r} value={r}>
-                    {dict.region[r]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="label" htmlFor="district">
-                <Building2 size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.district}
-              </label>
-              <select
-                id="district"
-                value={currentDistrict.id}
-                onChange={(e) => setDistrict(e.target.value)}
-                className="input cursor-pointer py-2.5 text-xs sm:text-sm font-bold"
-              >
-                {districts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {dict.districts[d.id]}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+            <Combobox
+              id="region"
+              label={dict.ask.region}
+              value={region}
+              onChange={(v) => {
+                const nextRegion = v as Region;
+                setRegion(nextRegion);
+                setDistrict(DISTRICTS_BY_REGION[nextRegion][0]!.id);
+              }}
+              options={REGIONS.map((r) => ({ value: r, label: dict.region[r] }))}
+              placeholder={dict.ask.region}
+              searchPlaceholder={dict.common.search}
+              emptyText={dict.common.nothingFound}
+              icon={<MapPin size={18} aria-hidden="true" />}
+            />
+            <Combobox
+              id="district"
+              label={dict.ask.district}
+              value={currentDistrict.id}
+              onChange={setDistrict}
+              options={districts.map((d) => ({ value: d.id, label: dict.districts[d.id] }))}
+              placeholder={dict.ask.district}
+              searchPlaceholder={dict.common.search}
+              emptyText={dict.common.nothingFound}
+              icon={<Building2 size={18} aria-hidden="true" />}
+            />
           </div>
 
           <div className="px-1 text-[11px] font-semibold text-slate-400 truncate">
@@ -272,7 +264,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
         {step === 2 && (
           <div className="space-y-4">
-            <div className="space-y-1.5">
+            <div>
               <label className="label" htmlFor="accountNumber">
                 {dict.ask.accountNumber}
               </label>
@@ -280,29 +272,50 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 id="accountNumber"
                 type="text"
                 inputMode="numeric"
+                autoComplete="off"
                 placeholder={dict.ask.accountHint}
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
-                className="input font-mono text-base font-extrabold tracking-wider"
+                className="input font-mono text-lg font-extrabold tracking-[0.15em]"
               />
             </div>
 
             <div>
               <label className="label" htmlFor="amountOwed">
-                <Wallet size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.amount}
+                {dict.ask.amount}
               </label>
-              <input
-                id="amountOwed"
-                type="number"
-                inputMode="numeric"
-                min={1000}
-                max={5000000}
-                step={100}
-                placeholder="150 000"
-                value={amountOwed}
-                onChange={(e) => setAmountOwed(e.target.value)}
-                className="input font-mono text-base font-extrabold"
-              />
+              <div className="relative">
+                <Wallet size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="amountOwed"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="150 000"
+                  value={amountOwed}
+                  onChange={(e) => setAmountOwed(e.target.value.replace(/\D/g, "").slice(0, 7))}
+                  className="input pl-11 pr-16 font-mono text-lg font-extrabold"
+                />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
+                  {dict.common.som}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[100000, 200000, 500000].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setAmountOwed(String(v))}
+                    className={`min-h-10 cursor-pointer whitespace-nowrap rounded-full border px-4 text-sm font-extrabold transition-all active:scale-95 ${
+                      amountNum === v
+                        ? "border-amber-500 bg-amber-50 text-amber-800"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    {v.toLocaleString("ru-RU")}
+                  </button>
+                ))}
+              </div>
             </div>
 
         <div className="panel">
@@ -405,28 +418,50 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           <div className="space-y-4">
             <div>
               <label className="label" htmlFor="phone">
-                <Phone size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.phone}
+                {dict.ask.phone}
               </label>
-              <input
-                id="phone"
-                type="tel"
-                required
-                placeholder="+998 90 123 45 67"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input font-mono text-base font-bold"
-              />
+              <div className="relative">
+                <Phone size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <span className="pointer-events-none absolute left-11 top-1/2 -translate-y-1/2 font-mono text-base font-bold text-slate-500">
+                  +998
+                </span>
+                <input
+                  id="phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  required
+                  minLength={9}
+                  maxLength={9}
+                  placeholder="90 123 45 67"
+                  value={phone.slice(4)}
+                  onChange={(e) => setPhone("+998" + e.target.value.replace(/\D/g, "").slice(0, 9))}
+                  className="input pl-[5.5rem] font-mono text-lg font-bold tracking-wide"
+                />
+              </div>
             </div>
 
-            <label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-slate-600">
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-4 text-sm font-semibold transition-all active:scale-[0.99] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-amber-500/20 ${
+                consent ? "border-amber-500 bg-amber-50 text-slate-800" : "border-slate-200 bg-white text-slate-600"
+              }`}
+            >
               <input
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
                 required
-                className="h-5 w-5 shrink-0 rounded accent-amber-500"
+                className="peer sr-only"
               />
-              <span>{dict.ask.consent}</span>
+              <span
+                aria-hidden="true"
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors ${
+                  consent ? "border-amber-500 bg-amber-500 text-white" : "border-slate-300 bg-white"
+                }`}
+              >
+                {consent && <Check size={16} strokeWidth={3} />}
+              </span>
+              <span className="min-w-0">{dict.ask.consent}</span>
             </label>
 
             {error && (
