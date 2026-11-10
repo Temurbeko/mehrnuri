@@ -160,13 +160,13 @@ export function DirectPaymentClient({
 
         {/* STEP 1: Copy Account & Pay in Merchant App / Web */}
         <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-slate-50/90 p-4">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col gap-0.5">
             <span className="text-xs font-extrabold text-slate-800">{t.step1Title}</span>
-            <span className="truncate text-[11px] font-semibold text-slate-400">{supplier}</span>
+            <span className="text-[11px] font-semibold text-slate-400">{supplier}</span>
           </div>
 
           <div className="flex items-center justify-between gap-2 rounded-xl bg-white p-3 shadow-2xs ring-1 ring-slate-200">
-            <div>
+            <div className="min-w-0">
               <div className="text-[11px] font-bold text-slate-400">
                 {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
               </div>
@@ -177,7 +177,7 @@ export function DirectPaymentClient({
             <button
               type="button"
               onClick={() => copyValue(accountNumber, "account")}
-              className={`cursor-pointer rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all ${
+              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all ${
                 copiedField === "account"
                   ? "bg-emerald-600 text-white"
                   : "bg-slate-900 text-white hover:bg-slate-800"
@@ -211,14 +211,14 @@ export function DirectPaymentClient({
             rel="noopener noreferrer"
             onClick={() => copyValue(accountNumber, "account")}
             style={{ backgroundColor: merchant.color }}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition-transform active:scale-98"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-3.5 text-sm font-extrabold text-white shadow-md transition-transform sm:gap-2.5 sm:px-5 active:scale-98"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={merchant.icon} alt="" className="h-6 w-6 rounded-lg bg-white/20 p-0.5" />
-            <span>
+            <span className="whitespace-nowrap">
               {merchant.name} · {isMobile ? t.openMobileApp : t.openWebCheckout}
             </span>
-            <span>↗</span>
+            <span className="shrink-0">↗</span>
           </a>
 
           {!isMobile && (

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BRAND } from "@/config/brand";
@@ -40,9 +39,6 @@ export default async function LocaleLayout({
               <strong className="text-slate-700">{BRAND.name}</strong> — {dict.common.tagline}
             </span>
           </span>
-          <Link href={`/${locale}/admin`} className="font-semibold text-slate-400 hover:text-slate-700 transition">
-            {dict.nav.admin}
-          </Link>
         </div>
       </footer>
     </div>

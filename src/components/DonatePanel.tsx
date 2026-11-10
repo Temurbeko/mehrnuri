@@ -154,14 +154,14 @@ export function DonatePanel({
     <div className="mx-auto max-w-lg space-y-4">
       <div className="card space-y-4 p-5">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ring-1 ${theme.bg} ${theme.text} ${theme.ring}`}
               aria-hidden="true"
             >
               {UTILITY_ICONS[bill.utilityType]}
             </span>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h1 className="text-lg font-extrabold text-slate-900">{dict.utility[bill.utilityType]}</h1>
                 {bill.verified && (
@@ -342,17 +342,17 @@ export function DonatePanel({
         </div>
       ) : (
         <div className="card space-y-4 p-5">
-          <div className="flex items-center justify-between gap-2">
-            <label className="text-xs font-extrabold uppercase tracking-wider text-slate-500" htmlFor="customAmount">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="text-xs font-extrabold uppercase tracking-wider whitespace-nowrap text-slate-500" htmlFor="customAmount">
               {dict.donate.chooseAmount}
             </label>
             <button
               type="button"
               onClick={() => setEditingNick((v) => !v)}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200"
+              className="inline-flex max-w-full cursor-pointer items-center gap-1 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200"
             >
-              <span>👤 {nickname ?? nicknameInput}</span>
-              <span className="text-slate-400">✎</span>
+              <span className="max-w-[10rem] truncate">👤 {nickname ?? nicknameInput}</span>
+              <span className="shrink-0 text-slate-400">✎</span>
             </button>
           </div>
 
@@ -488,7 +488,7 @@ export function DonatePanel({
             disabled={paying || providers.length === 0}
             onClick={handlePay}
             style={{ backgroundColor: activeMerchant.color }}
-            className="flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl px-5 py-4 text-base font-extrabold text-white shadow-md transition-all active:scale-98 disabled:opacity-50"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-3 py-4 text-sm font-extrabold whitespace-nowrap text-white shadow-md sm:gap-2.5 sm:px-5 sm:text-base transition-all active:scale-98 disabled:opacity-50"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

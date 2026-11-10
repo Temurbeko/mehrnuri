@@ -72,6 +72,7 @@ export function LiveFeed({
 
       {/* Horizontal Swipeable Category Chips + Region Select */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative sm:contents">
         <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:px-0">
           <button
             type="button"
@@ -113,6 +114,8 @@ export function LiveFeed({
               </button>
             );
           })}
+        </div>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 -right-4 w-10 bg-gradient-to-r from-transparent to-[#f4f6fb] sm:hidden" />
         </div>
 
         <select

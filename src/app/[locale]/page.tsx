@@ -70,23 +70,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       {/* Compact 3-Step Explainer Strip */}
-      <section aria-label={dict.home.howTitle} className="grid grid-cols-3 gap-2.5 sm:gap-4">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-2xs">
-          <div className="mb-1.5 inline-flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500/15 text-xs font-extrabold text-amber-700">
+      <section aria-label={dict.home.howTitle} className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 sm:block sm:p-4 shadow-2xs">
+          <div className="mb-0 sm:mb-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-xs font-extrabold text-amber-700">
             1
           </div>
           <p className="text-xs font-bold text-slate-700 leading-snug sm:text-sm">{dict.home.how1}</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-2xs">
-          <div className="mb-1.5 inline-flex h-7 w-7 items-center justify-center rounded-xl bg-sky-500/15 text-xs font-extrabold text-sky-700">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 sm:block sm:p-4 shadow-2xs">
+          <div className="mb-0 sm:mb-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-xs font-extrabold text-sky-700">
             2
           </div>
           <p className="text-xs font-bold text-slate-700 leading-snug sm:text-sm">{dict.home.how2}</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-3 sm:p-4 shadow-2xs">
-          <div className="mb-1.5 inline-flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/15 text-xs font-extrabold text-emerald-700">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 sm:block sm:p-4 shadow-2xs">
+          <div className="mb-0 sm:mb-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-xs font-extrabold text-emerald-700">
             3
           </div>
           <p className="text-xs font-bold text-slate-700 leading-snug sm:text-sm">{dict.home.how3}</p>

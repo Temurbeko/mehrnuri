@@ -72,8 +72,8 @@ export function ProfileClient({
     return (
       <div className="mx-auto max-w-xl space-y-5">
         <div className="card space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-xl font-extrabold text-amber-700">
                 {donor.nickname.slice(0, 1).toUpperCase()}
               </span>
@@ -86,7 +86,7 @@ export function ProfileClient({
               type="button"
               onClick={handleLogout}
               disabled={busy}
-              className="cursor-pointer rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              className="shrink-0 cursor-pointer whitespace-nowrap rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
             >
               {dict.me.logout}
             </button>
