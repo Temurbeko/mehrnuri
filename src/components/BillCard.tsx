@@ -76,128 +76,88 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
   const districtInfo = findDistrict(bill.region, bill.district);
 
   return (
-    <article className="card-interactive flex min-w-0 flex-col justify-between gap-4 p-5">
-      <div className="space-y-3.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-3">
-            <span
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ring-1 ${theme.bg} ${theme.text} ${theme.ring}`}
-              aria-hidden="true"
-            >
-              {UTILITY_ICONS[bill.utilityType]}
-            </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-base font-extrabold text-slate-900 leading-snug">
-                  {dict.utility[bill.utilityType]}
-                </h3>
-                {bill.verified && (
-                  <span
-                    title={dict.bill.verified}
-                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white"
-                  >
-                    <Check size={14} aria-hidden="true" />
-                  </span>
-                )}
-              </div>
-              <p className="flex items-center gap-1 text-sm text-slate-500">
-                <MapPin size={16} aria-hidden="true" className="shrink-0" />{dict.region[bill.region]} · {dict.districts[districtInfo.id]}
-              </p>
-              <div className="mt-1.5">
-                <TrustBadge bill={bill} dict={dict} />
-              </div>
+    <article className="card-interactive flex min-w-0 flex-col gap-3 p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ring-1 ${theme.bg} ${theme.text} ${theme.ring}`}
+            aria-hidden="true"
+          >
+            {UTILITY_ICONS[bill.utilityType]}
+          </span>
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <h3 className="truncate text-base font-extrabold leading-snug text-slate-900">
+                {dict.utility[bill.utilityType]}
+              </h3>
+              {bill.verified && (
+                <span
+                  title={dict.bill.verified}
+                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white"
+                >
+                  <Check size={14} aria-hidden="true" />
+                </span>
+              )}
+            </div>
+            <p className="flex min-w-0 items-start gap-1 text-sm text-slate-500">
+              <MapPin size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+              <span className="min-w-0 leading-snug">{dict.region[bill.region]} · {dict.districts[districtInfo.id]}</span>
+            </p>
+            <div className="mt-1.5">
+              <TrustBadge bill={bill} dict={dict} />
             </div>
           </div>
+        </div>
+        <div className="shrink-0 whitespace-nowrap">
           <StatusBadge bill={bill} dict={dict} />
         </div>
-
-        {bill.story && (
-          <p className="line-clamp-2 rounded-2xl bg-slate-50 px-3.5 py-2.5 text-[13px] font-medium text-slate-600 leading-relaxed">
-            “{bill.story}”
-          </p>
-        )}
-
-        {bill.thanksReactions && bill.thanksReactions.length > 0 && (
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-3 py-1 text-[11px] font-extrabold text-emerald-800 ring-1 ring-emerald-500/20">
-            <Heart size={14} aria-hidden="true" />
-            <span>{dict.reactions.cardBadge}</span>
-          </div>
-        )}
-
-        <div className="space-y-1.5 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-xs">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <span className="text-slate-400 font-semibold">{dict.bill.account}: </span>
-              <span className="font-mono font-bold text-slate-900">{bill.accountMasked}</span>
-            </div>
-            {bill.holderMasked ? (
-              <span className="font-bold text-slate-700 truncate max-w-[140px]">{bill.holderMasked}</span>
-            ) : (
-              <span className="font-mono text-[11px] font-bold text-slate-400">{bill.code}</span>
-            )}
-          </div>
-          <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
-            <span className="truncate font-semibold">{bill.supplier}</span>
-          </div>
-        </div>
-
-        <div className="space-y-2 pt-0.5">
-          <div className="flex items-baseline justify-between gap-2">
-            <div>
-              <div className="text-[11px] font-bold text-slate-400">
-                {dict.bill.remaining}
-              </div>
-              <div className="text-lg font-extrabold tracking-tight text-slate-900">
-                {formatMoney(remaining, dict)}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] font-semibold text-slate-400">
-                {dict.bill.owed}: {formatMoney(bill.amountOwed, dict)}
-              </div>
-              <div className="text-xs font-extrabold text-emerald-600">{pct}%</div>
-            </div>
-          </div>
-
-          <div
-            className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100"
-            role="progressbar"
-            aria-valuenow={pct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <div
-              className={`h-full rounded-full bg-gradient-to-r ${theme.bar} transition-all duration-500`}
-              style={{ width: `${Math.max(pct, bill.paidAmount > 0 ? 6 : 0)}%` }}
-            />
-          </div>
-        </div>
       </div>
 
-      <div className="flex items-center gap-2.5 pt-0.5">
-        {!isDone && (
-          <div className="flex -space-x-1.5 shrink-0" aria-hidden="true">
-            {(["/merchants/click.png", "/merchants/payme.png", "/merchants/uzum.png", "/merchants/paynet.png"] as const).map(
-              (src) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={src}
-                  src={src}
-                  alt=""
-                  className="h-6 w-6 rounded-full object-cover ring-2 ring-white shadow-2xs"
-                />
-              ),
-            )}
+      {bill.story && (
+        <p className="line-clamp-1 text-[13px] font-medium text-slate-500">“{bill.story}”</p>
+      )}
+
+      {bill.thanksReactions && bill.thanksReactions.length > 0 && (
+        <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-800 ring-1 ring-emerald-500/20">
+          <Heart size={12} aria-hidden="true" />
+          <span>{dict.reactions.cardBadge}</span>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <div className="flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold text-slate-400">{dict.bill.remaining}</div>
+            <div className="truncate text-2xl font-extrabold tracking-tight text-slate-900">
+              {formatMoney(remaining, dict)}
+            </div>
           </div>
-        )}
-        <Link
-          href={`/${locale}/bill/${bill.id}`}
-          className={`flex-1 ${isDone ? "btn-outline py-2.5 text-sm" : "btn-primary py-3 text-sm"}`}
+          <div className="shrink-0 pb-1 text-right text-[11px] font-semibold text-slate-400">
+            {dict.bill.owed}: {formatMoney(bill.amountOwed, dict)}
+          </div>
+        </div>
+
+        <div
+          className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
         >
-          <span>{isDone ? dict.bill.thanks : dict.bill.help}</span>
-          {!isDone && <ArrowRight size={18} aria-hidden="true" />}
-        </Link>
+          <div
+            className={`h-full rounded-full bg-gradient-to-r ${theme.bar} transition-all duration-500`}
+            style={{ width: `${Math.max(pct, bill.paidAmount > 0 ? 6 : 0)}%` }}
+          />
+        </div>
       </div>
+
+      <Link
+        href={`/${locale}/bill/${bill.id}`}
+        className={`w-full whitespace-nowrap py-3 text-sm ${isDone ? "btn-secondary" : "btn-primary"}`}
+      >
+        <span>{isDone ? dict.bill.thanks : dict.bill.help}</span>
+        {!isDone && <ArrowRight size={18} aria-hidden="true" />}
+      </Link>
     </article>
   );
 }

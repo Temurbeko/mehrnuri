@@ -21,7 +21,7 @@ const uzLatn = {
     heroSubtitle: "Kommunal to'lovga qiynalgan oilaga 1 000 so'mdan yordam bering. Pul to'g'ri ularning hisobiga tushadi.",
     wantHelp: "Yordam bermoqchiman",
     needHelp: "Menga yordam kerak",
-    howTitle: "Qanday ishlaydi",
+    howTitle: "Qanday ishlaydi?",
     how1: "Oila ariza qoldiradi — darhol ro'yxatda chiqadi.",
     how2: "Siz Click, Payme, Uzum yoki Paynetda to'laysiz.",
     how3: "Pul to'g'ri kommunal hisobga tushadi.",

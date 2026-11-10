@@ -53,19 +53,19 @@ export function LiveFeed({
   const countByUtility = (u: UtilityType) => bills.filter((b) => b.utilityType === u).length;
 
   return (
-    <section id="feed" className="space-y-4 scroll-mt-20">
+    <section id="feed" className="min-w-0 space-y-3 scroll-mt-20">
       {/* Section Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <h2 className="truncate text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
             {dict.home.feedTitle}
           </h2>
-          <span className="rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-extrabold text-slate-700">
+          <span className="shrink-0 rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-extrabold text-slate-700">
             {filtered.length}
           </span>
         </div>
 
-        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700">
+        <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700">
           <span className="relative h-2 w-2 rounded-full bg-emerald-500 live-dot" />
           {dict.bill.live}
         </span>
@@ -123,7 +123,7 @@ export function LiveFeed({
           value={regionFilter}
           onChange={(e) => setRegionFilter(e.target.value as Region | "all")}
           aria-label={dict.ask.region}
-          className="h-10 shrink-0 cursor-pointer rounded-2xl border border-slate-200/90 bg-white px-3.5 text-xs font-bold text-slate-700 outline-none focus:border-amber-500"
+          className="h-10 w-full min-w-0 cursor-pointer sm:w-auto rounded-2xl border border-slate-200/90 bg-white px-3.5 text-xs font-bold text-slate-700 outline-none focus:border-amber-500"
         >
           <option value="all">{dict.ask.region}: —</option>
           {REGIONS.map((r) => (

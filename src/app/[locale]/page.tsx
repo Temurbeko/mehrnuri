@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Heart, Home } from "lucide-react";
+import { ArrowRight, Heart } from "lucide-react";
 import { notFound } from "next/navigation";
 import { BRAND } from "@/config/brand";
 import { isLocale } from "@/i18n/config";
@@ -29,7 +29,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Hero Banner */}
       <section className="hero-mesh relative overflow-hidden rounded-3xl p-5 text-white shadow-[0_16px_40px_-12px_rgba(15,23,42,0.45)] sm:p-8">
         <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-amber-300 backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
               <span>{fmt(dict.home.stats, { count: bills.length })}</span>
@@ -43,17 +43,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {dict.home.heroSubtitle}
             </p>
 
-            <div className="grid gap-2.5 pt-2 sm:max-w-md sm:grid-cols-2">
-              <a href="#feed" className="btn-primary py-3.5 text-sm font-extrabold">
+            <div className="flex flex-col gap-1 pt-1 sm:max-w-xs">
+              <a href="#feed" className="btn-primary w-full py-3.5 text-sm font-extrabold">
                 <Heart size={18} aria-hidden="true" />
                 <span>{dict.home.wantHelp}</span>
               </a>
               <Link
                 href={`/${locale}/ask`}
-                className="btn border border-white/20 bg-white/10 py-3.5 text-sm font-extrabold text-white backdrop-blur-md hover:bg-white/20"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 text-sm font-bold text-white/80 hover:text-white"
               >
-                <Home size={18} aria-hidden="true" />
                 <span>{dict.home.needHelp}</span>
+                <ArrowRight size={16} aria-hidden="true" />
               </Link>
             </div>
           </div>
@@ -70,32 +70,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* Compact 3-Step Explainer Strip */}
-      <section aria-label={dict.home.howTitle} className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-4">
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 sm:block sm:p-4 shadow-2xs">
-          <div className="mb-0 sm:mb-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-xs font-extrabold text-amber-700">
-            1
-          </div>
-          <p className="text-xs font-bold text-slate-700 leading-snug sm:text-sm">{dict.home.how1}</p>
-        </div>
-
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 sm:block sm:p-4 shadow-2xs">
-          <div className="mb-0 sm:mb-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-extrabold text-slate-700">
-            2
-          </div>
-          <p className="text-xs font-bold text-slate-700 leading-snug sm:text-sm">{dict.home.how2}</p>
-        </div>
-
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 sm:block sm:p-4 shadow-2xs">
-          <div className="mb-0 sm:mb-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-xs font-extrabold text-emerald-700">
-            3
-          </div>
-          <p className="text-xs font-bold text-slate-700 leading-snug sm:text-sm">{dict.home.how3}</p>
-        </div>
-      </section>
-
       {/* Real-time Feed */}
       <LiveFeed initialBills={bills} locale={locale} dict={dict} />
+
+      {/* How it works */}
+      <section aria-labelledby="how-title" className="panel p-5">
+        <h2 id="how-title" className="text-sm font-extrabold text-slate-900">
+          {dict.home.howTitle}
+        </h2>
+        <ol className="mt-3 space-y-2.5">
+          {[dict.home.how1, dict.home.how2, dict.home.how3].map((text, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-xs font-extrabold text-amber-700">
+                {i + 1}
+              </span>
+              <span className="min-w-0 text-sm font-medium leading-snug text-slate-700">{text}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
     </div>
   );
 }
