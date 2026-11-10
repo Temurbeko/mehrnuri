@@ -1,4 +1,17 @@
+import { networkInterfaces } from "node:os";
 import type { NextConfig } from "next";
+
+/**
+ * This machine's current local-network IPv4 addresses, so phones and other
+ * devices on the same Wi-Fi can open the dev server (http://<ip>:3000).
+ * Computed at startup because the Wi-Fi address changes; dev-only setting.
+ */
+function lanAddresses(): string[] {
+  return Object.values(networkInterfaces())
+    .flat()
+    .filter((i) => i && i.family === "IPv4" && !i.internal)
+    .map((i) => i!.address);
+}
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -12,7 +25,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  allowedDevOrigins: ["10.214.121.217", "10.156.189.217"],
+  allowedDevOrigins: lanAddresses(),
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

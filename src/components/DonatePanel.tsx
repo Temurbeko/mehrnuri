@@ -329,10 +329,16 @@ export function DonatePanel({
               ? dict.check.flaggedNotice
               : dict.status.rejected}
         </div>
-      ) : bill.fundingStatus === "fully_paid" || bill.available <= 0 ? (
+      ) : bill.fundingStatus === "fully_paid" ? (
         <div className="card space-y-2 text-center py-8">
           <div className="text-4xl">🎉</div>
           <p className="text-base font-extrabold text-emerald-700">{dict.bill.thanks}</p>
+        </div>
+      ) : bill.available <= 0 ? (
+        // Not paid yet: other donors have the rest reserved and are paying now.
+        <div className="card space-y-2 text-center py-8">
+          <div className="text-4xl">⏳</div>
+          <p className="text-sm font-extrabold text-slate-700">{dict.donate.reserved}</p>
         </div>
       ) : (
         <div className="card space-y-4 p-5">

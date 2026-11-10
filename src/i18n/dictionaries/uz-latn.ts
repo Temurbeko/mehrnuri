@@ -224,6 +224,7 @@ const uzLatn = {
     pay: "{amount} to'lash",
     redirecting: "To'lov sahifasiga o'tilmoqda...",
     full: "Bu hisob bo'yicha kerakli summa allaqachon yig'ilgan.",
+    reserved: "Qolgan summani hozir boshqa saxiy to'layapti. Bir necha daqiqadan so'ng qarang.",
     copy: "Nusxa",
     copied: "Nusxalandi ✓",
     moreDetails: "Qo'shimcha ma'lumotlar",

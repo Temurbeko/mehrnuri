@@ -39,6 +39,16 @@ if (!(await isPortOpen(27017))) {
 // so `npm run dev:local` always means "local database".
 process.env.MONGODB_URI = "mongodb://127.0.0.1:27017";
 process.env.MONGODB_DB ??= "mehrnuri";
+// Soliq only answers from inside Uzbekistan, so a local run tests receipts in mock mode.
+process.env.SOLIQ_MODE ??= "mock";
+
+// Print the address phones on the same Wi-Fi can open.
+const { networkInterfaces } = await import("node:os");
+const lan = Object.values(networkInterfaces())
+  .flat()
+  .filter((i) => i && i.family === "IPv4" && !i.internal)
+  .map((i) => `http://${i.address}:3000`);
+console.log(`[dev:local] Open on your phone (same Wi-Fi): ${lan.join("  ") || "no network found"}`);
 
 await seedDatabase();
 
