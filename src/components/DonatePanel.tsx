@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Check, ChevronDown, ChevronUp, Copy, Dices, MapPin, Monitor, Pencil, Smartphone, Sparkles, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { REACTION_TYPES, UTILITY_ICONS, type PaymentProviderId, type PublicBill, type ReactionType, type ReviewStatus } from "@/lib/domain";
@@ -165,13 +166,13 @@ export function DonatePanel({
               <div className="flex items-center gap-1.5">
                 <h1 className="text-lg font-extrabold text-slate-900">{dict.utility[bill.utilityType]}</h1>
                 {bill.verified && (
-                  <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
-                    ✓
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white">
+                    <Check size={14} aria-hidden="true" />
                   </span>
                 )}
               </div>
-              <p className="text-xs font-semibold text-slate-500">
-                📍 {dict.region[bill.region]} · {dict.districts[districtInfo.id]}
+              <p className="flex items-center gap-1 text-sm text-slate-500">
+                <MapPin size={16} aria-hidden="true" className="shrink-0" />{dict.region[bill.region]} · {dict.districts[districtInfo.id]}
               </p>
               <div className="mt-1.5">
                 <TrustBadge bill={bill} dict={dict} />
@@ -214,7 +215,7 @@ export function DonatePanel({
                 : "bg-white text-slate-800 shadow-2xs ring-1 ring-slate-200 hover:bg-slate-100"
             }`}
           >
-            {copiedAccount ? dict.donate.copied : `📋 ${dict.donate.copy}`}
+            {copiedAccount ? <span className="inline-flex items-center gap-1.5"><Check size={18} aria-hidden="true" />{dict.donate.copied}</span> : <span className="inline-flex items-center gap-1.5"><Copy size={18} aria-hidden="true" />{dict.donate.copy}</span>}
           </button>
         </div>
 
@@ -238,8 +239,8 @@ export function DonatePanel({
         )}
 
         {canReact && (
-          <div className="rounded-2xl border border-amber-400/40 bg-amber-50/50 p-3 space-y-2">
-            <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900">
+          <div className="panel space-y-2">
+            <div className="text-[11px] font-extrabold text-amber-900">
               {dict.reactions.panelTitle}
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -267,7 +268,7 @@ export function DonatePanel({
         <div className="space-y-1.5">
           <div className="flex items-baseline justify-between">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dict.bill.remaining}: </span>
+              <span className="text-[11px] font-bold text-slate-400">{dict.bill.remaining}: </span>
               <span className="text-lg font-extrabold text-slate-900">{formatMoney(remaining, dict)}</span>
             </div>
             <span className="text-xs font-extrabold text-emerald-600">
@@ -290,7 +291,7 @@ export function DonatePanel({
             className="flex w-full cursor-pointer items-center justify-between text-xs font-bold text-slate-500 hover:text-slate-800"
           >
             <span>{dict.donate.moreDetails}</span>
-            <span>{showDetails ? "▲" : "▼"}</span>
+            {showDetails ? <ChevronUp size={18} aria-hidden="true" /> : <ChevronDown size={18} aria-hidden="true" />}
           </button>
           {showDetails && (
             <div className="mt-2.5 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
@@ -343,7 +344,7 @@ export function DonatePanel({
       ) : (
         <div className="card space-y-4 p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <label className="text-xs font-extrabold uppercase tracking-wider whitespace-nowrap text-slate-500" htmlFor="customAmount">
+            <label className="text-xs font-extrabold whitespace-nowrap text-slate-500" htmlFor="customAmount">
               {dict.donate.chooseAmount}
             </label>
             <button
@@ -351,8 +352,9 @@ export function DonatePanel({
               onClick={() => setEditingNick((v) => !v)}
               className="inline-flex max-w-full cursor-pointer items-center gap-1 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200"
             >
-              <span className="max-w-[10rem] truncate">👤 {nickname ?? nicknameInput}</span>
-              <span className="shrink-0 text-slate-400">✎</span>
+              <User size={16} aria-hidden="true" className="shrink-0" />
+              <span className="max-w-[10rem] truncate">{nickname ?? nicknameInput}</span>
+              <Pencil size={14} aria-hidden="true" className="shrink-0 text-slate-400" />
             </button>
           </div>
 
@@ -373,7 +375,7 @@ export function DonatePanel({
                 onClick={() => setNicknameInput(randomKindNickname())}
                 className="btn-outline w-auto shrink-0 px-3 py-2 text-sm"
               >
-                🎲
+                <Dices size={18} aria-hidden="true" />
               </button>
             </div>
           )}
@@ -394,7 +396,7 @@ export function DonatePanel({
               }}
               className="input pr-16 font-mono text-2xl font-extrabold text-slate-900"
             />
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-extrabold uppercase text-slate-400">
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">
               {dict.common.som}
             </span>
           </div>
@@ -432,13 +434,13 @@ export function DonatePanel({
                   : "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20"
               }`}
             >
-              ✨ {fmt(dict.donate.all, { amount: formatMoney(bill.available, dict) })}
+              <Sparkles size={16} aria-hidden="true" className="mr-1 inline" />{fmt(dict.donate.all, { amount: formatMoney(bill.available, dict) })}
             </button>
           </div>
 
           {providers.length > 0 && (
             <div className="space-y-2 pt-1">
-              <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+              <div className="text-xs font-extrabold text-slate-500">
                 {dict.donate.payWith}
               </div>
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -471,7 +473,8 @@ export function DonatePanel({
                   );
                 })}
               </div>
-              <p className="text-[11px] font-semibold text-slate-500">
+              <p className="flex items-start gap-1.5 text-sm text-slate-500">
+                {isMobile ? <Smartphone size={18} aria-hidden="true" className="shrink-0" /> : <Monitor size={18} aria-hidden="true" className="shrink-0" />}
                 {isMobile ? dict.donate.mobileHint : dict.donate.pcHint}
               </p>
             </div>
@@ -501,7 +504,7 @@ export function DonatePanel({
                 ? dict.donate.redirecting
                 : `${activeMerchant.name} · ${fmt(dict.donate.pay, { amount: formatMoney(Math.min(amount, bill.available), dict) })}`}
             </span>
-            {!paying && <span>→</span>}
+            {!paying && <ArrowRight size={18} aria-hidden="true" />}
           </button>
         </div>
       )}

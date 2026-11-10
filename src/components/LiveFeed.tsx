@@ -1,5 +1,6 @@
 "use client";
 
+import { Sparkles, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { REGIONS, UTILITY_ICONS, UTILITY_TYPES, type PublicBill, type Region, type UtilityType } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
@@ -83,7 +84,7 @@ export function LiveFeed({
                 : "border border-slate-200/90 bg-white text-slate-700 hover:border-slate-300"
             }`}
           >
-            ✦ ({bills.length})
+            ({bills.length})
           </button>
 
           {UTILITY_TYPES.map((u) => {
@@ -124,7 +125,7 @@ export function LiveFeed({
           aria-label={dict.ask.region}
           className="h-10 shrink-0 cursor-pointer rounded-2xl border border-slate-200/90 bg-white px-3.5 text-xs font-bold text-slate-700 outline-none focus:border-amber-500"
         >
-          <option value="all">📍 {dict.ask.region}: —</option>
+          <option value="all">{dict.ask.region}: —</option>
           {REGIONS.map((r) => (
             <option key={r} value={r}>
               {dict.region[r]}
@@ -136,7 +137,7 @@ export function LiveFeed({
       {/* Cards Grid */}
       {filtered.length === 0 ? (
         <div className="card py-12 text-center space-y-2">
-          <div className="text-3xl">✨</div>
+          <Sparkles size={32} aria-hidden="true" className="mx-auto text-amber-500" />
           <p className="text-sm font-bold text-slate-600">{dict.home.empty}</p>
         </div>
       ) : (

@@ -1,5 +1,6 @@
 "use client";
 
+import { Home, Plus, Trophy, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BRAND } from "@/config/brand";
@@ -28,9 +29,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
         p.startsWith(`/${locale}/pay/`) ||
         p.startsWith(`/${locale}/payment/`),
       icon: (active: boolean) => (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5.5v-6h-5v6H4a1 1 0 01-1-1v-9.5z" />
-        </svg>
+        <Home size={22} aria-hidden="true" strokeWidth={active ? 2.5 : 2} />
       ),
     },
     {
@@ -38,9 +37,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
       label: dict.nav.ask,
       match: (p: string) => p.startsWith(`/${locale}/ask`),
       icon: (active: boolean) => (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
+        <Plus size={22} aria-hidden="true" strokeWidth={active ? 2.5 : 2} />
       ),
     },
     {
@@ -48,9 +45,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
       label: dict.nav.leaders,
       match: (p: string) => p.startsWith(`/${locale}/leaders`),
       icon: (active: boolean) => (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15l-3.5 2 1-4L6 10l4-.3L12 6l2 3.7 4 .3-3.5 3 1 4-3.5-2z" />
-        </svg>
+        <Trophy size={22} aria-hidden="true" strokeWidth={active ? 2.5 : 2} />
       ),
     },
     {
@@ -58,9 +53,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
       label: dict.nav.me,
       match: (p: string) => p.startsWith(`/${locale}/me`),
       icon: (active: boolean) => (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
+        <User size={22} aria-hidden="true" strokeWidth={active ? 2.5 : 2} />
       ),
     },
   ];

@@ -1,5 +1,6 @@
 "use client";
 
+import { Camera, Check, Copy, ExternalLink, FlaskConical, Lightbulb, Smartphone, Trophy } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PAYMENT_PROVIDERS, UTILITY_ICONS, type PaymentProviderId, type UtilityType } from "@/lib/domain";
@@ -183,7 +184,7 @@ export function DirectPaymentClient({
                   : "bg-slate-900 text-white hover:bg-slate-800"
               }`}
             >
-              {copiedField === "account" ? t.copiedBtn : `📋 ${t.copyBtn}`}
+              {copiedField === "account" ? <span className="inline-flex items-center gap-1.5"><Check size={18} aria-hidden="true" />{t.copiedBtn}</span> : <span className="inline-flex items-center gap-1.5"><Copy size={18} aria-hidden="true" />{t.copyBtn}</span>}
             </button>
           </div>
 
@@ -197,12 +198,13 @@ export function DirectPaymentClient({
               onClick={() => copyValue(String(amount), "amount")}
               className="cursor-pointer rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200"
             >
-              {copiedField === "amount" ? t.copiedBtn : `📋 ${t.copyBtn}`}
+              {copiedField === "amount" ? <span className="inline-flex items-center gap-1.5"><Check size={18} aria-hidden="true" />{t.copiedBtn}</span> : <span className="inline-flex items-center gap-1.5"><Copy size={18} aria-hidden="true" />{t.copyBtn}</span>}
             </button>
           </div>
 
-          <p className="rounded-xl bg-white/80 px-3 py-2 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200/80 leading-relaxed">
-            💡 {t.payHint}
+          <p className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600 leading-relaxed">
+            <Lightbulb size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
+            <span>{t.payHint}</span>
           </p>
 
           <a
@@ -218,7 +220,7 @@ export function DirectPaymentClient({
             <span className="whitespace-nowrap">
               {merchant.name} · {isMobile ? t.openMobileApp : t.openWebCheckout}
             </span>
-            <span className="shrink-0">↗</span>
+            <ExternalLink size={18} aria-hidden="true" className="shrink-0" />
           </a>
 
           {!isMobile && (
@@ -237,7 +239,7 @@ export function DirectPaymentClient({
                 )}
               </svg>
               <div className="text-[11px] text-slate-600">
-                <div className="font-extrabold text-slate-900">📱 {t.scanQrTitle}</div>
+                <div className="inline-flex items-center gap-1.5 font-extrabold text-slate-900"><Smartphone size={18} aria-hidden="true" />{t.scanQrTitle}</div>
                 <div>{merchantText.utilityPath}</div>
               </div>
             </div>
@@ -251,8 +253,8 @@ export function DirectPaymentClient({
         <div className="space-y-3 rounded-2xl border-2 border-amber-400/50 bg-amber-50/40 p-4">
           <div className="flex flex-wrap items-center justify-between gap-1">
             <span className="text-xs font-extrabold text-slate-900">{t.step2Title}</span>
-            <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-900">
-              {t.step2Badge}
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-900">
+              <Trophy size={14} aria-hidden="true" />{t.step2Badge}
             </span>
           </div>
 
@@ -270,6 +272,7 @@ export function DirectPaymentClient({
             onClick={() => fileInputRef.current?.click()}
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-500/60 bg-white px-4 py-3 text-xs font-extrabold text-slate-800 shadow-2xs transition hover:border-amber-500 hover:bg-amber-50/50"
           >
+            <Camera size={18} aria-hidden="true" />
             <span>{scanningQr ? t.scanningReceipt : t.scanReceiptBtn}</span>
           </button>
 
@@ -296,9 +299,9 @@ export function DirectPaymentClient({
             <button
               type="button"
               onClick={fillSampleReceipt}
-              className="w-full cursor-pointer rounded-xl border border-dashed border-violet-400 bg-violet-50 px-3 py-2 text-[11px] font-extrabold text-violet-800 hover:bg-violet-100"
+              className="btn-secondary border-dashed"
             >
-              🧪 {t.testReceiptBtn}
+              <FlaskConical size={18} aria-hidden="true" />{t.testReceiptBtn}
             </button>
           )}
 
@@ -308,7 +311,7 @@ export function DirectPaymentClient({
             onClick={() => submitConfirmation("verified")}
             className="btn-emerald py-3.5 text-sm font-extrabold"
           >
-            {busy === "verified" ? t.processing : t.verifyWithReceiptBtn}
+            {busy === "verified" ? t.processing : <><Trophy size={18} aria-hidden="true" />{t.verifyWithReceiptBtn}</>}
           </button>
         </div>
 

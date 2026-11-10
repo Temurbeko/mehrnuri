@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { env } from "@/config/env";
@@ -41,9 +42,9 @@ export default async function BillPage({
     <div className="mx-auto max-w-xl space-y-4">
       <Link
         href={`/${locale}`}
-        className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-extrabold text-slate-600 shadow-2xs border border-slate-200/80 hover:text-slate-900 transition active:scale-95"
+        className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-sm font-bold text-slate-600 border border-slate-200/80 hover:text-slate-900 transition active:scale-95"
       >
-        <span>←</span>
+        <ChevronLeft size={18} aria-hidden="true" />
         <span>{dict.common.back}</span>
       </Link>
       <DonatePanel

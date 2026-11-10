@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Building2, Check, ChevronUp, MapPin, Phone, Plus, Wallet } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -93,22 +94,22 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
   if (created) {
     return (
       <div className="card mx-auto max-w-md space-y-5 text-center p-6">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-2xl text-emerald-600 ring-1 ring-emerald-500/25">
-          ✓
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25">
+          <Check size={28} aria-hidden="true" />
         </div>
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-slate-900">{dict.ask.successTitle}</h2>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{created.held ? dict.ask.heldText : dict.ask.successText}</p>
         </div>
-        <div className="rounded-2xl border border-dashed border-amber-400 bg-amber-50/70 p-3.5">
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">{dict.ask.yourCode}</div>
+        <div className="panel">
+          <div className="text-sm font-semibold text-slate-600">{dict.ask.yourCode}</div>
           <div className="mt-0.5 font-mono text-xl font-extrabold tracking-widest text-slate-900 select-all">
             {created.code}
           </div>
         </div>
         <Link href={`/${locale}/bill/${created.id}`} className="btn-primary">
           <span>{dict.ask.viewBill}</span>
-          <span>→</span>
+          <ArrowRight size={18} aria-hidden="true" />
         </Link>
       </div>
     );
@@ -160,8 +161,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
         <div className="space-y-1.5">
           <div className="grid grid-cols-2 gap-2.5">
             <div>
-              <label className="label text-xs" htmlFor="region">
-                📍 {dict.ask.region}
+              <label className="label" htmlFor="region">
+                <MapPin size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.region}
               </label>
               <select
                 id="region"
@@ -182,8 +183,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             </div>
 
             <div>
-              <label className="label text-xs" htmlFor="district">
-                🏢 {dict.ask.district}
+              <label className="label" htmlFor="district">
+                <Building2 size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.district}
               </label>
               <select
                 id="district"
@@ -206,7 +207,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
         </div>
 
         <div className="space-y-1.5">
-          <label className="label text-xs" htmlFor="accountNumber">
+          <label className="label" htmlFor="accountNumber">
             {dict.ask.accountNumber}
           </label>
           <input
@@ -223,8 +224,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="label text-xs" htmlFor="amountOwed">
-              💰 {dict.ask.amount}
+            <label className="label" htmlFor="amountOwed">
+              <Wallet size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.amount}
             </label>
             <input
               id="amountOwed"
@@ -242,8 +243,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           </div>
 
           <div>
-            <label className="label text-xs" htmlFor="phone">
-              📞 {dict.ask.phone}
+            <label className="label" htmlFor="phone">
+              <Phone size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.phone}
             </label>
             <input
               id="phone"
@@ -263,16 +264,16 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             onClick={() => setShowExtra((v) => !v)}
             className="flex w-full cursor-pointer items-center justify-between text-xs font-extrabold text-slate-600 hover:text-slate-900"
           >
-            <span>➕ {dict.ask.moreToggle}</span>
+            <span className="inline-flex items-center gap-1.5"><Plus size={18} aria-hidden="true" />{dict.ask.moreToggle}</span>
             <span className="rounded-md bg-slate-200/70 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-              {showExtra ? "▲" : dict.ask.optionalBadge}
+              {showExtra ? <ChevronUp size={14} aria-hidden="true" /> : dict.ask.optionalBadge}
             </span>
           </button>
 
           {showExtra && (
             <div className="mt-3 space-y-3 border-t border-slate-200/70 pt-3">
               <div>
-                <label className="label text-xs" htmlFor="story">
+                <label className="label" htmlFor="story">
                   {dict.ask.story}
                 </label>
                 <textarea
@@ -288,7 +289,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div>
-                  <label className="label text-xs" htmlFor="familyName">
+                  <label className="label" htmlFor="familyName">
                     {dict.ask.familyName}
                   </label>
                   <input
@@ -304,7 +305,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
                 {meterUnit && (
                   <div>
-                    <label className="label text-xs" htmlFor="meterReading">
+                    <label className="label" htmlFor="meterReading">
                       {fmt(dict.ask.meter, { unit: meterUnit })}
                     </label>
                     <input
@@ -364,7 +365,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
         <button type="submit" disabled={submitting || !consent} className="btn-primary py-3.5 text-sm font-extrabold">
           <span>{submitting ? dict.ask.submitting : dict.ask.submit}</span>
-          {!submitting && <span>→</span>}
+          {!submitting && <ArrowRight size={18} aria-hidden="true" />}
         </button>
       </div>
     </form>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Ban, Check, Eye, Flag, Shield, X } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UTILITY_ICONS } from "@/lib/domain";
@@ -94,17 +95,17 @@ export function AdminClient({
           <div className="flex flex-wrap items-center gap-1.5">
             {b.reportCount > 0 && (
               <span className="rounded-full bg-rose-500/12 px-2.5 py-1 text-xs font-extrabold text-rose-700">
-                🚩 {fmt(dict.admin.reportCount, { count: b.reportCount })}
+                <Flag size={14} aria-hidden="true" className="mr-1 inline" />{fmt(dict.admin.reportCount, { count: b.reportCount })}
               </span>
             )}
             {b.accountBlocked && (
               <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-extrabold text-white">
-                ⛔ {dict.admin.accountBlocked}
+                <Ban size={14} aria-hidden="true" className="mr-1 inline" />{dict.admin.accountBlocked}
               </span>
             )}
             {b.checkedCount > 0 && (
-              <span className="rounded-full bg-sky-500/12 px-2.5 py-1 text-xs font-extrabold text-sky-700">
-                👀 {fmt(dict.check.checkedCount, { count: b.checkedCount })}
+              <span className="rounded-full bg-slate-500/10 px-2.5 py-1 text-xs font-bold text-slate-700">
+                <Eye size={14} aria-hidden="true" className="mr-1 inline" />{fmt(dict.check.checkedCount, { count: b.checkedCount })}
               </span>
             )}
           </div>
@@ -146,7 +147,7 @@ export function AdminClient({
             onClick={() => act(b.id, { action: "approve" })}
             className="btn-emerald sm:w-auto sm:px-6 text-xs"
           >
-            ✓ {dict.admin.approve}
+            <Check size={18} aria-hidden="true" />{dict.admin.approve}
           </button>
           <div className="flex flex-1 gap-2">
             <input
@@ -164,7 +165,7 @@ export function AdminClient({
               }
               className="btn border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 w-auto px-4 text-xs"
             >
-              ✕ {dict.admin.reject}
+              <X size={18} aria-hidden="true" />{dict.admin.reject}
             </button>
           </div>
         </div>
@@ -186,7 +187,7 @@ export function AdminClient({
     return (
       <form onSubmit={handleLogin} className="card mx-auto max-w-md space-y-4 p-6">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-lg text-white">🛡️</span>
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white"><Shield size={20} aria-hidden="true" /></span>
           <h1 className="text-xl font-extrabold text-slate-900">{dict.admin.title}</h1>
         </div>
         <div>
@@ -213,7 +214,7 @@ export function AdminClient({
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">🛡️ {dict.admin.title}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{dict.admin.title}</h1>
         <button
           type="button"
           onClick={handleLogout}

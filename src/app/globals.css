@@ -27,7 +27,8 @@ body {
     radial-gradient(at 0% 0%, rgba(251, 191, 36, 0.08) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.07) 0px, transparent 50%);
   background-attachment: fixed;
-  color: var(--color-night);
+  font-size: 1rem;
+  color: var(--color-slate-700);
   min-height: 100dvh;
 }
 
@@ -46,44 +47,57 @@ body {
 }
 
 @utility btn {
-  @apply relative inline-flex min-h-12 w-full cursor-pointer select-none items-center justify-center gap-2 rounded-2xl px-5 py-3 text-center text-[15px] font-bold tracking-tight transition-all duration-150 active:translate-y-[1px] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  @apply relative inline-flex min-h-12 w-full cursor-pointer select-none items-center justify-center gap-2 rounded-xl px-5 py-3 text-center text-base font-bold transition-all duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
 }
 
 @utility btn-primary {
-  @apply btn bg-gradient-to-b from-amber-400 to-amber-500 text-slate-950 shadow-[0_1px_0_0_rgba(255,255,255,0.4)_inset,0_4px_14px_-2px_rgba(245,158,11,0.45)] hover:from-amber-400 hover:to-amber-600 hover:shadow-[0_6px_20px_-2px_rgba(245,158,11,0.55)];
+  @apply btn bg-light text-night shadow-xs hover:bg-light-deep;
+}
+
+@utility btn-secondary {
+  @apply btn border border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50;
+}
+
+@utility btn-ghost {
+  @apply btn bg-transparent text-slate-600 hover:bg-slate-100;
 }
 
 @utility btn-emerald {
-  @apply btn bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-[0_1px_0_0_rgba(255,255,255,0.25)_inset,0_4px_14px_-2px_rgba(5,150,105,0.4)] hover:from-emerald-500 hover:to-emerald-700;
+  @apply btn bg-emerald-600 text-white shadow-xs hover:bg-emerald-700;
 }
 
 @utility btn-dark {
-  @apply btn bg-slate-900 text-white shadow-[0_4px_12px_-2px_rgba(15,23,42,0.25)] hover:bg-slate-800;
+  @apply btn bg-slate-900 text-white hover:bg-slate-800;
 }
 
 @utility btn-outline {
-  @apply btn border border-slate-200 bg-white text-slate-800 shadow-xs hover:border-slate-300 hover:bg-slate-50;
+  @apply btn border border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50;
 }
 
 @utility card {
-  @apply rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_2px_10px_-3px_rgba(15,23,42,0.06),0_10px_25px_-5px_rgba(15,23,42,0.04)];
+  @apply rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.04)];
 }
 
 @utility card-interactive {
-  @apply card transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/90 hover:shadow-[0_12px_30px_-8px_rgba(15,23,42,0.1)];
+  @apply card transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.12)];
+}
+
+@utility panel {
+  @apply rounded-xl bg-slate-50 p-4;
 }
 
 @utility input {
-  @apply min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 text-base font-medium text-slate-900 transition-all outline-none placeholder:text-slate-400 focus:border-amber-500 focus:bg-white focus:ring-4 focus:ring-amber-500/15;
+  @apply min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-base text-slate-900 transition-all outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20;
 }
 
 @utility label {
-  @apply mb-1.5 block text-sm font-bold text-slate-700;
+  @apply mb-1.5 block text-sm font-semibold text-slate-700;
 }
 
 @utility hint {
-  @apply mt-1.5 text-xs font-medium text-slate-500;
+  @apply mt-1.5 text-sm text-slate-500;
 }
+
 
 .hero-mesh {
   background:

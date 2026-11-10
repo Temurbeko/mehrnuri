@@ -1,5 +1,6 @@
 "use client";
 
+import { Ban, BadgeCheck, Check, Eye, Sparkles, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import type { PublicBill, TrustLevel, VerdictKind } from "@/lib/domain";
 import { fmt, type Dictionary } from "@/i18n";
@@ -14,10 +15,10 @@ import { api, errorText } from "./api";
  * which is why no admin has to approve anything.
  */
 
-const BADGES: Record<TrustLevel, { emoji: string; className: string; key: "badgeNew" | "badgeChecked" | "badgeProven" }> = {
-  new: { emoji: "🆕", className: "bg-slate-500/10 text-slate-600 ring-slate-500/20", key: "badgeNew" },
-  donor_checked: { emoji: "👀", className: "bg-sky-500/12 text-sky-700 ring-sky-500/25", key: "badgeChecked" },
-  proven: { emoji: "✅", className: "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25", key: "badgeProven" },
+const BADGES: Record<TrustLevel, { Icon: LucideIcon; className: string; key: "badgeNew" | "badgeChecked" | "badgeProven" }> = {
+  new: { Icon: Sparkles, className: "bg-slate-500/10 text-slate-600 ring-slate-500/20", key: "badgeNew" },
+  donor_checked: { Icon: Eye, className: "bg-slate-500/10 text-slate-700 ring-slate-500/20", key: "badgeChecked" },
+  proven: { Icon: BadgeCheck, className: "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25", key: "badgeProven" },
 };
 
 export function TrustBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary }) {
@@ -29,7 +30,7 @@ export function TrustBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary 
       title={title}
       className={`inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-extrabold ring-1 ${badge.className}`}
     >
-      <span aria-hidden="true">{badge.emoji}</span>
+      <badge.Icon size={14} aria-hidden="true" />
       <span>{label}</span>
       {bill.checkedCount > 1 && <span className="opacity-70">· {bill.checkedCount}</span>}
     </span>
@@ -74,7 +75,7 @@ export function DebtCheck({
 
   const wrapper =
     tone === "step"
-      ? "space-y-3 rounded-2xl border border-sky-300/70 bg-sky-50/50 p-4"
+      ? "space-y-3 panel"
       : "space-y-3 rounded-2xl border border-slate-200/90 bg-white p-4";
 
   if (stage === "sent" && result) {
@@ -103,26 +104,26 @@ export function DebtCheck({
             type="button"
             disabled={busy}
             onClick={() => send("match")}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-extrabold text-white transition active:scale-98 hover:bg-emerald-700 disabled:opacity-60"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 min-h-12 text-base font-bold text-white transition active:scale-[0.98] hover:bg-emerald-700 disabled:opacity-60"
           >
-            ✅ {t.match}
+            <Check size={18} aria-hidden="true" />{t.match}
           </button>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               disabled={busy}
               onClick={() => setStage("amount")}
-              className="cursor-pointer rounded-xl bg-white px-3 py-2.5 text-[11px] font-extrabold text-amber-900 shadow-2xs ring-1 ring-amber-400/50 transition hover:bg-amber-50 disabled:opacity-60"
+              className="flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-slate-800 ring-1 ring-slate-300 transition hover:bg-slate-50 disabled:opacity-60"
             >
-              ⚠️ {t.differs}
+              <TriangleAlert size={18} aria-hidden="true" />{t.differs}
             </button>
             <button
               type="button"
               disabled={busy}
               onClick={() => send("no_debt")}
-              className="cursor-pointer rounded-xl bg-white px-3 py-2.5 text-[11px] font-extrabold text-rose-700 shadow-2xs ring-1 ring-rose-400/50 transition hover:bg-rose-50 disabled:opacity-60"
+              className="flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-rose-700 ring-1 ring-rose-300 transition hover:bg-rose-50 disabled:opacity-60"
             >
-              🚫 {t.noDebt}
+              <Ban size={18} aria-hidden="true" />{t.noDebt}
             </button>
           </div>
         </div>

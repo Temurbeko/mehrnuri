@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight, Check, Heart, MapPin } from "lucide-react";
 import { UTILITY_ICONS, type PublicBill, type UtilityType } from "@/lib/domain";
 import { findDistrict } from "@/lib/uzbekistan";
 import type { Locale } from "@/i18n/config";
@@ -51,7 +52,7 @@ export function StatusBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary
   if (bill.payoutStatus === "paid_out") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700 ring-1 ring-emerald-500/20">
-        ✓ {dict.status.paid_out}
+        <Check size={14} aria-hidden="true" />{dict.status.paid_out}
       </span>
     );
   }
@@ -75,17 +76,17 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
   const districtInfo = findDistrict(bill.region, bill.district);
 
   return (
-    <article className="card-interactive flex flex-col justify-between gap-4 p-5">
+    <article className="card-interactive flex min-w-0 flex-col justify-between gap-4 p-5">
       <div className="space-y-3.5">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ring-1 ${theme.bg} ${theme.text} ${theme.ring}`}
               aria-hidden="true"
             >
               {UTILITY_ICONS[bill.utilityType]}
             </span>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h3 className="text-base font-extrabold text-slate-900 leading-snug">
                   {dict.utility[bill.utilityType]}
@@ -93,14 +94,14 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
                 {bill.verified && (
                   <span
                     title={dict.bill.verified}
-                    className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white"
                   >
-                    ✓
+                    <Check size={14} aria-hidden="true" />
                   </span>
                 )}
               </div>
-              <p className="text-xs font-semibold text-slate-500">
-                📍 {dict.region[bill.region]} · {dict.districts[districtInfo.id]}
+              <p className="flex items-center gap-1 text-sm text-slate-500">
+                <MapPin size={16} aria-hidden="true" className="shrink-0" />{dict.region[bill.region]} · {dict.districts[districtInfo.id]}
               </p>
               <div className="mt-1.5">
                 <TrustBadge bill={bill} dict={dict} />
@@ -118,7 +119,7 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
 
         {bill.thanksReactions && bill.thanksReactions.length > 0 && (
           <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-3 py-1 text-[11px] font-extrabold text-emerald-800 ring-1 ring-emerald-500/20">
-            <span>💛</span>
+            <Heart size={14} aria-hidden="true" />
             <span>{dict.reactions.cardBadge}</span>
           </div>
         )}
@@ -143,7 +144,7 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
         <div className="space-y-2 pt-0.5">
           <div className="flex items-baseline justify-between gap-2">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="text-[11px] font-bold text-slate-400">
                 {dict.bill.remaining}
               </div>
               <div className="text-lg font-extrabold tracking-tight text-slate-900">
@@ -194,7 +195,7 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
           className={`flex-1 ${isDone ? "btn-outline py-2.5 text-sm" : "btn-primary py-3 text-sm"}`}
         >
           <span>{isDone ? dict.bill.thanks : dict.bill.help}</span>
-          {!isDone && <span aria-hidden="true">→</span>}
+          {!isDone && <ArrowRight size={18} aria-hidden="true" />}
         </Link>
       </div>
     </article>

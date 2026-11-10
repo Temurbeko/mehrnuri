@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Shield } from "lucide-react";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
@@ -32,7 +33,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
       />
       <div className="pt-4 text-center">
         <Link href={`/${locale}/admin`} className="text-[11px] font-semibold text-slate-400 hover:text-slate-600">
-          🛡️ {dict.nav.admin}
+          <span className="inline-flex items-center gap-1.5"><Shield size={16} aria-hidden="true" />{dict.nav.admin}</span>
         </Link>
       </div>
     </div>

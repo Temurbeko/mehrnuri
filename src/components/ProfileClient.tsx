@@ -1,5 +1,6 @@
 "use client";
 
+import { KeyRound } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicDonor } from "@/lib/domain";
@@ -94,11 +95,11 @@ export function ProfileClient({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-emerald-500/10 p-4">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">{dict.me.total}</div>
+              <div className="text-[11px] font-bold text-emerald-800">{dict.me.total}</div>
               <div className="mt-1 text-lg font-extrabold text-emerald-700">{formatMoney(donor.totalDonated, dict)}</div>
             </div>
             <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{dict.me.count}</div>
+              <div className="text-[11px] font-bold text-slate-400">{dict.me.count}</div>
               <div className="mt-1 text-lg font-extrabold text-slate-900">{donor.donationsCount}</div>
             </div>
           </div>
@@ -106,7 +107,7 @@ export function ProfileClient({
 
         {code && (
           <div className="card space-y-3">
-            <h3 className="text-base font-extrabold text-slate-900">🔑 {dict.me.recoveryTitle}</h3>
+            <h3 className="text-base font-extrabold text-slate-900"><KeyRound size={18} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.me.recoveryTitle}</h3>
             <p className="text-xs font-medium text-slate-500 leading-relaxed">{dict.me.recoveryText}</p>
             {showCode ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-3.5 font-mono text-xs break-all font-bold text-slate-800 select-all">
@@ -144,7 +145,7 @@ export function ProfileClient({
       </form>
 
       <form onSubmit={handleRestore} className="card space-y-4">
-        <h2 className="text-lg font-extrabold text-slate-900">🔑 {dict.me.restoreTitle}</h2>
+        <h2 className="text-lg font-extrabold text-slate-900"><KeyRound size={18} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.me.restoreTitle}</h2>
         <input
           type="text"
           required

@@ -1,5 +1,7 @@
 "use client";
 
+import { Clock, Heart, X } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import type { PaymentStatus } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
@@ -33,7 +35,7 @@ export function PaymentResultClient({
               : "bg-rose-500/15 text-rose-600 ring-rose-500/25"
         }`}
       >
-        {paid ? "💛" : pending ? "⏳" : "✕"}
+        {paid ? <Heart size={32} aria-hidden="true" /> : pending ? <Clock size={32} aria-hidden="true" /> : <X size={32} aria-hidden="true" />}
       </div>
 
       <div className="space-y-2">
@@ -49,7 +51,7 @@ export function PaymentResultClient({
       <div className="space-y-2.5 pt-1">
         <Link href={`/${locale}/bill/${billId}`} className="btn-primary">
           <span>{dict.result.backToBill}</span>
-          <span>→</span>
+          <ArrowRight size={18} aria-hidden="true" />
         </Link>
         <Link href={`/${locale}`} className="btn-outline">
           {dict.result.backToFeed}

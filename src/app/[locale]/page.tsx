@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Heart, Home } from "lucide-react";
 import { notFound } from "next/navigation";
 import { BRAND } from "@/config/brand";
 import { isLocale } from "@/i18n/config";
@@ -44,14 +45,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
             <div className="grid gap-2.5 pt-2 sm:max-w-md sm:grid-cols-2">
               <a href="#feed" className="btn-primary py-3.5 text-sm font-extrabold">
-                <span>💛</span>
+                <Heart size={18} aria-hidden="true" />
                 <span>{dict.home.wantHelp}</span>
               </a>
               <Link
                 href={`/${locale}/ask`}
                 className="btn border border-white/20 bg-white/10 py-3.5 text-sm font-extrabold text-white backdrop-blur-md hover:bg-white/20"
               >
-                <span>🏠</span>
+                <Home size={18} aria-hidden="true" />
                 <span>{dict.home.needHelp}</span>
               </Link>
             </div>
@@ -79,7 +80,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
 
         <div className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 sm:block sm:p-4 shadow-2xs">
-          <div className="mb-0 sm:mb-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-xs font-extrabold text-sky-700">
+          <div className="mb-0 sm:mb-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-extrabold text-slate-700">
             2
           </div>
           <p className="text-xs font-bold text-slate-700 leading-snug sm:text-sm">{dict.home.how2}</p>
