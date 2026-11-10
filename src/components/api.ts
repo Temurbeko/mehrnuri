@@ -50,6 +50,8 @@ export function errorText(code: string | undefined, dict: Dictionary): string {
       return dict.errors.soliq_receipt_refunded;
     case "soliq_unavailable":
       return dict.errors.soliq_unavailable;
+    case "receipt_amount_mismatch":
+      return dict.errors.receipt_amount_mismatch;
     case "duplicate_receipt":
       return dict.errors.duplicate_receipt;
     default:

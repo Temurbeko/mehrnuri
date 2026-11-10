@@ -1,5 +1,5 @@
 import "server-only";
-import { ObjectId } from "mongodb";
+import { MongoServerError, ObjectId } from "mongodb";
 import { env } from "@/config/env";
 import { collections } from "@/lib/db/mongo";
 import type { BillDoc, DonorDoc, PaymentDoc } from "@/lib/db/models";
@@ -88,11 +88,18 @@ type TxPatch = Partial<Pick<PaymentDoc, "receiptKey" | "receiptLabel" | "leaderb
 export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<PaymentDoc> {
   const { payments, bills, donors } = await collections();
   const now = new Date();
-  const p = await payments.findOneAndUpdate(
-    { _id: paymentId, status: { $in: OPEN_STATES } },
-    { $set: { ...set, status: "paid", paidAt: now, updatedAt: now } },
-    { returnDocument: "after" },
-  );
+  let p: PaymentDoc | null;
+  try {
+    p = await payments.findOneAndUpdate(
+      { _id: paymentId, status: { $in: OPEN_STATES } },
+      { $set: { ...set, status: "paid", paidAt: now, updatedAt: now } },
+      { returnDocument: "after" },
+    );
+  } catch (err) {
+    // Two donors submitting the same receipt at once: the unique receiptKey index rejects the second one.
+    if (err instanceof MongoServerError && err.code === 11000) throw new HttpError(409, "duplicate_receipt");
+    throw err;
+  }
   if (!p) {
     const current = await payments.findOne({ _id: paymentId });
     if (!current) throw new HttpError(404, "payment_not_found");

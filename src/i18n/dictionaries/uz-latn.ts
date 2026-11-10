@@ -330,6 +330,7 @@ const uzLatn = {
       "Ushbu chek bekor qilingan (qaytarilgan).",
     soliq_unavailable:
       "Soliq (ofd.soliq.uz) serveri bilan bog'lanib bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
+    receipt_amount_mismatch: "Chekdagi summa xayriya summasidan kam. Aynan shu to'lov uchun berilgan chekni yuklang.",
     duplicate_receipt: "Bu to'lov cheki avval ishlatilgan! Har bir chek faqat bir marta qabul qilinadi.",
     unauthorized: "Ruxsat yo'q.",
     forbidden_origin: "Xavfsizlik xatosi: sahifani yangilang.",

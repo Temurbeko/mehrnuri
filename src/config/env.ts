@@ -21,6 +21,9 @@ const schema = z.object({
 
   RATE_LIMIT_STORE: z.preprocess((v) => (typeof v === "string" && v.trim() !== "" ? v : "mongo"), z.enum(["mongo", "memory"])),
 
+  /** `live`: verify receipts with Soliq (server must be inside Uzbekistan). `mock`: accept any well-formed receipt link (test hosting only). */
+  SOLIQ_MODE: z.preprocess((v) => (typeof v === "string" && v.trim() !== "" ? v : "live"), z.enum(["live", "mock"])),
+
   TELEGRAM_BOT_TOKEN: optional,
   TELEGRAM_ADMIN_CHAT_ID: optional,
 });

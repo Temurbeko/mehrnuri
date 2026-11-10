@@ -73,22 +73,6 @@ export const confirmPaymentSchema = z.object({
   signature: z.string().min(10).max(200),
   receiptRaw: z.string().trim().max(500).optional(),
   skipLeaderboard: z.boolean().optional(),
-  soliqRelayResult: z
-    .object({
-      status: z.number().int().min(100).max(599),
-      data: z
-        .object({
-          isRefund: z.number().optional(),
-          kkmName: z.string().optional(),
-          cashTotal: z.number().optional(),
-          cardTotal: z.number().optional(),
-          terminalId: z.string().optional(),
-          paymentNo: z.union([z.string(), z.number()]).optional(),
-        })
-        .nullable()
-        .optional(),
-    })
-    .optional(),
 });
 
 export const objectIdSchema = z.string().regex(/^[a-f0-9]{24}$/);

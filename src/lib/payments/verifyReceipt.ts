@@ -1,5 +1,6 @@
 import "server-only";
 import { createHmac } from "node:crypto";
+import { env } from "@/config/env";
 import { collections } from "@/lib/db/mongo";
 import { sha256 } from "@/lib/security/crypto";
 import { HttpError } from "@/lib/security/http";
@@ -11,19 +12,14 @@ export interface VerifiedReceipt {
   receiptLabel: string | null;
 }
 
-export interface SoliqRelayResultInput {
-  status: number;
-  data?: {
-    isRefund?: number;
-    kkmName?: string;
-    cashTotal?: number;
-    cardTotal?: number;
-    terminalId?: string;
-    paymentNo?: string | number;
-  } | null;
+interface SoliqReceiptData {
+  isRefund?: number;
+  kkmName?: string;
+  cashTotal?: number;
+  cardTotal?: number;
 }
 
-export interface SoliqRelaySpec {
+interface SoliqRequestSpec {
   endpoint: string;
   headers: Record<string, string>;
   bodies: Array<Record<string, string>>;
@@ -79,7 +75,7 @@ function parseSoliqQrUrl(raw: string): SoliqQueryParams | null {
   };
 }
 
-function buildSoliqRelaySpec(params: SoliqQueryParams): SoliqRelaySpec {
+function buildSoliqRequestSpec(params: SoliqQueryParams): SoliqRequestSpec {
   const endpoint = params.fiscalSignHash
     ? `${SOLIQ_API_BASE}/payment/mobile-dashboard`
     : `${SOLIQ_API_BASE}/payment`;
@@ -112,45 +108,36 @@ function buildSoliqRelaySpec(params: SoliqQueryParams): SoliqRelaySpec {
   };
 }
 
-function evaluateSoliqData(
-  data: NonNullable<SoliqRelayResultInput["data"]>,
-  minExpectedAmountUzs?: number,
-): { kkmName: string; totalAmountUzs: number } {
+function evaluateSoliqData(data: SoliqReceiptData, expectedAmountUzs: number): { kkmName: string } {
   if (data.isRefund === 1) {
     throw new HttpError(422, "soliq_receipt_refunded");
   }
+  // Soliq reports totals in tiyin on some receipt types and in so'm on others.
   const rawTotal = Number(data.cashTotal ?? 0) + Number(data.cardTotal ?? 0);
   const totalAmountUzs =
-    rawTotal >= (minExpectedAmountUzs ?? 1000) * 50 ? Math.round(rawTotal / 100) : Math.round(rawTotal);
+    rawTotal >= Math.max(expectedAmountUzs, 1000) * 50 ? Math.round(rawTotal / 100) : Math.round(rawTotal);
 
-  return {
-    kkmName: data.kkmName ?? "OFD",
-    totalAmountUzs,
-  };
+  // The receipt must cover the whole donation it is being claimed for.
+  if (totalAmountUzs < expectedAmountUzs) {
+    throw new HttpError(422, "receipt_amount_mismatch", undefined, { receipt: totalAmountUzs, expected: expectedAmountUzs });
+  }
+
+  return { kkmName: data.kkmName ?? "OFD" };
 }
 
 /**
- * Calls the official Tax Committee (Soliq OFD) API on `https://new-ofd.soliq.uz/api/payment`.
- * If the cloud hosting server is outside Uzbekistan and blocked by Uzinfocom TAS-IX firewall,
- * throws `428 soliq_relay_required` with a server-signed HMAC spec so the client browser in
- * Uzbekistan can execute the TAS-IX request and return the result without ever exposing `SOLIQ_SIGN_KEY`.
+ * Calls the official Tax Committee (Soliq OFD) API at `https://new-ofd.soliq.uz/api/payment`.
+ * Soliq only answers requests from inside Uzbekistan (TAS-IX), so `SOLIQ_MODE=live` needs a server there.
+ * `SOLIQ_MODE=mock` (test hosting outside Uzbekistan only) skips the call and treats every
+ * well-formed receipt link as a valid receipt for the exact donation amount.
  */
-async function verifyWithSoliqServer(
-  params: SoliqQueryParams,
-  minExpectedAmountUzs?: number,
-  relayResult?: SoliqRelayResultInput,
-): Promise<{
-  kkmName: string;
-  totalAmountUzs: number;
-}> {
-  if (relayResult) {
-    if (relayResult.status >= 200 && relayResult.status < 300 && relayResult.data) {
-      return evaluateSoliqData(relayResult.data, minExpectedAmountUzs);
-    }
-    throw new HttpError(422, "soliq_receipt_not_found");
+async function verifyWithSoliqServer(params: SoliqQueryParams, expectedAmountUzs: number): Promise<{ kkmName: string }> {
+  if (env().SOLIQ_MODE === "mock") {
+    return { kkmName: "TEST MODE" };
   }
 
-  const spec = buildSoliqRelaySpec(params);
+  const spec = buildSoliqRequestSpec(params);
+  let reached = false;
 
   for (const body of spec.bodies) {
     let res: Response;
@@ -159,42 +146,38 @@ async function verifyWithSoliqServer(
         method: "POST",
         headers: spec.headers,
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(2500),
+        signal: AbortSignal.timeout(8000),
       });
     } catch {
-      // Cloud server IP is outside Uzbekistan TAS-IX firewall; instruct client to relay using server-signed headers
-      throw new HttpError(428, "soliq_relay_required", "Soliq TAS-IX relay required", spec);
+      continue;
     }
+    reached = true;
 
     if (!res.ok) {
       continue;
     }
 
-    const json = (await res.json().catch(() => null)) as {
-      success?: boolean;
-      data?: NonNullable<SoliqRelayResultInput["data"]>;
-    } | null;
+    const json = (await res.json().catch(() => null)) as { success?: boolean; data?: SoliqReceiptData } | null;
 
     if (json?.data) {
-      return evaluateSoliqData(json.data, minExpectedAmountUzs);
+      return evaluateSoliqData(json.data, expectedAmountUzs);
     }
   }
 
+  if (!reached) {
+    throw new HttpError(503, "soliq_unavailable");
+  }
   throw new HttpError(422, "soliq_receipt_not_found");
 }
 
 /**
  * Server-side Fiscal Receipt Verification:
  * 1. Parses the `ofd.soliq.uz` QR link (`t`, `r`, `c`, `s`/`h`).
- * 2. Queries `https://new-ofd.soliq.uz/api/payment` live from the server (or via server-signed TAS-IX relay).
+ * 2. Queries `https://new-ofd.soliq.uz/api/payment` live from the server and checks the paid amount.
  * 3. Enforces anti-replay uniqueness (`receiptKey` unique index in MongoDB) so
  *    the same receipt can never be used twice.
  */
-export async function verifyAndLockReceipt(
-  rawInput?: string | null,
-  expectedAmountUzs?: number,
-  relayResult?: SoliqRelayResultInput,
-): Promise<VerifiedReceipt> {
+export async function verifyAndLockReceipt(rawInput: string | null | undefined, expectedAmountUzs: number): Promise<VerifiedReceipt> {
   const trimmed = (rawInput ?? "").trim();
   if (!trimmed) {
     return {
@@ -221,7 +204,7 @@ export async function verifyAndLockReceipt(
   }
 
   // 2. Live verification with Uzbekistan Tax Committee (new-ofd.soliq.uz)
-  const soliqData = await verifyWithSoliqServer(parsed, expectedAmountUzs, relayResult);
+  const soliqData = await verifyWithSoliqServer(parsed, expectedAmountUzs);
   const label = `OFD #${parsed.paymentNo} (${soliqData.kkmName})`.slice(0, 48);
 
   return {

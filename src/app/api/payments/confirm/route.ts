@@ -13,13 +13,13 @@ export const dynamic = "force-dynamic";
  * Payment & Fiscal Receipt Confirmation Endpoint:
  * 1. Verifies HMAC signature.
  * 2. If `receiptRaw` (`ofd.soliq.uz/...`) is provided, verifies it live on the server
- *    against `https://new-ofd.soliq.uz/api/payment`, enforces anti-replay uniqueness,
- *    and credits the donor on the Top Donors Leaderboard (`leaderboardCredited: true`).
+ *    against `https://new-ofd.soliq.uz/api/payment` (skipped when `SOLIQ_MODE=mock`), checks the
+ *    receipt covers the payment amount, enforces anti-replay uniqueness, and credits the donor on the Top Donors Leaderboard (`leaderboardCredited: true`).
  * 3. If `skipLeaderboard: true`, marks the bill payment without crediting Leaderboard points.
  */
 export const POST = handler(async (req: NextRequest) => {
   await enforceRateLimit(req, "paymentConfirm");
-  const { paymentId, outcome, signature, receiptRaw, skipLeaderboard, soliqRelayResult } = await readJson(req, confirmPaymentSchema);
+  const { paymentId, outcome, signature, receiptRaw, skipLeaderboard } = await readJson(req, confirmPaymentSchema);
 
   if (!safeEqual(signature, paymentSignature(paymentId))) throw new HttpError(401, "bad_signature");
 
@@ -36,7 +36,7 @@ export const POST = handler(async (req: NextRequest) => {
     return NextResponse.json({ ok: true, status: cancelled.status });
   }
 
-  const verified = await verifyAndLockReceipt(skipLeaderboard ? null : receiptRaw, payment.amount, soliqRelayResult);
+  const verified = await verifyAndLockReceipt(skipLeaderboard ? null : receiptRaw, payment.amount);
   const creditLeaderboard = !skipLeaderboard && verified.verifiedForLeaderboard;
 
   const result = await markPaid(payment._id, {

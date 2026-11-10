@@ -90,14 +90,7 @@ export function DirectPaymentClient({
     }
 
     setBusy(mode);
-    let res = await api<{
-      status?: string;
-      details?: {
-        endpoint: string;
-        headers: Record<string, string>;
-        bodies: Array<Record<string, string>>;
-      };
-    }>("/api/payments/confirm", {
+    const res = await api("/api/payments/confirm", {
       body: {
         paymentId,
         outcome: mode === "failure" ? "failure" : "success",
@@ -106,55 +99,6 @@ export function DirectPaymentClient({
         skipLeaderboard: mode === "skip",
       },
     });
-
-    // If cloud server is outside Uzbekistan TAS-IX firewall, execute server-signed Soliq check from user's browser
-    if (!res.ok && res.data.error === "soliq_relay_required" && res.data.details) {
-      const spec = res.data.details;
-      let relayStatus = 404;
-      let relayData: Record<string, unknown> | null = null;
-      let reachable = false;
-
-      for (const b of spec.bodies) {
-        try {
-          const soliqRes = await fetch(spec.endpoint, {
-            method: "POST",
-            headers: spec.headers,
-            body: JSON.stringify(b),
-          });
-          reachable = true;
-          relayStatus = soliqRes.status;
-          if (soliqRes.ok) {
-            const json = (await soliqRes.json().catch(() => null)) as { data?: Record<string, unknown> } | null;
-            if (json?.data) {
-              relayData = json.data;
-              break;
-            }
-          }
-        } catch {
-          /* try next or fall through */
-        }
-      }
-
-      if (!reachable) {
-        setBusy(null);
-        setError(errorText("soliq_unavailable", dict));
-        return;
-      }
-
-      res = await api("/api/payments/confirm", {
-        body: {
-          paymentId,
-          outcome: "success",
-          signature,
-          receiptRaw: receiptRaw.trim(),
-          skipLeaderboard: false,
-          soliqRelayResult: {
-            status: relayStatus,
-            data: relayData,
-          },
-        },
-      });
-    }
 
     if (!res.ok) {
       setBusy(null);

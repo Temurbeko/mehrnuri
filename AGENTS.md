@@ -25,11 +25,13 @@ Read this section **before** running broad file searches to save tokens and time
    - `src/lib/uzbekistan.ts` and `src/lib/merchants.ts` store **pure data only** (IDs, SOATO codes, URLs, colors).
 2. **Zero Mock / Dead / Hardcoded Form Defaults**:
    - Do not add mock payment gateways, fake bill verifiers, or hardcoded default input values in user-facing forms (`AskForm.tsx` inputs must start empty).
+   - Sole exception: `SOLIQ_MODE=mock` in `verifyReceipt.ts`, an explicit env switch for test hosting outside Uzbekistan. Default is `live`.
 3. **Next.js 16 Middleware Convention**:
    - Next.js 16 uses `src/proxy.ts` (`export function proxy(req: NextRequest)`), **not** `src/middleware.ts`.
-4. **Zero-Media Receipt Storage & TAS-IX Soliq Relay**:
+4. **Zero-Media Receipt Storage & Server-Only Soliq Verification**:
    - Receipt images are decoded client-side in `src/lib/qrDecode.ts`; only the `ofd.soliq.uz` URL string is sent to the server.
-   - `src/lib/payments/verifyReceipt.ts` signs Soliq OFD requests on the server (`SOLIQ_SIGN_KEY` must never be exposed in client code). When hosted outside Uzbekistan (e.g., Netlify US), it returns `428 soliq_relay_required` with server-signed HMAC headers so `DirectPaymentClient.tsx` can relay the request through the user's Uzbekistan browser (TAS-IX) and return `soliqRelayResult` for server validation.
+   - `src/lib/payments/verifyReceipt.ts` signs and sends Soliq OFD requests **from the server only** (`SOLIQ_SIGN_KEY` must never be exposed in client code) and checks the receipt total covers the payment amount.
+   - **Never accept Soliq results from the browser** (the old TAS-IX browser relay was removed: clients could forge the response). Soliq only answers from inside Uzbekistan, so production (`SOLIQ_MODE=live`) must run on a server in Uzbekistan; test hosting elsewhere (Netlify) uses `SOLIQ_MODE=mock`.
 
 ## 2. Fast Task-to-File Lookup
 

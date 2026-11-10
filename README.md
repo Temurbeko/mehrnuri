@@ -28,8 +28,9 @@ Because MehrNuri operates **without holding user funds**, donors pay the family'
      - Parses `terminalId` (`t`), `paymentNo` (`r`), `paymentDate` (`c`), and `fiscalSign` (`s` or `h`).
      - Enforces **anti-replay uniqueness** (`receiptKey = sha256(canonical)` with a unique MongoDB index on `payments.receiptKey`) so a receipt can never be used twice.
      - Signs the request on the server with HMAC-SHA256 (`X-Timestamp`, `X-Signature`) and queries `POST https://new-ofd.soliq.uz/api/payment`.
-     - **TAS-IX Cloud Relay Fallback**: If the app is hosted on a non-Uzbek cloud server (e.g., Netlify AWS US) where Uzinfocom's TAS-IX firewall (`217.29.112.224`) drops foreign datacenter packets, `/api/payments/confirm` returns `428 soliq_relay_required` with the server-signed HMAC headers (`SOLIQ_SIGN_KEY` never leaves the server). The donor's browser in Uzbekistan executes the CORS request to `new-ofd.soliq.uz` inside TAS-IX and returns the result to `/api/payments/confirm`.
-     - Rejects fake/non-existent receipts (`422 soliq_receipt_not_found`) and refunded receipts (`isRefund === 1` -> `422 soliq_receipt_refunded`).
+     - **Hosting requirement**: Soliq only answers requests from inside Uzbekistan (TAS-IX), so production must run on a server in Uzbekistan with `SOLIQ_MODE=live`. If Soliq can't be reached the API returns `503 soliq_unavailable`.
+     - **Test mode (`SOLIQ_MODE=mock`)**: for test hosting outside Uzbekistan (e.g. Netlify). The Soliq call is skipped and any well-formed receipt link is accepted for the exact donation amount (label `OFD #... (TEST MODE)`). Parsing and anti-replay still run. Never use it in production.
+     - Rejects fake/non-existent receipts (`422 soliq_receipt_not_found`), refunded receipts (`isRefund === 1` -> `422 soliq_receipt_refunded`), and receipts whose total is below the donation (`422 receipt_amount_mismatch`).
      - Verified receipts credit the donor on the **Top Donors Leaderboard** (`leaderboardCredited: true`).
 5. **Step 3 — Skip Receipt Option (`skipLeaderboard: true`)**:
    - If the donor paid the bill but doesn't want to attach a fiscal receipt, they can confirm the bill payment without receiving Leaderboard points (`leaderboardCredited: false`).
@@ -88,7 +89,7 @@ MehrNuri/
     │   ├── payments/
     │   │   ├── core.ts                  # createPayment, markPaid, markUnsuccessful, sweepExpired reservations
     │   │   ├── providers.ts             # Direct checkout URL builder & HMAC paymentSignature(paymentId)
-    │   │   └── verifyReceipt.ts         # Soliq OFD parser, HMAC signer, TAS-IX relay spec, anti-replay check
+    │   │   └── verifyReceipt.ts         # Soliq OFD parser, HMAC signer, amount check, anti-replay, SOLIQ_MODE
     │   └── security/
     │       ├── crypto.ts                # sha256, hmacSha256, safeEqual, signPayload/verifySignedToken
     │       ├── http.ts                  # HttpError, handler() wrapper, readJson(), assertSameOrigin(), clientIp()
@@ -99,7 +100,7 @@ MehrNuri/
     │   ├── LiveFeed.tsx                 # Filterable bill grid + EventSource("/api/bills/stream") live updates
     │   ├── BillCard.tsx                 # Utility card with progress bar, SOATO/district badge, reactions
     │   ├── DonatePanel.tsx              # Bill detail view, amount presets, nickname selector, merchant picker
-    │   ├── DirectPaymentClient.tsx      # 3-step direct payment, QR scanner, Soliq OFD verifier & TAS-IX relay
+    │   ├── DirectPaymentClient.tsx      # 3-step direct payment, QR scanner, Soliq OFD receipt submission
     │   ├── PaymentResultClient.tsx      # Post-payment confirmation screen
     │   ├── AskForm.tsx                  # Family bill submission form with dynamic region/district/purpose fields
     │   ├── ProfileClient.tsx            # Donor profile, recovery code backup, and restore form
@@ -205,6 +206,7 @@ node scripts/seed.mjs --force
 | `MIN_DONATION_UZS` | No | `1000` | Minimum donation in UZS |
 | `MAX_DONATION_UZS` | No | `10000000` | Maximum donation in UZS |
 | `RATE_LIMIT_STORE` | No | `mongo` | `mongo` or `memory` |
+| `SOLIQ_MODE` | No | `live` | `live` (real Soliq check, server must be in Uzbekistan) or `mock` (test hosting only: accepts any well-formed receipt link) |
 | `TELEGRAM_BOT_TOKEN` | No | — | Optional Telegram bot token for admin alerts |
 | `TELEGRAM_ADMIN_CHAT_ID` | No | — | Optional Telegram chat ID for admin alerts |
 
