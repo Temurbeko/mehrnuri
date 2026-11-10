@@ -64,7 +64,7 @@ export function DebtCheck({
     setBusy(false);
 
     if (!res.ok) {
-      setError(res.data.error === "already_voted" ? t.already : errorText(res.data.error, dict));
+      setError(res.data.error === "already_voted" ? t.already : errorText(res.data.error, dict, res.data.details));
       return;
     }
     if (res.data.bill && onUpdated) onUpdated(res.data.bill);

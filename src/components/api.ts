@@ -1,4 +1,4 @@
-import type { Dictionary } from "@/i18n";
+import { fmt, formatMoney, type Dictionary } from "@/i18n";
 
 export interface ApiResult<T> {
   ok: boolean;
@@ -22,51 +22,42 @@ export async function api<T = Record<string, unknown>>(url: string, init: { meth
   }
 }
 
-/** Maps API error codes to friendly, localized text. */
-export function errorText(code: string | undefined, dict: Dictionary): string {
-  switch (code) {
-    case "rate_limited":
-      return dict.errors.rate_limited;
-    case "duplicate_open_bill":
-      return dict.errors.duplicate_open_bill;
-    case "account_blocked":
-      return dict.errors.account_blocked;
-    case "phone_has_open_bill":
-      return dict.errors.phone_has_open_bill;
-    case "phone_limit_reached":
-      return dict.errors.phone_limit_reached;
-    case "already_voted":
-      return dict.errors.already_voted;
-    case "verdict_not_allowed":
-      return dict.errors.verdict_not_allowed;
-    case "donor_required":
-      return dict.errors.donor_required;
-    case "account_not_found":
-      return dict.ask.notFound;
-    case "nickname_taken":
-      return dict.errors.nickname_taken;
-    case "amount_exceeds_available":
-    case "bill_not_open":
-      return dict.donate.full;
-    case "invalid_recovery_code":
-      return dict.errors.invalid_recovery_code;
-    case "wrong_password":
-    case "unauthorized":
-      return dict.errors.unauthorized;
-    case "invalid_receipt":
-    case "invalid_receipt_format":
-      return dict.errors.invalid_receipt_format;
-    case "soliq_receipt_not_found":
-      return dict.errors.soliq_receipt_not_found;
-    case "soliq_receipt_refunded":
-      return dict.errors.soliq_receipt_refunded;
-    case "soliq_unavailable":
-      return dict.errors.soliq_unavailable;
-    case "receipt_amount_mismatch":
-      return dict.errors.receipt_amount_mismatch;
-    case "duplicate_receipt":
-      return dict.errors.duplicate_receipt;
-    default:
-      return dict.errors.invalid_input;
+/**
+ * Maps API error codes to friendly, localized text.
+ *
+ * Any code that has its own entry in `dict.errors` gets that text, with
+ * {min} / {max} / {available} filled from the error details. Only truly
+ * unknown codes fall back to the generic "check your input" message: before,
+ * many specific errors (e.g. an expired payment) all showed that generic text,
+ * which left donors with no idea what to do.
+ */
+export function errorText(code: string | undefined, dict: Dictionary, details?: unknown): string {
+  const aliased = code ? (ALIASES[code] ?? code) : "invalid_input";
+  if (aliased === "account_not_found") return dict.ask.notFound;
+  if (aliased === "bill_not_open") return dict.donate.full;
+
+  const table = dict.errors as Record<string, string>;
+  const template = table[aliased];
+  if (!template) return dict.errors.invalid_input;
+
+  const vars: Record<string, string> = {};
+  if (details && typeof details === "object") {
+    for (const [k, v] of Object.entries(details as Record<string, unknown>)) {
+      if (typeof v === "number") vars[k] = formatMoney(v, dict);
+    }
   }
+  const text = fmt(template, vars);
+  // If the server sent no amount, a raw "{available}" would show: use the general text instead.
+  if (/\{\w+\}/.test(text)) {
+    return aliased === "amount_exceeds_available" ? dict.donate.full : dict.errors.invalid_input;
+  }
+  return text;
 }
+
+/** Server codes that share a message with another code. */
+const ALIASES: Record<string, string> = {
+  wrong_password: "unauthorized",
+  invalid_receipt: "invalid_receipt_format",
+  bad_origin: "forbidden_origin",
+  bad_signature: "payment_not_found",
+};

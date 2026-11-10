@@ -89,23 +89,29 @@ type TxPatch = Partial<Pick<PaymentDoc, "receiptKey" | "receiptLabel" | "leaderb
 export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<PaymentDoc> {
   const { payments, bills, donors } = await collections();
   const now = new Date();
-  let p: PaymentDoc | null;
+  let before: PaymentDoc | null;
   try {
-    p = await payments.findOneAndUpdate(
-      { _id: paymentId, status: { $in: OPEN_STATES } },
+    // "expired" is accepted too: paying inside a bank app can take longer than
+    // the reservation, and that money has already reached the utility account.
+    before = await payments.findOneAndUpdate(
+      { _id: paymentId, status: { $in: [...OPEN_STATES, "expired"] } },
       { $set: { ...set, status: "paid", paidAt: now, updatedAt: now } },
-      { returnDocument: "after" },
+      { returnDocument: "before" },
     );
   } catch (err) {
     // Two donors submitting the same receipt at once: the unique receiptKey index rejects the second one.
     if (err instanceof MongoServerError && err.code === 11000) throw new HttpError(409, "duplicate_receipt");
     throw err;
   }
-  if (!p) {
+  if (!before) {
     const current = await payments.findOne({ _id: paymentId });
     if (!current) throw new HttpError(404, "payment_not_found");
     return current;
   }
+  const p: PaymentDoc = { ...before, ...set, status: "paid", paidAt: now, updatedAt: now };
+  // An expired payment's reservation was already released; releasing it again
+  // would eat into another donor's live reservation.
+  const release = OPEN_STATES.includes(before.status) ? p.amount : 0;
 
   const bill = await bills.findOneAndUpdate(
     { _id: p.billId },
@@ -113,7 +119,7 @@ export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<
       {
         $set: {
           paidAmount: { $add: ["$paidAmount", p.amount] },
-          reservedAmount: { $max: [0, { $subtract: ["$reservedAmount", p.amount] }] },
+          reservedAmount: { $max: [0, { $subtract: ["$reservedAmount", release] }] },
           updatedAt: "$$NOW",
         },
       },

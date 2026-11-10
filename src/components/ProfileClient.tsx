@@ -34,7 +34,7 @@ export function ProfileClient({
     });
     setBusy(false);
     if (!res.ok || !res.data.donor) {
-      setError(errorText(res.data.error, dict));
+      setError(errorText(res.data.error, dict, res.data.details));
       return;
     }
     setDonor(res.data.donor);
@@ -51,7 +51,7 @@ export function ProfileClient({
     });
     setBusy(false);
     if (!res.ok || !res.data.donor) {
-      setError(errorText(res.data.error, dict));
+      setError(errorText(res.data.error, dict, res.data.details));
       return;
     }
     setDonor(res.data.donor);

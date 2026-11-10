@@ -48,7 +48,7 @@ export function AdminClient({
     const res = await api("/api/admin/session", { body: { password } });
     setBusy(false);
     if (!res.ok) {
-      setError(errorText(res.data.error, dict));
+      setError(errorText(res.data.error, dict, res.data.details));
       return;
     }
     setAuthed(true);
@@ -68,7 +68,7 @@ export function AdminClient({
     const res = await api(`/api/admin/bills?id=${encodeURIComponent(id)}`, { body });
     setBusy(false);
     if (!res.ok) {
-      setError(errorText(res.data.error, dict));
+      setError(errorText(res.data.error, dict, res.data.details));
       return;
     }
     await refreshQueues();

@@ -120,7 +120,7 @@ export function DonatePanel({
       }
       if (!donorRes.ok || !donorRes.data.donor) {
         setPaying(false);
-        setError(errorText(donorRes.data.error, dict));
+        setError(errorText(donorRes.data.error, dict, donorRes.data.details));
         return;
       }
       setNickname(donorRes.data.donor.nickname);
@@ -137,7 +137,7 @@ export function DonatePanel({
     });
     if (!res.ok || !res.data.redirectUrl) {
       setPaying(false);
-      setError(errorText(res.data.error, dict));
+      setError(errorText(res.data.error, dict, res.data.details));
       return;
     }
     const url = res.data.redirectUrl;

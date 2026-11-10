@@ -20,6 +20,7 @@ export function DirectPaymentClient({
   supplier,
   accountNumber,
   signature,
+  testMode = false,
   locale,
   dict,
 }: {
@@ -31,6 +32,8 @@ export function DirectPaymentClient({
   supplier: string;
   accountNumber: string;
   signature: string;
+  /** SOLIQ_MODE=mock (test hosting only): offers a sample receipt so the flow can be finished without paying. */
+  testMode?: boolean;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -85,10 +88,27 @@ export function DirectPaymentClient({
     }
   }
 
+  /**
+   * Test hosting only (SOLIQ_MODE=mock, where the server accepts any
+   * well-formed receipt link): fills a unique sample link so testers can finish
+   * the flow without a real payment. Unique each time, because a receipt link
+   * can only be used once.
+   */
+  function fillSampleReceipt() {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    const rand = () => Math.floor(Math.random() * 1e9).toString().padStart(9, "0");
+    setReceiptRaw(`https://ofd.soliq.uz/epi?t=EP000000TEST&r=${rand()}&c=${stamp}&s=${rand()}${rand().slice(0, 3)}`);
+    setQrStatus("extracted");
+    setError(null);
+  }
+
   async function submitConfirmation(mode: "verified" | "skip" | "failure") {
     setError(null);
     if (mode === "verified" && !receiptRaw.trim()) {
-      setError(t.manualPlaceholder);
+      // Say what is missing, not show the example link as if it were an error.
+      setError(qrStatus === "not_found" ? t.qrNotFoundHint : t.receiptMissing);
       return;
     }
 
@@ -105,7 +125,7 @@ export function DirectPaymentClient({
 
     if (!res.ok) {
       setBusy(null);
-      setError(errorText(res.data.error, dict));
+      setError(errorText(res.data.error, dict, res.data.details));
       return;
     }
     router.push(`/${locale}/payment/${paymentId}`);
@@ -271,6 +291,16 @@ export function DirectPaymentClient({
             placeholder={t.manualPlaceholder}
             className="input bg-white py-2.5 font-mono text-xs font-bold"
           />
+
+          {testMode && (
+            <button
+              type="button"
+              onClick={fillSampleReceipt}
+              className="w-full cursor-pointer rounded-xl border border-dashed border-violet-400 bg-violet-50 px-3 py-2 text-[11px] font-extrabold text-violet-800 hover:bg-violet-100"
+            >
+              🧪 {t.testReceiptBtn}
+            </button>
+          )}
 
           <button
             type="button"

@@ -83,7 +83,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
       ) {
         setError(fmt(dict.ask.amountTooHigh, { max: formatMoney(Number((res.data.details as { max: number }).max), dict) }));
       } else {
-        setError(errorText(res.data.error, dict));
+        setError(errorText(res.data.error, dict, res.data.details));
       }
       return;
     }

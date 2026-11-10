@@ -26,10 +26,10 @@ export const POST = handler(async (req: NextRequest) => {
   const payment = await getPayment(paymentId);
   if (!payment) throw new HttpError(404, "payment_not_found");
 
-  if (payment.status === "created" && payment.expiresAt < new Date()) {
-    await markUnsuccessful(payment._id, "expired");
-    throw new HttpError(409, "payment_expired");
-  }
+  // No "payment_expired" refusal for a success: the 20-minute reservation only
+  // holds the amount for other donors. A donor who spent longer in their bank
+  // app has still paid the utility, so the confirmation is recorded (markPaid
+  // accepts expired payments without double-releasing the reservation).
 
   if (outcome === "failure") {
     const cancelled = (await markUnsuccessful(payment._id, "failed")) ?? payment;
