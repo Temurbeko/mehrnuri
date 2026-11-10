@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, Check, ChevronUp, MapPin, Phone, Plus, Wallet } from "lucide-react";
+import { ArrowRight, Building2, Check, ChevronLeft, ChevronUp, MapPin, Phone, Plus, Wallet } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -22,6 +22,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
   const [utilityType, setUtilityType] = useState<UtilityType>("electricity");
   const [region, setRegion] = useState<Region>("tashkent_city");
   const [district, setDistrict] = useState<string>(DISTRICTS_BY_REGION.tashkent_city[0]!.id);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [accountNumber, setAccountNumber] = useState<string>("");
 
   const [amountOwed, setAmountOwed] = useState("");
@@ -43,8 +44,35 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
   const supplier = officialSupplierName(utilityType, region);
   const meterUnit = meterUnitFor(utilityType);
 
+  const accountDigits = accountNumber.replace(/[\s-]/g, "");
+  const amountNum = Number(amountOwed.replace(/\s/g, ""));
+  const step2Valid =
+    /^\d{5,20}$/.test(accountDigits) &&
+    amountOwed.trim() !== "" &&
+    Number.isInteger(amountNum) &&
+    amountNum >= 1000 &&
+    amountNum <= 5000000;
+
+  function goNext() {
+    setError(null);
+    if (step === 1) setStep(2);
+    else if (step === 2 && step2Valid) setStep(3);
+  }
+
+  function goBack() {
+    setError(null);
+    if (step === 3) setStep(2);
+    else if (step === 2) setStep(1);
+  }
+
+  const stepTitle = step === 1 ? dict.ask.step1Title : step === 2 ? dict.ask.step2Title : dict.ask.step3Title;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (step !== 3) {
+      goNext();
+      return;
+    }
     setError(null);
     const digits = accountNumber.replace(/[\s-]/g, "");
     if (!/^\d{5,20}$/.test(digits)) {
@@ -128,7 +156,34 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
         aria-hidden="true"
       />
 
-      <div className="card space-y-4 p-5">
+      <div className="card space-y-5 p-5 sm:p-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            {step !== 1 && (
+              <button
+                type="button"
+                onClick={goBack}
+                disabled={submitting}
+                className="btn-ghost w-auto shrink-0 whitespace-nowrap px-2"
+              >
+                <ChevronLeft size={18} aria-hidden="true" />
+                {dict.common.back}
+              </button>
+            )}
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <div className="flex gap-1.5" aria-hidden="true">
+                {[1, 2, 3].map((n) => (
+                  <span key={n} className={`h-2 w-6 rounded-full ${n <= step ? "bg-amber-500" : "bg-slate-200"}`} />
+                ))}
+              </div>
+              <span className="text-sm font-extrabold whitespace-nowrap text-slate-500">{fmt(dict.checkout.stepOf, { n: step })}</span>
+            </div>
+          </div>
+          <h1 className="text-xl font-extrabold text-slate-900">{stepTitle}</h1>
+        </div>
+
+        {step === 1 && (
+          <div className="space-y-4">
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
           {UTILITY_TYPES.map((u) => {
             const active = utilityType === u;
@@ -205,60 +260,49 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             {supplier}
           </div>
         </div>
-
-        <div className="space-y-1.5">
-          <label className="label" htmlFor="accountNumber">
-            {dict.ask.accountNumber}
-          </label>
-          <input
-            id="accountNumber"
-            type="text"
-            inputMode="numeric"
-            required
-            placeholder={dict.ask.accountHint}
-            value={accountNumber}
-            onChange={(e) => setAccountNumber(e.target.value)}
-            className="input font-mono text-base font-extrabold tracking-wider"
-          />
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="amountOwed">
-              <Wallet size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.amount}
-            </label>
-            <input
-              id="amountOwed"
-              type="number"
-              inputMode="numeric"
-              min={1000}
-              max={5000000}
-              step={100}
-              required
-              placeholder="150 000"
-              value={amountOwed}
-              onChange={(e) => setAmountOwed(e.target.value)}
-              className="input font-mono text-base font-extrabold"
-            />
+            <button type="button" onClick={goNext} className="btn-primary">
+              <span>{dict.common.next}</span>
+              <ArrowRight size={18} aria-hidden="true" />
+            </button>
           </div>
+        )}
 
-          <div>
-            <label className="label" htmlFor="phone">
-              <Phone size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.phone}
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              required
-              placeholder="+998 90 123 45 67"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="input font-mono text-base font-bold"
-            />
-          </div>
-        </div>
+        {step === 2 && (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="label" htmlFor="accountNumber">
+                {dict.ask.accountNumber}
+              </label>
+              <input
+                id="accountNumber"
+                type="text"
+                inputMode="numeric"
+                placeholder={dict.ask.accountHint}
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                className="input font-mono text-base font-extrabold tracking-wider"
+              />
+            </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3">
+            <div>
+              <label className="label" htmlFor="amountOwed">
+                <Wallet size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.amount}
+              </label>
+              <input
+                id="amountOwed"
+                type="number"
+                inputMode="numeric"
+                min={1000}
+                max={5000000}
+                step={100}
+                placeholder="150 000"
+                value={amountOwed}
+                onChange={(e) => setAmountOwed(e.target.value)}
+                className="input font-mono text-base font-extrabold"
+              />
+            </div>
+
+        <div className="panel">
           <button
             type="button"
             onClick={() => setShowExtra((v) => !v)}
@@ -346,27 +390,54 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           )}
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2.5 px-1 text-xs font-semibold text-slate-600">
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            required
-            className="h-4 w-4 rounded accent-amber-500"
-          />
-          <span>{dict.ask.consent}</span>
-        </label>
-
-        {error && (
-          <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-xs font-bold text-rose-700">
-            {error}
+            <button type="button" onClick={goNext} disabled={!step2Valid} className="btn-primary">
+              <span>{dict.common.next}</span>
+              <ArrowRight size={18} aria-hidden="true" />
+            </button>
+            {!step2Valid && <p className="text-center text-sm font-semibold text-slate-500">{dict.ask.needAccountAmount}</p>}
           </div>
         )}
 
-        <button type="submit" disabled={submitting || !consent} className="btn-primary py-3.5 text-sm font-extrabold">
-          <span>{submitting ? dict.ask.submitting : dict.ask.submit}</span>
-          {!submitting && <ArrowRight size={18} aria-hidden="true" />}
-        </button>
+        {step === 3 && (
+          <div className="space-y-4">
+            <div>
+              <label className="label" htmlFor="phone">
+                <Phone size={16} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.ask.phone}
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                required
+                placeholder="+998 90 123 45 67"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="input font-mono text-base font-bold"
+              />
+            </div>
+
+            <label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-slate-600">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                required
+                className="h-5 w-5 shrink-0 rounded accent-amber-500"
+              />
+              <span>{dict.ask.consent}</span>
+            </label>
+
+            {error && (
+              <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-sm font-bold text-rose-700">
+                {error}
+              </div>
+            )}
+
+            <button type="submit" disabled={submitting || !consent} className="btn-primary">
+              <span>{submitting ? dict.ask.submitting : dict.ask.submit}</span>
+              {!submitting && <ArrowRight size={18} aria-hidden="true" />}
+            </button>
+          </div>
+        )}
       </div>
     </form>
   );

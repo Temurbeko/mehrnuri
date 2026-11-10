@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound } from "lucide-react";
+import { Check, KeyRound } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicDonor } from "@/lib/domain";
@@ -75,30 +75,30 @@ export function ProfileClient({
         <div className="card space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/15 text-xl font-extrabold text-amber-700">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-xl font-extrabold text-amber-700">
                 {donor.nickname.slice(0, 1).toUpperCase()}
               </span>
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900">{donor.nickname}</h2>
-                <span className="text-xs font-bold text-emerald-600">✓ Saxiy</span>
+              <div className="min-w-0">
+                <h2 className="truncate text-xl font-extrabold text-slate-900">{donor.nickname}</h2>
+                <span className="inline-flex items-center gap-1 text-sm font-bold text-emerald-600"><Check size={16} aria-hidden="true" />{dict.me.donorBadge}</span>
               </div>
             </div>
             <button
               type="button"
               onClick={handleLogout}
               disabled={busy}
-              className="shrink-0 cursor-pointer whitespace-nowrap rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              className="btn-secondary w-auto shrink-0 whitespace-nowrap px-3"
             >
               {dict.me.logout}
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-emerald-500/10 p-4">
+            <div className="panel bg-emerald-50">
               <div className="text-[11px] font-bold text-emerald-800">{dict.me.total}</div>
               <div className="mt-1 text-lg font-extrabold text-emerald-700">{formatMoney(donor.totalDonated, dict)}</div>
             </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
+            <div className="panel">
               <div className="text-[11px] font-bold text-slate-400">{dict.me.count}</div>
               <div className="mt-1 text-lg font-extrabold text-slate-900">{donor.donationsCount}</div>
             </div>
@@ -110,11 +110,11 @@ export function ProfileClient({
             <h3 className="text-base font-extrabold text-slate-900"><KeyRound size={18} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.me.recoveryTitle}</h3>
             <p className="text-xs font-medium text-slate-500 leading-relaxed">{dict.me.recoveryText}</p>
             {showCode ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-3.5 font-mono text-xs break-all font-bold text-slate-800 select-all">
+              <div className="rounded-2xl panel font-mono text-xs break-all font-bold text-slate-800 select-all">
                 {code}
               </div>
             ) : (
-              <button type="button" onClick={() => setShowCode(true)} className="btn-outline text-sm">
+              <button type="button" onClick={() => setShowCode(true)} className="btn-secondary">
                 {dict.me.show}
               </button>
             )}

@@ -41,7 +41,7 @@ export default async function LeadersPage({ params }: { params: Promise<{ locale
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl">{medals[idx]}</span>
+                  <span className="text-2xl" aria-hidden="true">{medals[idx]}</span>
                   <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-extrabold text-slate-600">
                     #{idx + 1}
                   </span>
@@ -52,7 +52,7 @@ export default async function LeadersPage({ params }: { params: Promise<{ locale
                     {fmt(dict.leaders.donations, { count: d.donationsCount })}
                   </div>
                 </div>
-                <div className="text-base font-extrabold text-emerald-600">{formatMoney(d.totalDonated, dict)}</div>
+                <div className="whitespace-nowrap text-base font-extrabold text-emerald-600">{formatMoney(d.totalDonated, dict)}</div>
               </div>
             ))}
           </div>
@@ -62,18 +62,18 @@ export default async function LeadersPage({ params }: { params: Promise<{ locale
             <ol className="space-y-2.5">
               {donors.slice(3).map((d, idx) => (
                 <li key={d.nickname} className="card flex items-center justify-between gap-3 px-4 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-xs font-extrabold text-slate-600">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-extrabold text-slate-600">
                       {idx + 4}
                     </span>
-                    <div>
-                      <div className="text-sm font-extrabold text-slate-900">{d.nickname}</div>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-extrabold text-slate-900">{d.nickname}</div>
                       <div className="text-xs font-semibold text-slate-400">
                         {fmt(dict.leaders.donations, { count: d.donationsCount })}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right text-sm font-extrabold text-emerald-600">
+                  <div className="shrink-0 whitespace-nowrap text-right text-sm font-extrabold text-emerald-600">
                     {formatMoney(d.totalDonated, dict)}
                   </div>
                 </li>
