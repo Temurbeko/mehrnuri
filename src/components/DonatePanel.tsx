@@ -8,6 +8,7 @@ import { findDistrict, meterUnitFor } from "@/lib/uzbekistan";
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { StatusBadge, UTILITY_THEMES } from "./BillCard";
+import { DebtCheck, TrustBadge } from "./DebtCheck";
 import { api, errorText } from "./api";
 
 const PRESET_AMOUNTS = [10_000, 25_000, 50_000, 100_000];
@@ -172,12 +173,19 @@ export function DonatePanel({
               <p className="text-xs font-semibold text-slate-500">
                 📍 {dict.region[bill.region]} · {dict.districts[districtInfo.id]}
               </p>
+              <div className="mt-1.5">
+                <TrustBadge bill={bill} dict={dict} />
+              </div>
             </div>
           </div>
 
           {initialReviewStatus === "pending_review" ? (
             <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-extrabold text-amber-800">
               {dict.status.pending_review}
+            </span>
+          ) : initialReviewStatus === "flagged" ? (
+            <span className="rounded-full bg-rose-500/15 px-3 py-1 text-xs font-extrabold text-rose-700">
+              {dict.status.flagged}
             </span>
           ) : initialReviewStatus === "rejected" ? (
             <span className="rounded-full bg-rose-500/15 px-3 py-1 text-xs font-extrabold text-rose-700">
@@ -209,6 +217,9 @@ export function DonatePanel({
             {copiedAccount ? dict.donate.copied : `📋 ${dict.donate.copy}`}
           </button>
         </div>
+
+        {/* Anyone can look this account up in their payment app and tell us what it showed. */}
+        {initialReviewStatus !== "rejected" && <DebtCheck billId={bill.id} dict={dict} onUpdated={setBill} />}
 
         {bill.story && (
           <div className="rounded-2xl bg-amber-50/70 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-700 italic">
@@ -315,7 +326,11 @@ export function DonatePanel({
 
       {initialReviewStatus !== "approved" ? (
         <div className="card text-center text-sm font-bold text-slate-600 p-5">
-          {initialReviewStatus === "pending_review" ? dict.ask.successText : dict.status.rejected}
+          {initialReviewStatus === "pending_review"
+            ? dict.ask.successText
+            : initialReviewStatus === "flagged"
+              ? dict.check.flaggedNotice
+              : dict.status.rejected}
         </div>
       ) : bill.fundingStatus === "fully_paid" || bill.available <= 0 ? (
         <div className="card space-y-2 text-center py-8">

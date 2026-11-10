@@ -2,7 +2,16 @@ import "server-only";
 import { MongoServerError, ObjectId, type Filter } from "mongodb";
 import { collections } from "@/lib/db/mongo";
 import type { BillDoc } from "@/lib/db/models";
-import { fundingStatusOf, type PublicBill, type Region, type UtilityType } from "@/lib/domain";
+import {
+  accountKeyOf,
+  BILL_TTL_DAYS,
+  fundingStatusOf,
+  isPlausibleAmount,
+  type PublicBill,
+  type Region,
+  type TrustLevel,
+  type UtilityType,
+} from "@/lib/domain";
 import { HttpError } from "@/lib/security/http";
 import { hashIp, shortCode } from "@/lib/security/crypto";
 import type { CreateBillInput } from "@/lib/validation";
@@ -37,6 +46,9 @@ export function toPublicBill(b: BillDoc): PublicBill {
     available,
     fundingStatus: fundingStatusOf(b.paidAmount, b.amountOwed),
     verified: b.verification?.verified ?? false,
+    trustLevel: b.trust?.level ?? "new",
+    checkedCount: b.trust?.matchVotes ?? 0,
+    expiresAt: b.expiresAt ? b.expiresAt.toISOString() : null,
     payoutStatus: b.payout.status,
     thanksReactions: b.thanksReactions ?? [],
     createdAt: b.createdAt.toISOString(),
@@ -44,8 +56,11 @@ export function toPublicBill(b: BillDoc): PublicBill {
   };
 }
 
+/** One open request per phone at a time, and a few per season. */
+const MAX_BILLS_PER_PHONE_30D = 3;
+
 export async function createBill(input: CreateBillInput, ip: string): Promise<BillDoc> {
-  const { bills } = await collections();
+  const { bills, accounts } = await collections();
 
   const existing = await bills.findOne(
     { utilityType: input.utilityType, accountNumber: input.accountNumber, isOpen: true },
@@ -55,10 +70,31 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
     throw new HttpError(409, "duplicate_open_bill");
   }
 
+  const accountKey = accountKeyOf(input.utilityType, input.accountNumber);
+  const account = await accounts.findOne({ _id: accountKey });
+  // An account donors kept reporting stays out, whatever name or phone is used next.
+  if (account?.blocked) throw new HttpError(403, "account_blocked");
+
+  const sinceWindow = new Date(Date.now() - 30 * 24 * 60 * 60_000);
+  const [openForPhone, recentForPhone] = await Promise.all([
+    bills.countDocuments({ phone: input.phone, isOpen: true }),
+    bills.countDocuments({ phone: input.phone, createdAt: { $gte: sinceWindow } }),
+  ]);
+  if (openForPhone > 0) throw new HttpError(409, "phone_has_open_bill");
+  if (recentForPhone >= MAX_BILLS_PER_PHONE_30D) throw new HttpError(429, "phone_limit_reached");
+
   const d = findDistrict(input.region, input.district);
   const supplier = officialSupplierName(input.utilityType, input.region);
 
   const now = new Date();
+  // Published straight away. The only brake is an amount no household could owe:
+  // nobody here can see the real debt, but every donor sees it in their payment
+  // app before paying, so the donors do the verifying.
+  const plausible = isPlausibleAmount(input.utilityType, input.amountOwed);
+  const reviewStatus = plausible ? ("approved" as const) : ("pending_review" as const);
+  // An account that already received a Soliq-verified payment is proven real.
+  const trustLevel: TrustLevel = (account?.provenPayments ?? 0) > 0 ? "proven" : "new";
+
   const base = {
     utilityType: input.utilityType,
     region: input.region,
@@ -75,8 +111,10 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
     paidAmount: 0,
     reservedAmount: 0,
     isOpen: true,
-    reviewStatus: "pending_review" as const,
+    reviewStatus,
     rejectReason: null,
+    trust: { level: trustLevel, matchVotes: 0, mismatchVotes: 0, lastMismatch: null },
+    expiresAt: new Date(now.getTime() + BILL_TTL_DAYS * 24 * 60 * 60_000),
     verification: {
       provider: "manual",
       verified: false,
@@ -95,7 +133,28 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
     const doc: BillDoc = { _id: new ObjectId(), code: shortCode(), ...base };
     try {
       await bills.insertOne(doc);
-      void notify({ type: "bill_submitted", code: doc.code, amount: doc.amountOwed });
+      await accounts.updateOne(
+        { _id: accountKey },
+        {
+          $setOnInsert: {
+            utilityType: input.utilityType,
+            accountNumber: input.accountNumber,
+            provenPayments: 0,
+            matchVotes: 0,
+            mismatchVotes: 0,
+            blocked: false,
+            blockedReason: null,
+            firstSeenAt: now,
+          },
+          $set: { lastSeenAt: now },
+        },
+        { upsert: true },
+      );
+      void notify(
+        plausible
+          ? { type: "bill_submitted", code: doc.code, amount: doc.amountOwed }
+          : { type: "bill_held", code: doc.code, amount: doc.amountOwed, reason: "amount above plausible range" },
+      );
       return doc;
     } catch (err) {
       if (err instanceof MongoServerError && err.code === 11000) {
@@ -112,6 +171,28 @@ export interface FeedQuery {
   utilityType?: UtilityType;
   region?: Region;
   limit?: number;
+}
+
+let lastBillSweep = 0;
+
+/**
+ * Closes requests that went stale. Utility debt is re-issued monthly, so a
+ * month-old claimed amount is no longer true — and nobody should have to clean
+ * that up by hand. Money already paid went straight to the supplier, so there
+ * is nothing to unwind.
+ */
+export async function sweepStaleBills(force = false): Promise<void> {
+  if (!force && Date.now() - lastBillSweep < 60_000) return;
+  lastBillSweep = Date.now();
+  const { bills } = await collections();
+  // Bills posted before auto-expiry existed get a date from their own age.
+  await bills.updateMany({ isOpen: true, expiresAt: { $exists: false } }, [
+    { $set: { expiresAt: { $add: ["$createdAt", BILL_TTL_DAYS * 24 * 60 * 60_000] } } },
+  ]);
+  await bills.updateMany(
+    { isOpen: true, expiresAt: { $lt: new Date() } },
+    { $set: { isOpen: false, updatedAt: new Date() } },
+  );
 }
 
 export async function listOpenBills(q: FeedQuery = {}): Promise<PublicBill[]> {

@@ -70,6 +70,7 @@ export const POLICIES = {
   donorCreate: { limit: 5, windowSec: 60 * 60 },
   donorRestore: { limit: 10, windowSec: 15 * 60 },
   checkout: { limit: 20, windowSec: 10 * 60 },
+  verdict: { limit: 15, windowSec: 60 * 60 },
   paymentConfirm: { limit: 30, windowSec: 60 },
   read: { limit: 120, windowSec: 60 },
   stream: { limit: 20, windowSec: 60 },

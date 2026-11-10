@@ -22,7 +22,7 @@ export const POST = handler(async (req: NextRequest) => {
   const id = new ObjectId(parseOr400(objectIdSchema, req.nextUrl.searchParams.get("id")));
   const action = await readJson(req, adminBillActionSchema);
   if (action.action === "approve") await approveBill(id);
-  else if (action.action === "reject") await rejectBill(id, action.reason);
+  else if (action.action === "reject") await rejectBill(id, action.reason, action.blockAccount ?? false);
   else await markPaidOut(id, action.reference);
   return NextResponse.json({ ok: true });
 });

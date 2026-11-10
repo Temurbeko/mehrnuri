@@ -4,16 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UTILITY_ICONS } from "@/lib/domain";
 import type { AdminBill } from "@/lib/admin/service";
-import { formatMoney, type Dictionary } from "@/i18n";
+import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { api, errorText } from "./api";
 
 export function AdminClient({
   authenticated,
+  initialReported,
   initialPending,
   initialPayouts,
   dict,
 }: {
   authenticated: boolean;
+  initialReported: AdminBill[];
   initialPending: AdminBill[];
   initialPayouts: AdminBill[];
   dict: Dictionary;
@@ -21,16 +23,19 @@ export function AdminClient({
   const router = useRouter();
   const [authed, setAuthed] = useState(authenticated);
   const [password, setPassword] = useState("");
+  const [reported, setReported] = useState<AdminBill[]>(initialReported);
   const [pending, setPending] = useState<AdminBill[]>(initialPending);
   const [payouts, setPayouts] = useState<AdminBill[]>(initialPayouts);
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
+  const [blockAccount, setBlockAccount] = useState<Record<string, boolean>>({});
   const [payoutRefs, setPayoutRefs] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function refreshQueues() {
-    const res = await api<{ pending?: AdminBill[]; payouts?: AdminBill[] }>("/api/admin/bills");
+    const res = await api<{ reported?: AdminBill[]; pending?: AdminBill[]; payouts?: AdminBill[] }>("/api/admin/bills");
     if (res.ok) {
+      setReported(res.data.reported ?? []);
       setPending(res.data.pending ?? []);
       setPayouts(res.data.payouts ?? []);
     }
@@ -57,7 +62,7 @@ export function AdminClient({
     router.refresh();
   }
 
-  async function act(id: string, body: Record<string, string>) {
+  async function act(id: string, body: Record<string, string | boolean>) {
     setError(null);
     setBusy(true);
     const res = await api(`/api/admin/bills?id=${encodeURIComponent(id)}`, { body });
@@ -67,6 +72,114 @@ export function AdminClient({
       return;
     }
     await refreshQueues();
+  }
+
+  /** One card for both exception queues: reported bills and auto-held bills. */
+  function reviewCard(b: AdminBill) {
+    const reason = (rejectReasons[b.id] ?? "").trim();
+    return (
+      <div key={b.id} className="card space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-xl">
+              {UTILITY_ICONS[b.utilityType]}
+            </span>
+            <div>
+              <div className="font-mono text-[11px] font-bold text-slate-400">{b.code}</div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                {dict.utility[b.utilityType]} · {dict.region[b.region]}
+              </h3>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {b.reportCount > 0 && (
+              <span className="rounded-full bg-rose-500/12 px-2.5 py-1 text-xs font-extrabold text-rose-700">
+                🚩 {fmt(dict.admin.reportCount, { count: b.reportCount })}
+              </span>
+            )}
+            {b.accountBlocked && (
+              <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-extrabold text-white">
+                ⛔ {dict.admin.accountBlocked}
+              </span>
+            )}
+            {b.checkedCount > 0 && (
+              <span className="rounded-full bg-sky-500/12 px-2.5 py-1 text-xs font-extrabold text-sky-700">
+                👀 {fmt(dict.check.checkedCount, { count: b.checkedCount })}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-3.5 text-xs">
+          <div>
+            <span className="text-slate-400 font-semibold">{dict.bill.account}: </span>
+            <span className="font-mono font-extrabold text-slate-900">{b.accountNumber}</span>
+          </div>
+          <div>
+            <span className="text-slate-400 font-semibold">{dict.admin.phone}: </span>
+            <span className="font-mono font-bold text-slate-800">{b.phone}</span>
+          </div>
+          <div>
+            <span className="text-slate-400 font-semibold">{dict.admin.entered}: </span>
+            <span className="font-extrabold text-slate-900">{formatMoney(b.amountOwed, dict)}</span>
+          </div>
+          {b.lastMismatch && (
+            <div>
+              <span className="text-slate-400 font-semibold">{dict.admin.donorSaw}: </span>
+              <span className="font-extrabold text-rose-700">
+                {b.lastMismatch.kind === "no_debt"
+                  ? dict.check.noDebt
+                  : b.lastMismatch.seenAmount === null
+                    ? dict.check.differs
+                    : formatMoney(b.lastMismatch.seenAmount, dict)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {b.story && <p className="text-xs italic text-slate-600">“{b.story}”</p>}
+
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => act(b.id, { action: "approve" })}
+            className="btn-emerald sm:w-auto sm:px-6 text-xs"
+          >
+            ✓ {dict.admin.approve}
+          </button>
+          <div className="flex flex-1 gap-2">
+            <input
+              type="text"
+              placeholder={dict.admin.rejectReason}
+              value={rejectReasons[b.id] ?? ""}
+              onChange={(e) => setRejectReasons({ ...rejectReasons, [b.id]: e.target.value })}
+              className="input text-xs"
+            />
+            <button
+              type="button"
+              disabled={busy || reason.length < 3}
+              onClick={() =>
+                act(b.id, { action: "reject", reason, blockAccount: blockAccount[b.id] === true })
+              }
+              className="btn border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 w-auto px-4 text-xs"
+            >
+              ✕ {dict.admin.reject}
+            </button>
+          </div>
+        </div>
+
+        <label className="flex cursor-pointer items-center gap-2 text-[11px] font-bold text-slate-600">
+          <input
+            type="checkbox"
+            checked={blockAccount[b.id] === true}
+            onChange={(e) => setBlockAccount({ ...blockAccount, [b.id]: e.target.checked })}
+            className="h-4 w-4 cursor-pointer rounded border-slate-300"
+          />
+          {dict.admin.blockAccountLabel}
+        </label>
+      </div>
+    );
   }
 
   if (!authed) {
@@ -116,7 +229,24 @@ export function AdminClient({
         </div>
       )}
 
-      {/* Pending moderation queue */}
+      {/* Reported by donors — the only queue that normally has anything in it. */}
+      <section className="space-y-3.5">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-extrabold text-slate-900">{dict.admin.reported}</h2>
+          <span className="rounded-full bg-rose-500/15 px-2.5 py-0.5 text-xs font-extrabold text-rose-700">
+            {reported.length}
+          </span>
+        </div>
+        <p className="text-xs font-medium text-slate-500">{dict.admin.reportedHint}</p>
+
+        {reported.length === 0 ? (
+          <div className="card py-8 text-center text-sm font-semibold text-slate-400">{dict.admin.empty}</div>
+        ) : (
+          reported.map(reviewCard)
+        )}
+      </section>
+
+      {/* Held automatically (an amount no household could owe). */}
       <section className="space-y-3.5">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-extrabold text-slate-900">{dict.admin.pending}</h2>
@@ -124,81 +254,12 @@ export function AdminClient({
             {pending.length}
           </span>
         </div>
+        <p className="text-xs font-medium text-slate-500">{dict.admin.pendingHint}</p>
 
         {pending.length === 0 ? (
           <div className="card py-8 text-center text-sm font-semibold text-slate-400">{dict.admin.empty}</div>
         ) : (
-          pending.map((b) => (
-            <div key={b.id} className="card space-y-4">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-xl">
-                    {UTILITY_ICONS[b.utilityType]}
-                  </span>
-                  <div>
-                    <div className="font-mono text-[11px] font-bold text-slate-400">{b.code}</div>
-                    <h3 className="text-base font-extrabold text-slate-900">
-                      {dict.utility[b.utilityType]} · {dict.region[b.region]}
-                    </h3>
-                  </div>
-                </div>
-                <span className="rounded-full bg-emerald-500/12 px-2.5 py-1 text-xs font-extrabold text-emerald-700">
-                  {b.verified ? `✓ ${dict.bill.verified} (${b.verificationProvider})` : dict.bill.unverified}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-3.5 text-xs">
-                <div>
-                  <span className="text-slate-400 font-semibold">{dict.bill.account}: </span>
-                  <span className="font-mono font-extrabold text-slate-900">{b.accountNumber}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-semibold">{dict.admin.phone}: </span>
-                  <span className="font-mono font-bold text-slate-800">{b.phone}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-semibold">{dict.admin.entered}: </span>
-                  <span className="font-extrabold text-slate-900">{formatMoney(b.amountOwed, dict)}</span>
-                </div>
-                {b.verifiedDebt !== null && (
-                  <div>
-                    <span className="text-slate-400 font-semibold">{dict.admin.verifiedDebt}: </span>
-                    <span className="font-extrabold text-emerald-700">{formatMoney(b.verifiedDebt, dict)}</span>
-                  </div>
-                )}
-              </div>
-
-              {b.story && <p className="text-xs italic text-slate-600">“{b.story}”</p>}
-
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => act(b.id, { action: "approve" })}
-                  className="btn-emerald sm:w-auto sm:px-6 text-xs"
-                >
-                  ✓ {dict.admin.approve}
-                </button>
-                <div className="flex flex-1 gap-2">
-                  <input
-                    type="text"
-                    placeholder={dict.admin.rejectReason}
-                    value={rejectReasons[b.id] ?? ""}
-                    onChange={(e) => setRejectReasons({ ...rejectReasons, [b.id]: e.target.value })}
-                    className="input text-xs"
-                  />
-                  <button
-                    type="button"
-                    disabled={busy || (rejectReasons[b.id] ?? "").trim().length < 3}
-                    onClick={() => act(b.id, { action: "reject", reason: (rejectReasons[b.id] ?? "").trim() })}
-                    className="btn border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 w-auto px-4 text-xs"
-                  >
-                    ✕ {dict.admin.reject}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
+          pending.map(reviewCard)
         )}
       </section>
 

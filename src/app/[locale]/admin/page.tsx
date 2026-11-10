@@ -13,11 +13,13 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
   const dict = getDictionary(locale);
 
   const authed = await isAdmin();
+  let reported: AdminBill[] = [];
   let pending: AdminBill[] = [];
   let payouts: AdminBill[] = [];
   if (authed) {
     try {
       const q = await adminQueues();
+      reported = q.reported;
       pending = q.pending;
       payouts = q.payouts;
     } catch {
@@ -25,5 +27,13 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
     }
   }
 
-  return <AdminClient authenticated={authed} initialPending={pending} initialPayouts={payouts} dict={dict} />;
+  return (
+    <AdminClient
+      authenticated={authed}
+      initialReported={reported}
+      initialPending={pending}
+      initialPayouts={payouts}
+      dict={dict}
+    />
+  );
 }

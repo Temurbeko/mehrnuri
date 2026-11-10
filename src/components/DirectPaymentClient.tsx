@@ -8,10 +8,12 @@ import { encodeQrMatrix } from "@/lib/qr";
 import { decodeQrFromImageFile } from "@/lib/qrDecode";
 import type { Locale } from "@/i18n/config";
 import { formatMoney, type Dictionary } from "@/i18n";
+import { DebtCheck } from "./DebtCheck";
 import { api, errorText } from "./api";
 
 export function DirectPaymentClient({
   paymentId,
+  billId,
   provider,
   amount,
   utilityType,
@@ -22,6 +24,7 @@ export function DirectPaymentClient({
   dict,
 }: {
   paymentId: string;
+  billId: string | null;
   provider: PaymentProviderId;
   amount: number;
   utilityType: UtilityType;
@@ -178,6 +181,10 @@ export function DirectPaymentClient({
             </button>
           </div>
 
+          <p className="rounded-xl bg-white/80 px-3 py-2 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200/80 leading-relaxed">
+            💡 {t.payHint}
+          </p>
+
           <a
             href={isMobile ? merchant.mobileAppUrl : merchant.webCheckoutUrl}
             target="_blank"
@@ -217,7 +224,10 @@ export function DirectPaymentClient({
           )}
         </div>
 
-        {/* STEP 2: Soliq OFD Receipt Verification */}
+        {/* STEP 2: The donor just saw the real debt in their app — ask what it said. */}
+        {billId && <DebtCheck billId={billId} dict={dict} tone="step" />}
+
+        {/* STEP 3: Soliq OFD Receipt Verification */}
         <div className="space-y-3 rounded-2xl border-2 border-amber-400/50 bg-amber-50/40 p-4">
           <div className="flex flex-wrap items-center justify-between gap-1">
             <span className="text-xs font-extrabold text-slate-900">{t.step2Title}</span>

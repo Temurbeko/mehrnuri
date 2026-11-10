@@ -3,6 +3,7 @@ import { UTILITY_ICONS, type PublicBill, type UtilityType } from "@/lib/domain";
 import { findDistrict } from "@/lib/uzbekistan";
 import type { Locale } from "@/i18n/config";
 import { formatMoney, type Dictionary } from "@/i18n";
+import { TrustBadge } from "./DebtCheck";
 
 export const UTILITY_THEMES: Record<
   UtilityType,
@@ -101,6 +102,9 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
               <p className="text-xs font-semibold text-slate-500">
                 📍 {dict.region[bill.region]} · {dict.districts[districtInfo.id]}
               </p>
+              <div className="mt-1.5">
+                <TrustBadge bill={bill} dict={dict} />
+              </div>
             </div>
           </div>
           <StatusBadge bill={bill} dict={dict} />

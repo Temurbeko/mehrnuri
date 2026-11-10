@@ -43,6 +43,8 @@ export async function seedDatabase(clientUri = uri, databaseName = dbName, force
       reservedAmount: 0,
       isOpen: true,
       reviewStatus: "approved",
+      trust: { level: "new", matchVotes: 0, mismatchVotes: 0, lastMismatch: null },
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       rejectReason: null,
       verification: {
         provider: "manual",
@@ -76,6 +78,8 @@ export async function seedDatabase(clientUri = uri, databaseName = dbName, force
       reservedAmount: 0,
       isOpen: true,
       reviewStatus: "approved",
+      trust: { level: "new", matchVotes: 0, mismatchVotes: 0, lastMismatch: null },
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       rejectReason: null,
       verification: {
         provider: "manual",
@@ -109,6 +113,8 @@ export async function seedDatabase(clientUri = uri, databaseName = dbName, force
       reservedAmount: 0,
       isOpen: true,
       reviewStatus: "approved",
+      trust: { level: "new", matchVotes: 0, mismatchVotes: 0, lastMismatch: null },
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       rejectReason: null,
       verification: {
         provider: "manual",
@@ -142,6 +148,8 @@ export async function seedDatabase(clientUri = uri, databaseName = dbName, force
       reservedAmount: 0,
       isOpen: true,
       reviewStatus: "approved",
+      trust: { level: "new", matchVotes: 0, mismatchVotes: 0, lastMismatch: null },
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       rejectReason: null,
       verification: {
         provider: "manual",

@@ -37,6 +37,7 @@ export default async function DirectPayPage({
   return (
     <DirectPaymentClient
       paymentId={payment._id.toHexString()}
+      billId={pubBill?.id ?? null}
       provider={payment.provider}
       amount={payment.amount}
       utilityType={pubBill?.utilityType ?? "electricity"}

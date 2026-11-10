@@ -5,6 +5,7 @@ import { collections } from "@/lib/db/mongo";
 import type { BillDoc, DonorDoc, PaymentDoc } from "@/lib/db/models";
 import type { PaymentProviderId, PaymentStatus } from "@/lib/domain";
 import { HttpError } from "@/lib/security/http";
+import { markAccountProven } from "@/lib/bills/verdicts";
 import { notify } from "@/lib/notify";
 
 const OPEN_STATES: PaymentStatus[] = ["created", "processing"];
@@ -129,6 +130,15 @@ export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<
   }
 
   if (bill) {
+    // A real fiscal receipt on this account proves the account exists and is
+    // collecting money, so future requests on it skip review entirely.
+    if (typeof set.receiptKey === "string" && set.receiptKey.length > 0) {
+      void markAccountProven({
+        billId: bill._id,
+        utilityType: bill.utilityType,
+        accountNumber: bill.accountNumber,
+      }).catch((err: unknown) => console.warn("[trust] markAccountProven failed", err));
+    }
     void notify({ type: "payment_received", code: bill.code, amount: p.amount, nickname: p.donorNickname });
     if (bill.paidAmount >= bill.amountOwed) {
       void notify({ type: "bill_funded", code: bill.code, amount: bill.amountOwed });

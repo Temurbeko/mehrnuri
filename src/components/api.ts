@@ -29,6 +29,14 @@ export function errorText(code: string | undefined, dict: Dictionary): string {
       return dict.errors.rate_limited;
     case "duplicate_open_bill":
       return dict.errors.duplicate_open_bill;
+    case "account_blocked":
+      return dict.errors.account_blocked;
+    case "phone_has_open_bill":
+      return dict.errors.phone_has_open_bill;
+    case "phone_limit_reached":
+      return dict.errors.phone_limit_reached;
+    case "already_voted":
+      return dict.errors.already_voted;
     case "account_not_found":
       return dict.ask.notFound;
     case "nickname_taken":

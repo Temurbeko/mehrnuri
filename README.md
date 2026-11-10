@@ -13,7 +13,15 @@
 ### A. Family Help Request Flow (`/[locale]/ask` -> `POST /api/bills`)
 1. A family selects their **utility type** (`electricity`, `gas`, `water`, `heating`, `hot_water`, `waste`), **region** (14 regions), and **district** (68 districts mapped to official 7-digit **SOATO** codes and official regional suppliers such as *HET*, *Hududgazta'minot*, *Uzsuvta'minot*, *Veolia Energy*, *Maxsustrans*).
 2. Enters the **utility account number** (*shaxsiy hisob raqami*, 5–20 digits), payment purpose (`main` or ` fine`), optional meter reading, amount needed (`1,000` – `5,000,000` UZS), contact phone (`+998XXXXXXXXX`), and short story.
-3. The system prevents duplicate open bills for the same `{ utilityType, accountNumber }`, creates the bill with `reviewStatus: "pending_review"`, and sets an HTTP-only signed `mn_owner` cookie (`60 days`) so the family can send thank-you reactions once donors contribute.
+3. The system prevents duplicate open bills for the same `{ utilityType, accountNumber }`, blocks accounts donors have reported (`403 account_blocked`), caps one open request per phone plus 3 per 30 days (`409 phone_has_open_bill` / `429 phone_limit_reached`), and sets an HTTP-only signed `mn_owner` cookie (`60 days`) so the family can send thank-you reactions once donors contribute.
+4. **The request publishes immediately** (`reviewStatus: "approved"`) — no admin approves anything in the normal path. The only automatic brake is an implausible amount for the utility type (`PLAUSIBLE_MAX_UZS` in `src/lib/domain.ts`), which holds the request as `pending_review`. Each request also gets `expiresAt` (`BILL_TTL_DAYS`, 30 days) and closes itself after that, because utility debt is re-issued monthly.
+
+### A2. Donor-Side Verification (`POST /api/bills/[id]/verdict`)
+MehrNuri cannot read anybody's utility debt — that needs a supplier/aggregator contract. **Every donor can**: pasting the account number into Click / Payme / Uzum / Paynet shows the real balance before paying. So the donors are the verifiers (`src/lib/bills/verdicts.ts`, `src/components/DebtCheck.tsx`):
+- The donor answers `match`, `amount_differs` (with the amount their app showed) or `no_debt`. One verdict per visitor per bill (unique index `one_verdict_per_voter`; signed-in donors vote by donor id, visitors by hashed IP).
+- One `match` promotes the bill to `trustLevel: "donor_checked"`. `MISMATCH_LIMIT_BILL` (2) reports flip it to `reviewStatus: "flagged"`, which takes it off the feed and into the admin's reported queue. A `proven` bill needs double that, since its real debt can legitimately differ from the claim.
+- A Soliq-verified payment marks the account `proven` in the `accounts` ledger, so **future requests on that account publish as trusted instantly**. `MISMATCH_LIMIT_ACCOUNT` (3) reports block the account for good — reputation follows the account number, not a name or phone.
+- This is safe because MehrNuri never holds funds: a false request can only waste a donor's attention, and it dies the moment they open their app.
 
 ### B. Direct Utility Payment & Soliq OFD Verification Flow (`/[locale]/bill/[id]` -> `/[locale]/pay/[id]`)
 Because MehrNuri operates **without holding user funds**, donors pay the family's utility account directly in their own banking/payment app (**Click**, **Payme**, **Uzum Bank**, or **Paynet**):
@@ -38,10 +46,10 @@ Because MehrNuri operates **without holding user funds**, donors pay the family'
 ### C. Family Thank-You Reactions (`POST /api/bills/[id]/react`)
 - Families (authenticated via `mn_owner` cookie) or admins (`mn_admin` cookie) can toggle up to 4 gratitude badges on their bill (`thank_you`, `blessing`, `warm_home`, `accepted`).
 
-### D. Admin Moderation Panel (`/[locale]/admin`)
+### D. Admin Exception Panel (`/[locale]/admin`)
 - Password-protected (`ADMIN_PASSWORD`, signed HTTP-only `mn_admin` cookie, timing-safe comparison).
-- Filter bills by `pending_review`, `approved`, `rejected`, or `all`.
-- Approve bills (publishes to live feed), reject bills with a reason, or record payout references.
+- **Not a gate families wait in.** Three queues: `reported` (bills donors flagged), `pending` (held automatically for an implausible amount), and `payouts`.
+- Approving clears the reports that hid a bill and unblocks its account. Rejecting can also block the utility account for good (`blockAccount: true`).
 
 ---
 
@@ -139,8 +147,9 @@ MehrNuri/
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/health` | Public | Checks MongoDB ping (`db: "up"`) and enabled payment providers. |
 | `GET` | `/api/bills` | Rate limit (`read`) | Lists approved, open bills (`?utilityType=&region=&limit=`). |
-| `POST` | `/api/bills` | Same-origin + `billCreate` | Creates a new bill (`pending_review`) and sets `mn_owner` cookie. |
+| `POST` | `/api/bills` | Same-origin + `billCreate` | Creates a bill, published immediately (`approved`), and sets `mn_owner` cookie. |
 | `GET` | `/api/bills/[id]` | Rate limit (`read`) | Returns a single public bill + `reviewStatus`. |
+| `POST` | `/api/bills/[id]/verdict` | Same-origin + `verdict` | Donor reports what their payment app showed (`match` / `amount_differs` + `seenAmount` / `no_debt`). One per visitor per bill (`409 already_voted`). |
 | `POST` | `/api/bills/[id]/react` | `mn_owner` or `mn_admin` | Toggles a thank-you reaction (`thank_you`, `blessing`, `warm_home`, `accepted`). |
 | `GET` | `/api/bills/stream` | Rate limit (`stream`) | Serverless SSE endpoint (`retry: 8000`) pushing recent bill updates. |
 | `GET` | `/api/donors` | Rate limit (`read`) | Returns current donor from `mn_donor` cookie. |
@@ -151,8 +160,8 @@ MehrNuri/
 | `POST` | `/api/payments/confirm` | HMAC `signature` + `paymentConfirm` | Verifies Soliq OFD receipt (or `skipLeaderboard` / `failure`), updates bill & leaderboard. |
 | `GET` | `/api/payments/[id]` | Rate limit (`read`) | Returns public payment status. |
 | `POST` | `/api/admin/session` | Same-origin + `adminLogin` | Verifies `ADMIN_PASSWORD` and sets `mn_admin` cookie. |
-| `GET` | `/api/admin/bills` | `mn_admin` cookie | Lists bills filtered by `?status=pending_review\|approved\|rejected\|all`. |
-| `PATCH` | `/api/admin/bills` | `mn_admin` + `adminAction` | Executes `approve`, `reject` (with `reason`), or `payout` (with `reference`). |
+| `GET` | `/api/admin/bills` | `mn_admin` cookie | Returns the three exception queues: `reported`, `pending`, `payouts`. |
+| `POST` | `/api/admin/bills?id=` | `mn_admin` + `admin` | Executes `approve`, `reject` (with `reason`, optional `blockAccount`), or `payout` (with `reference`). |
 
 ---
 
@@ -174,6 +183,12 @@ MehrNuri/
    - `{ receiptKey: 1 }` (`unique: true, sparse: true`, `receipt_uniq` — prevents fiscal receipt replay)
 4. **`rate_limits`**:
    - `{ expiresAt: 1 }` (`expireAfterSeconds: 0`, MongoDB TTL index)
+5. **`verdicts`** (donor verifications):
+   - `{ billId: 1, voterHash: 1 }` (`unique: true`, `one_verdict_per_voter` — one answer per visitor per bill)
+   - `{ accountKey: 1, createdAt: -1 }`
+6. **`accounts`** (reputation ledger keyed by `utilityType:accountNumber`):
+   - `{ blocked: 1 }`, `{ lastSeenAt: -1 }`
+   - Holds `provenPayments` (Soliq-verified payments received), `matchVotes`, `mismatchVotes`, `blocked`.
 
 ---
 

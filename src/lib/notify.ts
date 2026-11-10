@@ -6,7 +6,10 @@ export type NotifyEvent =
   | { type: "bill_submitted"; code: string; amount: number }
   | { type: "payment_received"; code: string; amount: number; nickname: string }
   | { type: "bill_funded"; code: string; amount: number }
-  | { type: "bill_paid_out"; code: string; reference: string };
+  | { type: "bill_paid_out"; code: string; reference: string }
+  | { type: "bill_held"; code: string; amount: number; reason: string }
+  | { type: "bill_flagged"; code: string; reports: number; seenAmount: number | null }
+  | { type: "account_blocked"; accountKey: string; reports: number };
 
 function render(e: NotifyEvent): string {
   switch (e.type) {
@@ -18,6 +21,14 @@ function render(e: NotifyEvent): string {
       return `✅ ${BRAND.name}: ${e.code} fully funded (${e.amount} UZS)`;
     case "bill_paid_out":
       return `🏦 ${BRAND.name}: ${e.code} paid out to utility (Receipt: ${e.reference})`;
+    case "bill_held":
+      return `⏸️ ${BRAND.name}: ${e.code} held for review — ${e.amount} UZS (${e.reason})`;
+    case "bill_flagged":
+      return `🚩 ${BRAND.name}: ${e.code} hidden after ${e.reports} donor reports${
+        e.seenAmount === null ? "" : ` (app showed ${e.seenAmount} UZS)`
+      }`;
+    case "account_blocked":
+      return `⛔ ${BRAND.name}: account ${e.accountKey} blocked after ${e.reports} reports`;
   }
 }
 

@@ -1,7 +1,7 @@
 import "server-only";
 import { MongoClient, type Collection, type Db } from "mongodb";
 import { env } from "@/config/env";
-import type { BillDoc, DonorDoc, PaymentDoc, RateLimitDoc } from "./models";
+import type { AccountDoc, BillDoc, DonorDoc, PaymentDoc, RateLimitDoc, VerdictDoc } from "./models";
 
 /**
  * Re-use one MongoClient per process (survives Next.js dev hot reloads).
@@ -34,7 +34,16 @@ async function ensureIndexes(db: Db): Promise<void> {
       { key: { utilityType: 1, accountNumber: 1 }, unique: true, partialFilterExpression: { isOpen: true }, name: "one_open_per_account" },
       { key: { reviewStatus: 1, isOpen: 1, createdAt: 1 } },
       { key: { updatedAt: 1 } },
+      // Stale-request sweep, and the per-phone posting cap.
+      { key: { isOpen: 1, expiresAt: 1 } },
+      { key: { phone: 1, createdAt: -1 } },
     ]),
+    db.collection<VerdictDoc>("verdicts").createIndexes([
+      // One verdict per visitor per bill.
+      { key: { billId: 1, voterHash: 1 }, unique: true, name: "one_verdict_per_voter" },
+      { key: { accountKey: 1, createdAt: -1 } },
+    ]),
+    db.collection<AccountDoc>("accounts").createIndexes([{ key: { blocked: 1 } }, { key: { lastSeenAt: -1 } }]),
     db.collection<PaymentDoc>("payments").createIndexes([
       { key: { billId: 1, status: 1 } },
       { key: { status: 1, expiresAt: 1 } },
@@ -67,6 +76,8 @@ export async function collections(): Promise<{
   payments: Collection<PaymentDoc>;
   donors: Collection<DonorDoc>;
   rateLimits: Collection<RateLimitDoc>;
+  verdicts: Collection<VerdictDoc>;
+  accounts: Collection<AccountDoc>;
 }> {
   const db = await getDb();
   return {
@@ -74,5 +85,7 @@ export async function collections(): Promise<{
     payments: db.collection<PaymentDoc>("payments"),
     donors: db.collection<DonorDoc>("donors"),
     rateLimits: db.collection<RateLimitDoc>("rate_limits"),
+    verdicts: db.collection<VerdictDoc>("verdicts"),
+    accounts: db.collection<AccountDoc>("accounts"),
   };
 }

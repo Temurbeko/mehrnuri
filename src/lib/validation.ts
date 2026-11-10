@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { REGIONS, UTILITY_TYPES, PAYMENT_PROVIDERS, PAYMENT_PURPOSES } from "@/lib/domain";
+import { REGIONS, UTILITY_TYPES, PAYMENT_PROVIDERS, PAYMENT_PURPOSES, VERDICT_KINDS } from "@/lib/domain";
 import { LOCALES } from "@/i18n/config";
 
 const digitsOnly = (v: unknown) => (typeof v === "string" ? v.replace(/[\s-]/g, "") : v);
@@ -75,13 +75,32 @@ export const confirmPaymentSchema = z.object({
   skipLeaderboard: z.boolean().optional(),
 });
 
+/**
+ * A donor reporting what their payment app actually showed for the account.
+ * `seenAmount` is only meaningful for `amount_differs`.
+ */
+export const verdictSchema = z
+  .object({
+    kind: z.enum(VERDICT_KINDS),
+    seenAmount: z.preprocess(
+      (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+      z.number().int().nonnegative().max(50_000_000).nullable().optional().transform((v) => v ?? null),
+    ),
+  })
+  .transform((v) => ({ ...v, seenAmount: v.kind === "amount_differs" ? v.seenAmount : null }));
+
 export const objectIdSchema = z.string().regex(/^[a-f0-9]{24}$/);
 
 export const adminLoginSchema = z.object({ password: z.string().min(1).max(200) });
 
 export const adminBillActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("approve") }),
-  z.object({ action: z.literal("reject"), reason: safeText(200).pipe(z.string().min(3)) }),
+  z.object({
+    action: z.literal("reject"),
+    reason: safeText(200).pipe(z.string().min(3)),
+    /** Also block the utility account, so no new request can use it. */
+    blockAccount: z.boolean().optional(),
+  }),
   z.object({ action: z.literal("payout"), reference: safeText(100).pipe(z.string().min(3)) }),
 ]);
 

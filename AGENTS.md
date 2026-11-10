@@ -28,7 +28,12 @@ Read this section **before** running broad file searches to save tokens and time
    - Sole exception: `SOLIQ_MODE=mock` in `verifyReceipt.ts`, an explicit env switch for test hosting outside Uzbekistan. Default is `live`.
 3. **Next.js 16 Middleware Convention**:
    - Next.js 16 uses `src/proxy.ts` (`export function proxy(req: NextRequest)`), **not** `src/middleware.ts`.
-4. **Zero-Media Receipt Storage & Server-Only Soliq Verification**:
+4. **No Manual Approval of Family Requests**:
+   - Requests publish immediately (`reviewStatus: "approved"` in `createBill`). **Never reintroduce a human approval step in the normal path.**
+   - Verification is done by donors: they see the real debt in Click/Payme/Uzum/Paynet before paying and answer `match` / `amount_differs` / `no_debt` (`src/lib/bills/verdicts.ts`). Reports auto-hide a bill (`flagged`); a Soliq-verified payment marks the account `proven` so its future requests publish as trusted.
+   - Reputation lives on the **account number** (`accounts` collection, `accountKeyOf`), never on a name or phone.
+   - The admin panel holds only exceptions: `reported`, `pending` (implausible amount), `payouts`.
+5. **Zero-Media Receipt Storage & Server-Only Soliq Verification**:
    - Receipt images are decoded client-side in `src/lib/qrDecode.ts`; only the `ofd.soliq.uz` URL string is sent to the server.
    - `src/lib/payments/verifyReceipt.ts` signs and sends Soliq OFD requests **from the server only** (`SOLIQ_SIGN_KEY` must never be exposed in client code) and checks the receipt total covers the payment amount.
    - **Never accept Soliq results from the browser** (the old TAS-IX browser relay was removed: clients could forge the response). Soliq only answers from inside Uzbekistan, so production (`SOLIQ_MODE=live`) must run on a server in Uzbekistan; test hosting elsewhere (Netlify) uses `SOLIQ_MODE=mock`.
@@ -43,6 +48,8 @@ Read this section **before** running broad file searches to save tokens and time
 | Soliq OFD receipt verification logic | `src/lib/payments/verifyReceipt.ts`, `src/app/api/payments/confirm/route.ts` |
 | Direct payment UI & QR upload | `src/components/DirectPaymentClient.tsx`, `src/lib/qrDecode.ts`, `src/lib/qr.ts` |
 | Bill creation & feed queries | `src/lib/bills/service.ts`, `src/app/api/bills/route.ts`, `src/components/AskForm.tsx` |
+| Donor verification, trust levels, account blocking | `src/lib/bills/verdicts.ts`, `src/app/api/bills/[id]/verdict/route.ts`, `src/components/DebtCheck.tsx` |
+| Auto-publish rules, amount bands, bill expiry | `src/lib/domain.ts` (`PLAUSIBLE_MAX_UZS`, `BILL_TTL_DAYS`, `MISMATCH_LIMIT_*`), `src/lib/bills/service.ts` |
 | Bill detail & donation amount picker | `src/components/DonatePanel.tsx`, `src/app/[locale]/bill/[id]/page.tsx` |
 | MongoDB schemas & indexes | `src/lib/db/models.ts`, `src/lib/db/mongo.ts` |
 | Request validation schemas (Zod v4) | `src/lib/validation.ts` |

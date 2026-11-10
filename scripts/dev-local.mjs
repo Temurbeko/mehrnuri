@@ -35,6 +35,11 @@ if (!(await isPortOpen(27017))) {
   console.log("[dev:local] Using existing MongoDB on 127.0.0.1:27017");
 }
 
+// Point this run at the local MongoDB even when .env.local holds a cloud URI,
+// so `npm run dev:local` always means "local database".
+process.env.MONGODB_URI = "mongodb://127.0.0.1:27017";
+process.env.MONGODB_DB ??= "mehrnuri";
+
 await seedDatabase();
 
 const nextBin = join(process.cwd(), "node_modules", "next", "dist", "bin", "next");

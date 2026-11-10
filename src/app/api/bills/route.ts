@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { env } from "@/config/env";
 import { REGIONS, UTILITY_TYPES } from "@/lib/domain";
-import { createBill, listOpenBills } from "@/lib/bills/service";
+import { createBill, listOpenBills, sweepStaleBills } from "@/lib/bills/service";
 import { sweepExpired } from "@/lib/payments/core";
 import { signPayload } from "@/lib/security/crypto";
 import { assertSameOrigin, clientIp, handler, HttpError, parseOr400, readJson } from "@/lib/security/http";
@@ -22,6 +22,7 @@ export const GET = handler(async (req: NextRequest) => {
   await enforceRateLimit(req, "read");
   const q = parseOr400(feedQuery, Object.fromEntries(req.nextUrl.searchParams));
   void sweepExpired();
+  void sweepStaleBills();
   const bills = await listOpenBills(q);
   return NextResponse.json({ ok: true, bills });
 });
