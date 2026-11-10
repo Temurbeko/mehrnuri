@@ -13,7 +13,7 @@ import {
   type UtilityType,
 } from "@/lib/domain";
 import { HttpError } from "@/lib/security/http";
-import { hashIp, shortCode } from "@/lib/security/crypto";
+import { hashIp } from "@/lib/security/crypto";
 import type { CreateBillInput } from "@/lib/validation";
 import { findDistrict, officialSupplierName } from "@/lib/uzbekistan";
 import { notify } from "@/lib/notify";
@@ -56,6 +56,26 @@ export function toPublicBill(b: BillDoc): PublicBill {
     createdAt: b.createdAt.toISOString(),
     updatedAt: b.updatedAt.toISOString(),
   };
+}
+
+/** Request codes start here, so the first one is MN-1001. */
+const BILL_CODE_START = 1000;
+
+/**
+ * Next request code: MN-1001, MN-1002, ... Families read it out over the phone
+ * or write it down, so it must be short and orderly, not random letters.
+ * An atomic counter document hands out each number exactly once, even when two
+ * requests arrive at the same moment. Older random codes (MN-AUGBJB) keep
+ * working: they are letters, so they can never collide with these.
+ */
+async function nextBillCode(): Promise<string> {
+  const { counters } = await collections();
+  const counter = await counters.findOneAndUpdate(
+    { _id: "bill_code" },
+    { $inc: { seq: 1 } },
+    { upsert: true, returnDocument: "after" },
+  );
+  return `MN-${BILL_CODE_START + (counter?.seq ?? 1)}`;
 }
 
 /** One open request per phone at a time, and a few per season. */
@@ -132,7 +152,7 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
   };
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const doc: BillDoc = { _id: new ObjectId(), code: shortCode(), ...base };
+    const doc: BillDoc = { _id: new ObjectId(), code: await nextBillCode(), ...base };
     try {
       await bills.insertOne(doc);
       await accounts.updateOne(

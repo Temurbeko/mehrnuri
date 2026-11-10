@@ -94,6 +94,12 @@ export interface DonorDoc {
   lastSeenAt: Date;
 }
 
+/** Atomic sequence counters (e.g. "bill_code" for MN-1001, MN-1002, ...). */
+export interface CounterDoc {
+  _id: string;
+  seq: number;
+}
+
 export interface RateLimitDoc {
   _id: string;
   count: number;
