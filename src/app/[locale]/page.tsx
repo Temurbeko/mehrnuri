@@ -26,7 +26,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Hero Banner */}
-      hello world
       <section className="hero-mesh relative overflow-hidden rounded-3xl p-5 text-white shadow-[0_16px_40px_-12px_rgba(15,23,42,0.45)] sm:p-8">
         <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
           <div className="space-y-4">
