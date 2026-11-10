@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, ChevronDown, ChevronUp, Copy, MapPin, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { copyText, selectTextOf } from "@/lib/clipboard";
 import { useRouter } from "next/navigation";
 import { REACTION_TYPES, UTILITY_ICONS, type PaymentProviderId, type PublicBill, type ReactionType, type ReviewStatus } from "@/lib/domain";
 import { findDistrict, meterUnitFor } from "@/lib/uzbekistan";
@@ -45,6 +46,8 @@ export function DonatePanel({
   const [nicknameInput, setNicknameInput] = useState<string>(() => initialNickname ?? randomKindNickname());
   const [showDetails, setShowDetails] = useState(false);
   const [copiedAccount, setCopiedAccount] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const accountRef = useRef<HTMLDivElement | null>(null);
 
   const defaultAmt = Math.min(50_000, Math.max(minAmount, initialBill.available || initialBill.amountOwed));
   const [amount, setAmount] = useState<number>(defaultAmt);
@@ -74,8 +77,14 @@ export function DonatePanel({
   const districtInfo = findDistrict(bill.region, bill.district);
   const meterUnit = meterUnitFor(bill.utilityType);
 
-  function copyAccountNumber() {
-    navigator.clipboard?.writeText(bill.accountNumber).catch(() => {});
+  async function copyAccountNumber() {
+    const ok = await copyText(bill.accountNumber);
+    setCopyFailed(!ok);
+    if (!ok) {
+      // Tell the truth and highlight the number for a long-press copy.
+      selectTextOf(accountRef.current);
+      return;
+    }
     setCopiedAccount(true);
     setTimeout(() => setCopiedAccount(false), 2000);
   }
@@ -97,7 +106,8 @@ export function DonatePanel({
       return;
     }
 
-    navigator.clipboard?.writeText(bill.accountNumber).catch(() => {});
+    // Best effort inside the tap; the payment page has its own copy button.
+    void copyText(bill.accountNumber);
 
     setPaying(true);
 
@@ -191,7 +201,7 @@ export function DonatePanel({
             <div className="text-[11px] font-bold text-slate-400">
               {dict.bill.account} · {bill.holderMasked ?? bill.code}
             </div>
-            <div className="font-mono text-base font-extrabold tracking-wide text-slate-900 select-all">
+            <div ref={accountRef} className="font-mono text-base font-extrabold tracking-wide text-slate-900 select-all">
               {bill.accountNumber}
             </div>
           </div>
@@ -207,6 +217,11 @@ export function DonatePanel({
             {copiedAccount ? <span className="inline-flex items-center gap-1.5"><Check size={18} aria-hidden="true" />{dict.donate.copied}</span> : <span className="inline-flex items-center gap-1.5"><Copy size={18} aria-hidden="true" />{dict.donate.copy}</span>}
           </button>
         </div>
+        {copyFailed && (
+          <p role="alert" className="rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-semibold text-amber-900">
+            {dict.common.copyFailed}
+          </p>
+        )}
 
         {bill.story && (
           <div className="rounded-2xl bg-amber-50/70 px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-700 italic">

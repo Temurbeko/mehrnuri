@@ -7,6 +7,7 @@ import { PAYMENT_PROVIDERS, UTILITY_ICONS, type PaymentProviderId, type UtilityT
 import { MERCHANT_APPS, type MerchantId } from "@/lib/merchants";
 import { encodeQrMatrix } from "@/lib/qr";
 import { decodeQrFromImageFile } from "@/lib/qrDecode";
+import { copyText, selectTextOf } from "@/lib/clipboard";
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { DebtCheck } from "./DebtCheck";
@@ -45,7 +46,11 @@ export function DirectPaymentClient({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [activeMerchant, setActiveMerchant] = useState<MerchantId>(provider);
   const [isMobile, setIsMobile] = useState(false);
-  const [copiedField, setCopiedField] = useState<"account" | "amount" | null>("account");
+  // Only set after a copy really succeeded (it used to start as "copied" before any tap).
+  const [copiedField, setCopiedField] = useState<"account" | "amount" | null>(null);
+  const [copyFailed, setCopyFailed] = useState<"account" | "amount" | null>(null);
+  const accountRef = useRef<HTMLDivElement | null>(null);
+  const amountRef = useRef<HTMLSpanElement | null>(null);
 
   const [receiptRaw, setReceiptRaw] = useState("");
   const [scanningQr, setScanningQr] = useState(false);
@@ -62,17 +67,25 @@ export function DirectPaymentClient({
   useEffect(() => {
     const ua = navigator.userAgent || "";
     setIsMobile(/Android|iPhone|iPad|iPod|Mobile/i.test(ua));
-    if (accountNumber && accountNumber !== "—") {
-      navigator.clipboard?.writeText(accountNumber).catch(() => {});
-    }
-  }, [accountNumber]);
+    // No automatic copy on page load: browsers refuse it without a tap, and
+    // the page then claimed "copied" while the clipboard was empty.
+  }, []);
 
   const qrMatrix = useMemo(() => encodeQrMatrix(merchant.qrUrl), [merchant.qrUrl]);
 
-  function copyValue(val: string, field: "account" | "amount") {
-    navigator.clipboard?.writeText(val).catch(() => {});
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2500);
+  async function copyValue(val: string, field: "account" | "amount"): Promise<boolean> {
+    const ok = await copyText(val);
+    if (ok) {
+      setCopyFailed(null);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField((f) => (f === field ? null : f)), 2500);
+    } else {
+      // Say so honestly and highlight the number so a long-press copies it.
+      setCopiedField(null);
+      setCopyFailed(field);
+      selectTextOf(field === "account" ? accountRef.current : amountRef.current);
+    }
+    return ok;
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -181,18 +194,33 @@ export function DirectPaymentClient({
                 <div className="text-xs font-bold text-slate-500">
                   {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
                 </div>
-                <div className="mt-1 w-full font-mono text-2xl font-extrabold tracking-wide break-all text-slate-900 select-all">
+                <div
+                  ref={accountRef}
+                  className="mt-1 w-full font-mono text-2xl font-extrabold tracking-wide break-all text-slate-900 select-all"
+                >
                   {accountNumber}
                 </div>
               </div>
               <button type="button" onClick={() => copyValue(accountNumber, "account")} className="btn-secondary w-full whitespace-nowrap">
                 {copiedField === "account" ? <><Check size={18} aria-hidden="true" />{t.copiedBtn}</> : <><Copy size={18} aria-hidden="true" />{t.copyBtn}</>}
               </button>
+              {copyFailed === "account" && (
+                <p role="alert" className="rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-semibold text-amber-900">
+                  {dict.common.copyFailed}
+                </p>
+              )}
 
               <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-3">
                 <div className="min-w-0">
                   <span className="text-xs font-bold text-slate-500">{t.amount}: </span>
-                  <span className="font-extrabold whitespace-nowrap text-slate-900">{formatMoney(amount, dict)}</span>
+                  <span ref={amountRef} className="font-extrabold whitespace-nowrap text-slate-900 select-all">
+                    {formatMoney(amount, dict)}
+                  </span>
+                  {copyFailed === "amount" && (
+                    <p role="alert" className="mt-1 text-xs font-semibold text-amber-800">
+                      {dict.common.copyFailed}
+                    </p>
+                  )}
                 </div>
                 <button type="button" onClick={() => copyValue(String(amount), "amount")} className="btn-secondary w-auto shrink-0 whitespace-nowrap px-3 py-1.5 text-sm">
                   {copiedField === "amount" ? <><Check size={16} aria-hidden="true" />{t.copiedBtn}</> : <><Copy size={16} aria-hidden="true" />{t.copyBtn}</>}

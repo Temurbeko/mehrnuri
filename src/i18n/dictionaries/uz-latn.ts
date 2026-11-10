@@ -225,6 +225,7 @@ const uzLatn = {
     reserved: "Qolgan summani hozir boshqa saxiy to'layapti. Bir necha daqiqadan so'ng qarang.",
     copy: "Nusxa",
     copied: "Nusxalandi",
+    copyFailed: "Nusxa olinmadi. Raqamni bosib turing va «Nusxalash»ni tanlang.",
     moreDetails: "Qo'shimcha ma'lumotlar",
   },
   ask: {
