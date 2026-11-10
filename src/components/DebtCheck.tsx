@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban, BadgeCheck, Check, Eye, Sparkles, TriangleAlert, type LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PublicBill, TrustLevel, VerdictKind } from "@/lib/domain";
 import { fmt, type Dictionary } from "@/i18n";
 import { api, errorText } from "./api";
@@ -41,11 +41,14 @@ export function DebtCheck({
   billId,
   dict,
   onUpdated,
+  onDone,
   tone = "card",
 }: {
   billId: string;
   dict: Dictionary;
   onUpdated?: (bill: PublicBill) => void;
+  /** Called shortly after the answer was sent (or was already given). */
+  onDone?: () => void;
   /** `step` matches the numbered steps on the payment page. */
   tone?: "card" | "step";
 }) {
@@ -55,6 +58,11 @@ export function DebtCheck({
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ kind: VerdictKind; hidden: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (doneTimer.current) clearTimeout(doneTimer.current);
+  }, []);
 
   async function send(kind: VerdictKind) {
     setBusy(true);
@@ -65,12 +73,21 @@ export function DebtCheck({
     setBusy(false);
 
     if (!res.ok) {
+      // In the guided payment flow a vote that can't count (already given, or
+      // this visitor is the family that posted the bill) must not block paying:
+      // just move on. Real errors (network, rate limit) stay on screen.
+      const notCounted = ["already_voted", "verdict_not_allowed", "donor_required"].includes(res.data.error ?? "");
+      if (notCounted && onDone) {
+        onDone();
+        return;
+      }
       setError(res.data.error === "already_voted" ? t.already : errorText(res.data.error, dict, res.data.details));
       return;
     }
     if (res.data.bill && onUpdated) onUpdated(res.data.bill);
     setResult({ kind, hidden: res.data.hidden === true });
     setStage("sent");
+    if (onDone) doneTimer.current = setTimeout(onDone, 1200);
   }
 
   const wrapper =
@@ -94,8 +111,8 @@ export function DebtCheck({
   return (
     <div className={wrapper}>
       <div>
-        <div className="text-xs font-extrabold text-slate-900">{tone === "step" ? t.stepTitle : t.title}</div>
-        <p className="mt-1 text-[11px] font-medium text-slate-600 leading-relaxed">{t.hint}</p>
+        {tone !== "step" && <div className="text-xs font-extrabold text-slate-900">{t.title}</div>}
+        <p className={`text-sm font-medium leading-relaxed text-slate-600 ${tone === "step" ? "" : "mt-1"}`}>{t.hint}</p>
       </div>
 
       {stage === "ask" ? (

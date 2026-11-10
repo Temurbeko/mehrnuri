@@ -45,6 +45,7 @@ export default async function DirectPayPage({
       utilityType={pubBill?.utilityType ?? "electricity"}
       supplier={pubBill?.supplier ?? "—"}
       accountNumber={pubBill?.accountNumber ?? "—"}
+      nickname={payment.donorNickname}
       signature={sig}
       testMode={env().SOLIQ_MODE === "mock"}
       locale={locale}

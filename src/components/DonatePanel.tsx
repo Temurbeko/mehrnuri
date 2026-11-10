@@ -1,10 +1,9 @@
 "use client";
 
-import { ArrowRight, Check, ChevronDown, ChevronUp, Copy, Dices, MapPin, Monitor, Pencil, Smartphone, Sparkles, User } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Copy, MapPin, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { REACTION_TYPES, UTILITY_ICONS, type PaymentProviderId, type PublicBill, type ReactionType, type ReviewStatus } from "@/lib/domain";
-import { MERCHANT_APPS } from "@/lib/merchants";
 import { findDistrict, meterUnitFor } from "@/lib/uzbekistan";
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
@@ -44,22 +43,15 @@ export function DonatePanel({
   const [bill, setBill] = useState<PublicBill>(initialBill);
   const [nickname, setNickname] = useState<string | null>(initialNickname);
   const [nicknameInput, setNicknameInput] = useState<string>(() => initialNickname ?? randomKindNickname());
-  const [editingNick, setEditingNick] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [copiedAccount, setCopiedAccount] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   const defaultAmt = Math.min(50_000, Math.max(minAmount, initialBill.available || initialBill.amountOwed));
   const [amount, setAmount] = useState<number>(defaultAmt);
   const [customAmount, setCustomAmount] = useState<string>(String(defaultAmt));
-  const [provider, setProvider] = useState<PaymentProviderId>(providers[0] ?? "click");
+  const provider: PaymentProviderId = providers[0] ?? "click";
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const ua = navigator.userAgent || "";
-    setIsMobile(/Android|iPhone|iPad|iPod|Mobile/i.test(ua));
-  }, []);
 
   useEffect(() => {
     const es = new EventSource("/api/bills/stream");
@@ -109,7 +101,7 @@ export function DonatePanel({
 
     setPaying(true);
 
-    if (!nickname || editingNick) {
+    if (!nickname) {
       const cleanNick = nicknameInput.trim() || randomKindNickname();
       let donorRes = await api<{ donor?: { nickname: string } }>("/api/donors", {
         body: { nickname: cleanNick },
@@ -125,7 +117,6 @@ export function DonatePanel({
         return;
       }
       setNickname(donorRes.data.donor.nickname);
-      setEditingNick(false);
     }
 
     const res = await api<{ redirectUrl?: string }>("/api/payments/checkout", {
@@ -148,8 +139,6 @@ export function DonatePanel({
       window.location.href = url;
     }
   }
-
-  const activeMerchant = MERCHANT_APPS[provider];
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
@@ -343,42 +332,9 @@ export function DonatePanel({
         </div>
       ) : (
         <div className="card space-y-4 p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <label className="text-xs font-extrabold whitespace-nowrap text-slate-500" htmlFor="customAmount">
-              {dict.donate.chooseAmount}
-            </label>
-            <button
-              type="button"
-              onClick={() => setEditingNick((v) => !v)}
-              className="inline-flex max-w-full cursor-pointer items-center gap-1 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200"
-            >
-              <User size={16} aria-hidden="true" className="shrink-0" />
-              <span className="max-w-[10rem] truncate">{nickname ?? nicknameInput}</span>
-              <Pencil size={14} aria-hidden="true" className="shrink-0 text-slate-400" />
-            </button>
-          </div>
-
-          {editingNick && (
-            <div className="flex gap-2 rounded-2xl bg-slate-50 p-2.5">
-              <input
-                id="donor-nick"
-                type="text"
-                minLength={3}
-                maxLength={24}
-                value={nicknameInput}
-                onChange={(e) => setNicknameInput(e.target.value)}
-                placeholder={dict.donate.nicknamePlaceholder}
-                className="input py-2 text-sm font-bold"
-              />
-              <button
-                type="button"
-                onClick={() => setNicknameInput(randomKindNickname())}
-                className="btn-outline w-auto shrink-0 px-3 py-2 text-sm"
-              >
-                <Dices size={18} aria-hidden="true" />
-              </button>
-            </div>
-          )}
+          <label className="block text-sm font-extrabold text-slate-600" htmlFor="customAmount">
+            {dict.donate.chooseAmount}
+          </label>
 
           <div className="relative">
             <input
@@ -438,48 +394,6 @@ export function DonatePanel({
             </button>
           </div>
 
-          {providers.length > 0 && (
-            <div className="space-y-2 pt-1">
-              <div className="text-xs font-extrabold text-slate-500">
-                {dict.donate.payWith}
-              </div>
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                {providers.map((p) => {
-                  const m = MERCHANT_APPS[p];
-                  const mText = dict.merchants[p];
-                  const active = provider === p;
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setProvider(p)}
-                      className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 p-3 text-center transition-all active:scale-95 ${
-                        active
-                          ? m.activeClass
-                          : "border-slate-200/80 bg-white text-slate-800 hover:border-slate-300"
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={m.icon}
-                        alt={m.name}
-                        className="h-11 w-11 rounded-2xl object-cover shadow-2xs ring-1 ring-black/5"
-                      />
-                      <span className="text-xs font-extrabold text-slate-900">{m.name}</span>
-                      <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
-                        {isMobile ? mText.mobileBadge : mText.desktopBadge}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="flex items-start gap-1.5 text-sm text-slate-500">
-                {isMobile ? <Smartphone size={18} aria-hidden="true" className="shrink-0" /> : <Monitor size={18} aria-hidden="true" className="shrink-0" />}
-                {isMobile ? dict.donate.mobileHint : dict.donate.pcHint}
-              </p>
-            </div>
-          )}
-
           {error && (
             <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-xs font-bold text-rose-700">
               {error}
@@ -490,21 +404,9 @@ export function DonatePanel({
             type="button"
             disabled={paying || providers.length === 0}
             onClick={handlePay}
-            style={{ backgroundColor: activeMerchant.color }}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-3 py-4 text-sm font-extrabold whitespace-nowrap text-white shadow-md sm:gap-2.5 sm:px-5 sm:text-base transition-all active:scale-98 disabled:opacity-50"
+            className="btn-primary w-full"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={activeMerchant.icon}
-              alt=""
-              className="h-6 w-6 rounded-lg bg-white/20 p-0.5"
-            />
-            <span>
-              {paying
-                ? dict.donate.redirecting
-                : `${activeMerchant.name} · ${fmt(dict.donate.pay, { amount: formatMoney(Math.min(amount, bill.available), dict) })}`}
-            </span>
-            {!paying && <ArrowRight size={18} aria-hidden="true" />}
+            {paying ? dict.donate.redirecting : fmt(dict.donate.continue, { amount: formatMoney(Math.min(amount, bill.available), dict) })}
           </button>
         </div>
       )}

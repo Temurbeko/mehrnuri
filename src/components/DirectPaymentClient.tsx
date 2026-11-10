@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Check, Copy, ExternalLink, FlaskConical, Lightbulb, Smartphone, Trophy } from "lucide-react";
+import { Camera, Check, ChevronLeft, Copy, FlaskConical, Lightbulb, Smartphone, Trophy } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PAYMENT_PROVIDERS, UTILITY_ICONS, type PaymentProviderId, type UtilityType } from "@/lib/domain";
@@ -8,7 +8,7 @@ import { MERCHANT_APPS, type MerchantId } from "@/lib/merchants";
 import { encodeQrMatrix } from "@/lib/qr";
 import { decodeQrFromImageFile } from "@/lib/qrDecode";
 import type { Locale } from "@/i18n/config";
-import { formatMoney, type Dictionary } from "@/i18n";
+import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { DebtCheck } from "./DebtCheck";
 import { api, errorText } from "./api";
 
@@ -20,6 +20,7 @@ export function DirectPaymentClient({
   utilityType,
   supplier,
   accountNumber,
+  nickname,
   signature,
   testMode = false,
   locale,
@@ -32,6 +33,8 @@ export function DirectPaymentClient({
   utilityType: UtilityType;
   supplier: string;
   accountNumber: string;
+  /** Leaderboard name of this donor. */
+  nickname: string;
   signature: string;
   /** SOLIQ_MODE=mock (test hosting only): offers a sample receipt so the flow can be finished without paying. */
   testMode?: boolean;
@@ -48,6 +51,7 @@ export function DirectPaymentClient({
   const [scanningQr, setScanningQr] = useState(false);
   const [qrStatus, setQrStatus] = useState<"idle" | "extracted" | "not_found">("idle");
 
+  const [step, setStep] = useState<"pay" | "check" | "receipt">("pay");
   const [busy, setBusy] = useState<"verified" | "skip" | "failure" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -132,212 +136,198 @@ export function DirectPaymentClient({
     router.push(`/${locale}/payment/${paymentId}`);
   }
 
+  const hasDebtStep = billId !== null;
+  const stepNo = step === "pay" ? 1 : step === "check" ? 2 : 3;
+  const stepTitle = step === "pay" ? t.stepPayTitle : step === "check" ? t.stepCheckTitle : t.stepReceiptTitle;
+
+  function goBack() {
+    setError(null);
+    if (step === "receipt") setStep(hasDebtStep ? "check" : "pay");
+    else if (step === "check") setStep("pay");
+  }
+
   return (
     <div className="mx-auto max-w-lg space-y-4">
       <div className="card space-y-5 p-5 sm:p-6">
-        {/* 4-Merchant Switcher Tabs */}
-        <div className="grid grid-cols-4 gap-2">
-          {PAYMENT_PROVIDERS.map((mId) => {
-            const m = MERCHANT_APPS[mId];
-            const active = activeMerchant === mId;
-            return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            {step !== "pay" && (
               <button
-                key={mId}
                 type="button"
-                onClick={() => setActiveMerchant(mId)}
-                className={`flex cursor-pointer flex-col items-center gap-1 rounded-2xl border-2 p-2 text-center transition-all active:scale-95 ${
-                  active
-                    ? m.activeClass
-                    : "border-slate-200/80 bg-white text-slate-700 hover:border-slate-300"
-                }`}
+                onClick={goBack}
+                disabled={busy !== null}
+                className="btn-ghost w-auto shrink-0 whitespace-nowrap px-2"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={m.icon} alt={m.name} className="h-9 w-9 rounded-xl object-cover shadow-2xs" />
-                <span className="text-[11px] font-extrabold">{m.name}</span>
+                <ChevronLeft size={18} aria-hidden="true" />
+                {dict.common.back}
               </button>
-            );
-          })}
+            )}
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <div className="flex gap-1.5" aria-hidden="true">
+                {[1, 2, 3].map((n) => (
+                  <span key={n} className={`h-2 w-6 rounded-full ${n <= stepNo ? "bg-amber-500" : "bg-slate-200"}`} />
+                ))}
+              </div>
+              <span className="text-sm font-extrabold whitespace-nowrap text-slate-500">{fmt(t.stepOf, { n: stepNo })}</span>
+            </div>
+          </div>
+          <h1 className="text-xl font-extrabold text-slate-900">{stepTitle}</h1>
         </div>
 
-        {/* STEP 1: Copy Account & Pay in Merchant App / Web */}
-        <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-slate-50/90 p-4">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-extrabold text-slate-800">{t.step1Title}</span>
-            <span className="text-[11px] font-semibold text-slate-400">{supplier}</span>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-white p-3 shadow-2xs ring-1 ring-slate-200">
-            <div className="min-w-0">
-              <div className="text-[11px] font-bold text-slate-400">
-                {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
+        {step === "pay" && (
+          <div className="space-y-4">
+            <div className="panel space-y-3">
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-500">
+                  {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
+                </div>
+                <div className="mt-1 w-full font-mono text-2xl font-extrabold tracking-wide break-all text-slate-900 select-all">
+                  {accountNumber}
+                </div>
               </div>
-              <div className="font-mono text-xl font-extrabold tracking-wider text-slate-900 select-all">
-                {accountNumber}
+              <button type="button" onClick={() => copyValue(accountNumber, "account")} className="btn-secondary w-full whitespace-nowrap">
+                {copiedField === "account" ? <><Check size={18} aria-hidden="true" />{t.copiedBtn}</> : <><Copy size={18} aria-hidden="true" />{t.copyBtn}</>}
+              </button>
+
+              <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-3">
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-slate-500">{t.amount}: </span>
+                  <span className="font-extrabold whitespace-nowrap text-slate-900">{formatMoney(amount, dict)}</span>
+                </div>
+                <button type="button" onClick={() => copyValue(String(amount), "amount")} className="btn-secondary w-auto shrink-0 whitespace-nowrap px-3 py-1.5 text-sm">
+                  {copiedField === "amount" ? <><Check size={16} aria-hidden="true" />{t.copiedBtn}</> : <><Copy size={16} aria-hidden="true" />{t.copyBtn}</>}
+                </button>
               </div>
+              <p className="text-xs font-semibold text-slate-500">{supplier}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => copyValue(accountNumber, "account")}
-              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all ${
-                copiedField === "account"
-                  ? "bg-emerald-600 text-white"
-                  : "bg-slate-900 text-white hover:bg-slate-800"
-              }`}
-            >
-              {copiedField === "account" ? <span className="inline-flex items-center gap-1.5"><Check size={18} aria-hidden="true" />{t.copiedBtn}</span> : <span className="inline-flex items-center gap-1.5"><Copy size={18} aria-hidden="true" />{t.copyBtn}</span>}
-            </button>
-          </div>
 
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2.5 shadow-2xs ring-1 ring-slate-200">
-            <div>
-              <span className="text-[11px] font-bold text-slate-400">{t.amount}: </span>
-              <span className="font-extrabold text-slate-900">{formatMoney(amount, dict)}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => copyValue(String(amount), "amount")}
-              className="cursor-pointer rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200"
-            >
-              {copiedField === "amount" ? <span className="inline-flex items-center gap-1.5"><Check size={18} aria-hidden="true" />{t.copiedBtn}</span> : <span className="inline-flex items-center gap-1.5"><Copy size={18} aria-hidden="true" />{t.copyBtn}</span>}
-            </button>
-          </div>
+            <p className="flex items-start gap-2 text-sm font-medium leading-relaxed text-slate-600">
+              <Lightbulb size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
+              <span>{t.payHint}</span>
+            </p>
 
-          <p className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600 leading-relaxed">
-            <Lightbulb size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
-            <span>{t.payHint}</span>
-          </p>
-
-          <a
-            href={isMobile ? merchant.mobileAppUrl : merchant.webCheckoutUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => copyValue(accountNumber, "account")}
-            style={{ backgroundColor: merchant.color }}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-3.5 text-sm font-extrabold text-white shadow-md transition-transform sm:gap-2.5 sm:px-5 active:scale-98"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={merchant.icon} alt="" className="h-6 w-6 rounded-lg bg-white/20 p-0.5" />
-            <span className="whitespace-nowrap">
-              {merchant.name} · {isMobile ? t.openMobileApp : t.openWebCheckout}
-            </span>
-            <ExternalLink size={18} aria-hidden="true" className="shrink-0" />
-          </a>
-
-          {!isMobile && (
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-2.5">
-              <svg
-                viewBox={`0 0 ${qrMatrix.length + 4} ${qrMatrix.length + 4}`}
-                className="h-16 w-16 shrink-0"
-                shapeRendering="crispEdges"
-                aria-label={`${merchant.name} QR`}
-              >
-                <rect width="100%" height="100%" fill="#ffffff" />
-                {qrMatrix.map((row, r) =>
-                  row.map((cell, c) =>
-                    cell ? <rect key={`${r}-${c}`} x={c + 2} y={r + 2} width={1} height={1} fill="#0f172a" /> : null,
-                  ),
-                )}
-              </svg>
-              <div className="text-[11px] text-slate-600">
-                <div className="inline-flex items-center gap-1.5 font-extrabold text-slate-900"><Smartphone size={18} aria-hidden="true" />{t.scanQrTitle}</div>
-                <div>{merchantText.utilityPath}</div>
+            <div className="space-y-2">
+              <div className="text-sm font-extrabold text-slate-700">{t.openApp}</div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {PAYMENT_PROVIDERS.map((mId) => {
+                  const m = MERCHANT_APPS[mId];
+                  return (
+                    <a
+                      key={mId}
+                      href={isMobile ? m.mobileAppUrl : m.webCheckoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        copyValue(accountNumber, "account");
+                        setActiveMerchant(mId);
+                      }}
+                      className={`flex min-h-14 min-w-0 items-center justify-center gap-2 rounded-2xl border-2 px-2 py-2.5 transition-all active:scale-95 ${
+                        activeMerchant === mId ? m.activeClass : "border-slate-200 bg-white text-slate-800 hover:border-slate-300"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={m.icon} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover shadow-2xs" />
+                      <span className="truncate text-sm font-extrabold">{m.name}</span>
+                    </a>
+                  );
+                })}
               </div>
             </div>
-          )}
-        </div>
 
-        {/* STEP 2: The donor just saw the real debt in their app — ask what it said. */}
-        {billId && <DebtCheck billId={billId} dict={dict} tone="step" />}
+            {!isMobile && (
+              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
+                <svg
+                  viewBox={`0 0 ${qrMatrix.length + 4} ${qrMatrix.length + 4}`}
+                  className="h-20 w-20 shrink-0"
+                  shapeRendering="crispEdges"
+                  aria-label={`${merchant.name} QR`}
+                >
+                  <rect width="100%" height="100%" fill="#ffffff" />
+                  {qrMatrix.map((row, r) =>
+                    row.map((cell, c) =>
+                      cell ? <rect key={`${r}-${c}`} x={c + 2} y={r + 2} width={1} height={1} fill="#0f172a" /> : null,
+                    ),
+                  )}
+                </svg>
+                <div className="min-w-0 text-xs text-slate-600">
+                  <div className="inline-flex items-center gap-1.5 font-extrabold text-slate-900"><Smartphone size={18} aria-hidden="true" />{t.scanQrTitle}</div>
+                  <div>{merchantText.utilityPath}</div>
+                </div>
+              </div>
+            )}
 
-        {/* STEP 3: Soliq OFD Receipt Verification */}
-        <div className="space-y-3 rounded-2xl border-2 border-amber-400/50 bg-amber-50/40 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-1">
-            <span className="text-xs font-extrabold text-slate-900">{t.step2Title}</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-900">
-              <Trophy size={14} aria-hidden="true" />{t.step2Badge}
-            </span>
+            <button type="button" onClick={() => setStep(hasDebtStep ? "check" : "receipt")} className="btn-primary w-full">
+              {t.paidBtn}
+            </button>
           </div>
+        )}
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
+        {step === "check" && billId && (
+          <div className="space-y-3">
+            <DebtCheck billId={billId} dict={dict} tone="step" onDone={() => setStep("receipt")} />
+            <button type="button" onClick={() => setStep("receipt")} className="btn-ghost w-full">
+              {t.skipStep}
+            </button>
+          </div>
+        )}
 
-          <button
-            type="button"
-            disabled={scanningQr}
-            onClick={() => fileInputRef.current?.click()}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-amber-500/60 bg-white px-4 py-3 text-xs font-extrabold text-slate-800 shadow-2xs transition hover:border-amber-500 hover:bg-amber-50/50"
-          >
-            <Camera size={18} aria-hidden="true" />
-            <span>{scanningQr ? t.scanningReceipt : t.scanReceiptBtn}</span>
-          </button>
+        {step === "receipt" && (
+          <div className="space-y-4">
+            <p className="flex items-start gap-2 text-sm font-medium leading-relaxed text-slate-600">
+              <Trophy size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
+              <span>{fmt(t.leaderboardAs, { nickname })}</span>
+            </p>
 
-          {qrStatus === "extracted" && (
-            <div className="rounded-xl bg-emerald-500/15 px-3 py-2 text-xs font-extrabold text-emerald-800">
-              {t.qrExtractedOk}
-            </div>
-          )}
-          {qrStatus === "not_found" && (
-            <div className="rounded-xl bg-amber-500/15 px-3 py-2 text-xs font-bold text-amber-900">
-              {t.qrNotFoundHint}
-            </div>
-          )}
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
-          <input
-            type="text"
-            value={receiptRaw}
-            onChange={(e) => setReceiptRaw(e.target.value)}
-            placeholder={t.manualPlaceholder}
-            className="input bg-white py-2.5 font-mono text-xs font-bold"
-          />
-
-          {testMode && (
             <button
               type="button"
-              onClick={fillSampleReceipt}
-              className="btn-secondary border-dashed"
+              disabled={scanningQr}
+              onClick={() => fileInputRef.current?.click()}
+              className="btn-secondary w-full border-dashed"
             >
-              <FlaskConical size={18} aria-hidden="true" />{t.testReceiptBtn}
+              <Camera size={18} aria-hidden="true" />
+              <span>{scanningQr ? t.scanningReceipt : t.scanReceiptBtn}</span>
             </button>
-          )}
 
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={() => submitConfirmation("verified")}
-            className="btn-emerald py-3.5 text-sm font-extrabold"
-          >
-            {busy === "verified" ? t.processing : <><Trophy size={18} aria-hidden="true" />{t.verifyWithReceiptBtn}</>}
-          </button>
-        </div>
+            {qrStatus === "extracted" && (
+              <div className="rounded-xl bg-emerald-500/15 px-3 py-2 text-sm font-extrabold text-emerald-800">{t.qrExtractedOk}</div>
+            )}
+            {qrStatus === "not_found" && (
+              <div className="rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-bold text-amber-900">{t.qrNotFoundHint}</div>
+            )}
+
+            <input
+              type="text"
+              value={receiptRaw}
+              onChange={(e) => setReceiptRaw(e.target.value)}
+              placeholder={t.manualPlaceholder}
+              className="input py-2.5 font-mono text-xs font-bold"
+            />
+
+            {testMode && (
+              <button type="button" onClick={fillSampleReceipt} className="btn-secondary w-full border-dashed">
+                <FlaskConical size={18} aria-hidden="true" />{t.testReceiptBtn}
+              </button>
+            )}
+
+            <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("verified")} className="btn-primary w-full">
+              {busy === "verified" ? t.processing : <><Trophy size={18} aria-hidden="true" />{t.verifyWithReceiptBtn}</>}
+            </button>
+            <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("skip")} className="btn-secondary w-full">
+              {busy === "skip" ? t.processing : t.skipReceiptBtn}
+            </button>
+          </div>
+        )}
 
         {error && (
-          <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-xs font-bold text-rose-700">
+          <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-sm font-bold text-rose-700">
             {error}
           </div>
         )}
 
-        {/* STEP 3: Optional Skip Receipt or Cancel */}
-        <div className="space-y-2 border-t border-slate-100 pt-3">
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={() => submitConfirmation("skip")}
-            className="btn border border-slate-300 bg-white py-3 text-xs font-extrabold text-slate-700 hover:bg-slate-50"
-          >
-            {busy === "skip" ? t.processing : t.skipReceiptBtn}
-          </button>
-
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={() => submitConfirmation("failure")}
-            className="btn py-2.5 text-xs font-bold text-slate-400 hover:text-slate-600"
-          >
+        <div className="border-t border-slate-100 pt-2 text-center">
+          <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("failure")} className="btn-ghost w-auto text-sm text-slate-500">
             {busy === "failure" ? t.processing : t.cancelBtn}
           </button>
         </div>
