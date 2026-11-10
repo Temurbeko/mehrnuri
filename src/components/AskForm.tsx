@@ -139,6 +139,9 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           <span>{dict.ask.viewBill}</span>
           <ArrowRight size={18} aria-hidden="true" />
         </Link>
+        <Link href={`/${locale}/me#my-requests`} className="btn-ghost w-full">
+          {dict.ask.viewMyRequests}
+        </Link>
       </div>
     );
   }

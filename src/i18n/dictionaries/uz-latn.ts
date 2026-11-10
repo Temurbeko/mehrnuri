@@ -263,6 +263,7 @@ const uzLatn = {
     heldText: "Summa odatdagidan katta, shuning uchun ariza avval tekshiriladi. Keyin ro'yxatda chiqadi.",
     yourCode: "Ariza kodingiz (saqlab qo'ying)",
     viewBill: "Arizani ochish",
+    viewMyRequests: "Barcha arizalarim",
   },
   leaders: {
     title: "Saxiylar ro'yxati",
@@ -271,6 +272,9 @@ const uzLatn = {
     empty: "Birinchi saxiy bo'ling!",
   },
   me: {
+    myRequests: "Mening arizalarim",
+    remainingShort: "qoldi",
+    closed: "Yopilgan",
     title: "Mening profilim",
     total: "Jami yordamingiz",
     count: "Yordam soni",

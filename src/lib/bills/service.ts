@@ -241,6 +241,14 @@ export async function getBill(id: string): Promise<BillDoc | null> {
   return bills.findOne({ _id: new ObjectId(id) });
 }
 
+/** A family's own requests (any status), newest first, for the Profile page. */
+export async function getBillsByIds(ids: string[]): Promise<BillDoc[]> {
+  const valid = ids.filter((id) => ObjectId.isValid(id) && id.length === 24).map((id) => new ObjectId(id));
+  if (valid.length === 0) return [];
+  const { bills } = await collections();
+  return bills.find({ _id: { $in: valid } }).sort({ createdAt: -1 }).toArray();
+}
+
 export function isPubliclyVisible(b: BillDoc): boolean {
   return b.reviewStatus === "approved";
 }

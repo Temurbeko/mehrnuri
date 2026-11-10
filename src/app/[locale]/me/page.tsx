@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { Shield } from "lucide-react";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { OWNER_COOKIE, ownedBillIds } from "@/lib/bills/owner";
+import { getBillsByIds, toPublicBill } from "@/lib/bills/service";
+import { MyRequests, type MyRequest } from "@/components/MyRequests";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
 import { currentDonor, currentRecoveryCode } from "@/lib/donors/session";
@@ -15,8 +19,17 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
 
   let donor = null;
   let code = null;
+  let myRequests: MyRequest[] = [];
   try {
-    [donor, code] = await Promise.all([currentDonor(), currentRecoveryCode()]);
+    const jar = await cookies();
+    const [d, c, owned] = await Promise.all([
+      currentDonor(),
+      currentRecoveryCode(),
+      getBillsByIds(ownedBillIds(jar.get(OWNER_COOKIE)?.value)),
+    ]);
+    donor = d;
+    code = c;
+    myRequests = owned.map((b) => ({ bill: toPublicBill(b), reviewStatus: b.reviewStatus, isOpen: b.isOpen }));
   } catch {
     /* DB offline */
   }
@@ -24,6 +37,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
   return (
     <div className="mx-auto max-w-xl space-y-5">
       <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{dict.me.title}</h1>
+      <MyRequests items={myRequests} locale={locale} dict={dict} />
       <ProfileClient
         initialDonor={
           donor ? { nickname: donor.nickname, totalDonated: donor.totalDonated, donationsCount: donor.donationsCount } : null

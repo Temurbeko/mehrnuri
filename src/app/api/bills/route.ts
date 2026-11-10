@@ -2,9 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { env } from "@/config/env";
 import { REGIONS, UTILITY_TYPES } from "@/lib/domain";
+import { OWNER_COOKIE, ownerCookieWith } from "@/lib/bills/owner";
 import { createBill, listOpenBills, sweepStaleBills } from "@/lib/bills/service";
 import { sweepExpired } from "@/lib/payments/core";
-import { signPayload } from "@/lib/security/crypto";
 import { assertSameOrigin, clientIp, handler, HttpError, parseOr400, readJson } from "@/lib/security/http";
 import { enforceRateLimit } from "@/lib/security/rateLimit";
 import { createBillSchema } from "@/lib/validation";
@@ -36,7 +36,8 @@ export const POST = handler(async (req: NextRequest) => {
   const bill = await createBill(input, clientIp(req));
   const billId = bill._id.toHexString();
   const res = NextResponse.json({ ok: true, id: billId, code: bill.code, reviewStatus: bill.reviewStatus }, { status: 201 });
-  res.cookies.set("mn_owner", signPayload({ billId, iat: Date.now() }), {
+  // Remember every request this browser posted (not just the last), so the family can find them under Profile.
+  res.cookies.set(OWNER_COOKIE, ownerCookieWith(req.cookies.get(OWNER_COOKIE)?.value, billId), {
     httpOnly: true,
     sameSite: "lax",
     secure: env().NODE_ENV === "production",

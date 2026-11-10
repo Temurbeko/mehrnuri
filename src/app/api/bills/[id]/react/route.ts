@@ -4,6 +4,7 @@ import { z } from "zod";
 import { REACTION_TYPES } from "@/lib/domain";
 import { collections } from "@/lib/db/mongo";
 import { toPublicBill } from "@/lib/bills/service";
+import { isBillOwner, OWNER_COOKIE } from "@/lib/bills/owner";
 import { verifyPayload } from "@/lib/security/crypto";
 import { assertSameOrigin, handler, HttpError, readJson } from "@/lib/security/http";
 import { enforceRateLimit } from "@/lib/security/rateLimit";
@@ -15,8 +16,7 @@ const reactSchema = z.object({
 });
 
 export function canReactToBill(reqCookies: { get(name: string): { value: string } | undefined }, billId: string): boolean {
-  const ownerSession = verifyPayload<{ billId?: string }>(reqCookies.get("mn_owner")?.value);
-  if (ownerSession?.billId === billId) return true;
+  if (isBillOwner(reqCookies.get(OWNER_COOKIE)?.value, billId)) return true;
   const adminSession = verifyPayload<{ role?: string; exp?: number }>(reqCookies.get("mn_admin")?.value);
   if (adminSession?.role === "admin" && (adminSession.exp ?? 0) > Date.now()) return true;
   return false;

@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getBill } from "@/lib/bills/service";
 import { assertCanVote, recordVerdict } from "@/lib/bills/verdicts";
 import { currentDonor } from "@/lib/donors/session";
-import { hashIp, verifyPayload } from "@/lib/security/crypto";
+import { isBillOwner, OWNER_COOKIE } from "@/lib/bills/owner";
+import { hashIp } from "@/lib/security/crypto";
 import { assertSameOrigin, clientIp, handler, HttpError, readJson } from "@/lib/security/http";
 import { enforceRateLimit } from "@/lib/security/rateLimit";
 import { verdictSchema } from "@/lib/validation";
@@ -34,12 +35,11 @@ export const POST = handler(async (req: NextRequest, ctx: { params: Promise<{ id
 
   const donor = await currentDonor();
   const ipHash = hashIp(clientIp(req));
-  const owner = verifyPayload<{ billId?: string }>(req.cookies.get("mn_owner")?.value);
   await assertCanVote({
     bill,
     donorId: donor?._id ?? null,
     ipHash,
-    isOwner: owner?.billId === id,
+    isOwner: isBillOwner(req.cookies.get(OWNER_COOKIE)?.value, id),
   });
 
   const { bill: publicBill, hidden } = await recordVerdict({

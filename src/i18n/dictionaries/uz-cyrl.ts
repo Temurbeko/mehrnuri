@@ -261,6 +261,7 @@ const uzCyrl: Dictionary = {
     heldText: "Сумма одатдагидан катта, шунинг учун ариза аввал текширилади. Кейин рўйхатда чиқади.",
     yourCode: "Ариза кодингиз (сақлаб қўйинг)",
     viewBill: "Аризани очиш",
+    viewMyRequests: "Барча аризаларим",
   },
   leaders: {
     title: "Сахийлар рўйхати",
@@ -269,6 +270,9 @@ const uzCyrl: Dictionary = {
     empty: "Биринчи сахий бўлинг!",
   },
   me: {
+    myRequests: "Менинг аризаларим",
+    remainingShort: "қолди",
+    closed: "Ёпилган",
     title: "Менинг профилим",
     total: "Жами ёрдамингиз",
     count: "Ёрдам сони",
