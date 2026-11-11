@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, MapPin, Sparkles } from "lucide-react";
+import { Check, MapPin, Share2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { copyText } from "@/lib/clipboard";
+import { digitsOnly, groupDigits } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { REACTION_TYPES, UTILITY_ICONS, type PaymentProviderId, type PublicBill, type ReactionType, type ReviewStatus } from "@/lib/domain";
 import { findDistrict, meterUnitFor } from "@/lib/uzbekistan";
@@ -29,6 +30,7 @@ export function DonatePanel({
   providers,
   minAmount,
   canReact = false,
+  isOwner = false,
   locale,
   dict,
 }: {
@@ -38,6 +40,8 @@ export function DonatePanel({
   providers: PaymentProviderId[];
   minAmount: number;
   canReact?: boolean;
+  /** This browser posted the request: show sharing instead of the donate form. */
+  isOwner?: boolean;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -51,6 +55,24 @@ export function DonatePanel({
   const [customAmount, setCustomAmount] = useState<string>(String(defaultAmt));
   const provider: PaymentProviderId = providers[0] ?? "click";
   const [paying, setPaying] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  /** Native share sheet on phones; otherwise copy the link. */
+  async function shareRequest() {
+    const url = window.location.href;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: dict.bill.ownTitle, url });
+      } catch {
+        /* the user closed the share sheet */
+      }
+      return;
+    }
+    if (await copyText(url)) {
+      setShared(true);
+      setTimeout(() => setShared(false), 2500);
+    }
+  }
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -148,7 +170,7 @@ export function DonatePanel({
       <StatusBadge bill={bill} dict={dict} />
     );
 
-  const canDonate = initialReviewStatus === "approved" && bill.fundingStatus !== "fully_paid" && bill.available > 0;
+  const canDonate = !isOwner && initialReviewStatus === "approved" && bill.fundingStatus !== "fully_paid" && bill.available > 0;
 
   return (
     <div className="space-y-5 pb-4">
@@ -292,6 +314,20 @@ export function DonatePanel({
           <div className="text-4xl">🎉</div>
           <p className="text-base font-extrabold text-emerald-800">{dict.bill.thanks}</p>
         </div>
+      ) : isOwner ? (
+        // The family itself: no donate form (paying your own bill would put you on the
+        // leaderboard); sharing the request is what actually helps.
+        <div className="space-y-3 rounded-3xl bg-amber-50 px-5 py-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-amber-600 shadow-[var(--lift)]">
+            <Share2 size={24} aria-hidden="true" />
+          </div>
+          <p className="text-lg font-extrabold text-stone-900">{dict.bill.ownTitle}</p>
+          <p className="text-sm text-stone-600">{dict.bill.ownText}</p>
+          <button type="button" onClick={shareRequest} className="btn-primary w-full">
+            <Share2 size={18} aria-hidden="true" />
+            {shared ? dict.bill.linkCopied : dict.bill.share}
+          </button>
+        </div>
       ) : bill.available <= 0 ? (
         // Not paid yet: other donors have the rest reserved and are paying now.
         <div className="space-y-1 rounded-2xl bg-[var(--tone)] px-4 py-8 text-center">
@@ -307,15 +343,14 @@ export function DonatePanel({
           <div className="relative">
             <input
               id="customAmount"
-              type="number"
+              type="text"
               inputMode="numeric"
-              min={Math.min(minAmount, bill.available)}
-              max={bill.available}
-              step={500}
-              value={customAmount}
+              autoComplete="off"
+              value={groupDigits(customAmount)}
               onChange={(e) => {
-                setCustomAmount(e.target.value);
-                const v = Number(e.target.value);
+                const raw = digitsOnly(e.target.value, 7);
+                setCustomAmount(raw);
+                const v = Number(raw);
                 if (Number.isFinite(v) && v > 0) setAmount(Math.min(v, bill.available));
               }}
               className="field min-h-16 pr-16 text-2xl font-extrabold text-stone-900"

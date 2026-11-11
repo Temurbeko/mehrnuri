@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, Building2, Check, ChevronLeft, ChevronUp, MapPin, Phone, Plus, Wallet } from "lucide-react";
+import { digitsOnly, groupDigits } from "@/lib/format";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -295,8 +296,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                   inputMode="numeric"
                   autoComplete="off"
                   placeholder="150 000"
-                  value={amountOwed}
-                  onChange={(e) => setAmountOwed(e.target.value.replace(/\D/g, "").slice(0, 7))}
+                  value={groupDigits(amountOwed)}
+                  onChange={(e) => setAmountOwed(digitsOnly(e.target.value, 7))}
                   className="field pl-11 pr-16 tabular-nums text-lg font-extrabold"
                 />
                 <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-500">

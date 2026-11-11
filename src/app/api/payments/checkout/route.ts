@@ -3,7 +3,9 @@ import { getBill } from "@/lib/bills/service";
 import { currentDonor } from "@/lib/donors/session";
 import { createPayment } from "@/lib/payments/core";
 import { getProvider } from "@/lib/payments/providers";
-import { assertSameOrigin, handler, HttpError, readJson } from "@/lib/security/http";
+import { isBillOwner, OWNER_COOKIE } from "@/lib/bills/owner";
+import { hashIp } from "@/lib/security/crypto";
+import { assertSameOrigin, clientIp, handler, HttpError, readJson } from "@/lib/security/http";
 import { enforceRateLimit } from "@/lib/security/rateLimit";
 import { checkoutSchema } from "@/lib/validation";
 
@@ -22,6 +24,9 @@ export const POST = handler(async (req: NextRequest) => {
 
   const bill = await getBill(input.billId);
   if (!bill) throw new HttpError(404, "bill_not_found");
+  // The family that posted a request cannot donate to it: that would put them on
+  // the leaderboard for paying their own bill.
+  if (isBillOwner(req.cookies.get(OWNER_COOKIE)?.value, input.billId)) throw new HttpError(403, "own_bill");
 
   const payment = await createPayment({
     bill,
@@ -29,6 +34,7 @@ export const POST = handler(async (req: NextRequest) => {
     amount: input.amount,
     provider: provider.id,
     locale: input.locale,
+    ipHash: hashIp(clientIp(req)),
   });
 
   const redirectUrl = provider.checkoutUrl(payment, { locale: input.locale });

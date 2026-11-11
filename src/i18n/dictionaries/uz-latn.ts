@@ -206,6 +206,9 @@ const uzLatn = {
     help: "Yordam berish",
     thanks: "Bu oilaning qarzi to'liq yopildi — katta rahmat!",
     share: "Ulashish",
+    ownTitle: "Bu sizning arizangiz",
+    ownText: "O'zingizga to'lov qila olmaysiz. Havolani ulashing — ko'proq saxiy ko'radi.",
+    linkCopied: "Havola nusxalandi",
     code: "Ariza kodi",
     notFound: "Ariza topilmadi.",
     live: "Jonli",
@@ -380,6 +383,7 @@ const uzLatn = {
     unauthorized: "Ruxsat yo'q.",
     forbidden_origin: "Xatolik yuz berdi. Sahifani yangilang.",
     network: "Internet aloqasi yo'q. Ulanishni tekshirib, qayta urinib ko'ring.",
+    own_bill: "Bu sizning arizangiz — unga o'zingiz yordam bera olmaysiz.",
     internal_error: "Xatolik yuz berdi. Birozdan so'ng urinib ko'ring.",
   },
   common: {

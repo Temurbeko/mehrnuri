@@ -10,6 +10,7 @@ import { currentDonor } from "@/lib/donors/session";
 import { sweepExpired } from "@/lib/payments/core";
 import { enabledProviders } from "@/lib/payments/providers";
 import { canReactToBill } from "@/app/api/bills/[id]/react/route";
+import { isBillOwner, OWNER_COOKIE } from "@/lib/bills/owner";
 import { DonatePanel } from "@/components/DonatePanel";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,7 @@ export default async function BillPage({
         providers={enabledProviders()}
         minAmount={env().MIN_DONATION_UZS}
         canReact={canReact}
+        isOwner={isBillOwner(cookieStore.get(OWNER_COOKIE)?.value, billDoc._id.toHexString())}
         locale={locale}
         dict={dict}
       />

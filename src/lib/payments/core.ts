@@ -21,8 +21,9 @@ export async function createPayment(args: {
   amount: number;
   provider: PaymentProviderId;
   locale: string;
+  ipHash?: string;
 }): Promise<PaymentDoc> {
-  const { bill, donor, amount, provider, locale } = args;
+  const { bill, donor, amount, provider, locale, ipHash } = args;
   const { MIN_DONATION_UZS, MAX_DONATION_UZS, RESERVATION_MINUTES } = env();
   if (amount > MAX_DONATION_UZS) throw new HttpError(422, "amount_too_large", undefined, { max: MAX_DONATION_UZS });
 
@@ -63,6 +64,7 @@ export async function createPayment(args: {
     provider,
     status: "created",
     locale,
+    ...(ipHash ? { ipHash } : {}),
     expiresAt: new Date(now.getTime() + RESERVATION_MINUTES * 60_000),
     paidAt: null,
     createdAt: now,
@@ -138,7 +140,10 @@ export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<
   if (bill) {
     // A real fiscal receipt on this account proves the account exists and is
     // collecting money, so future requests on it skip review entirely.
-    if (typeof set.receiptKey === "string" && set.receiptKey.length > 0) {
+    // ...but not when the payment came from the network that posted the request:
+    // a family paying its own bill must not make its account look trusted.
+    const selfPaid = Boolean(p.ipHash && p.ipHash === bill.ipHash);
+    if (typeof set.receiptKey === "string" && set.receiptKey.length > 0 && !selfPaid) {
       void markAccountProven({
         billId: bill._id,
         utilityType: bill.utilityType,

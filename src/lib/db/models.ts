@@ -75,6 +75,8 @@ export interface PaymentDoc {
   expiresAt: Date;
   paidAt: Date | null;
   receiptKey?: string | null;
+  /** Network the donor paid from; a payment from the request's own network never builds trust. */
+  ipHash?: string;
   receiptLabel?: string | null;
   leaderboardCredited?: boolean;
   createdAt: Date;

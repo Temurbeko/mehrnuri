@@ -1,6 +1,7 @@
 "use client";
 
 import { Ban, BadgeCheck, Check, Eye, Sparkles, TriangleAlert, type LucideIcon } from "lucide-react";
+import { digitsOnly, groupDigits } from "@/lib/format";
 import { useEffect, useRef, useState } from "react";
 import type { PublicBill, TrustLevel, VerdictKind } from "@/lib/domain";
 import { fmt, type Dictionary } from "@/i18n";
@@ -152,11 +153,11 @@ export function DebtCheck({
           </label>
           <input
             id="seenAmount"
-            type="number"
+            type="text"
             inputMode="numeric"
-            min={0}
-            value={seenAmount}
-            onChange={(e) => setSeenAmount(e.target.value)}
+            autoComplete="off"
+            value={groupDigits(seenAmount)}
+            onChange={(e) => setSeenAmount(digitsOnly(e.target.value, 9))}
             placeholder={t.seenPlaceholder}
             className="field text-lg font-bold"
           />
