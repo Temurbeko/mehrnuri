@@ -19,6 +19,9 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
     return `/${target}`;
   }
 
+  // Inner pages render their own compact AppBar instead of the brand bar.
+  const inner = new RegExp(`^/${locale}/(bill|payment|ask)(/|$)`).test(pathname);
+
   const navItems = [
     {
       href: `/${locale}`,
@@ -60,6 +63,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
 
   return (
     <>
+      {!inner && (
       <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex h-15 max-w-4xl items-center justify-between gap-2 px-4">
           <Link
@@ -119,6 +123,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
           </div>
         </div>
       </header>
+      )}
 
       {/* Focus mode: no tab bar while paying, so the donor's only way forward
           is the payment step itself (its main button is pinned to the bottom). */}

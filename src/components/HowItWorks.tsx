@@ -9,10 +9,29 @@ import { BottomSheet } from "./BottomSheet";
  * "How it works?" — always reachable from the top of the home page, but not
  * taking space: a small pill that opens a sheet with the three steps.
  */
-export function HowItWorks({ dict }: { dict: Dictionary }) {
+export function HowItWorks({
+  dict,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+}: {
+  dict: Dictionary;
+  /** Optional: let a parent (the home slider) own the open state. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+}) {
   const t = dict.how;
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
+  const [innerOpen, setInnerOpen] = useState(false);
+  const open = controlledOpen ?? innerOpen;
+  const setOpen = useCallback(
+    (v: boolean) => {
+      setInnerOpen(v);
+      onOpenChange?.(v);
+    },
+    [onOpenChange],
+  );
+  const close = useCallback(() => setOpen(false), [setOpen]);
 
   const steps = [
     { Icon: HouseHeart, title: t.s1t, text: t.s1d },
@@ -22,6 +41,7 @@ export function HowItWorks({ dict }: { dict: Dictionary }) {
 
   return (
     <>
+      {!hideTrigger && (
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -30,6 +50,7 @@ export function HowItWorks({ dict }: { dict: Dictionary }) {
         <CircleHelp size={16} aria-hidden="true" />
         {t.open}
       </button>
+      )}
       <BottomSheet open={open} onClose={close} labelledBy="how-title">
         <h2 id="how-title" className="text-2xl font-extrabold tracking-tight text-[var(--ink)]">
           {t.open}

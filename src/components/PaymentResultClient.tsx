@@ -8,6 +8,7 @@ import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { copyText } from "@/lib/clipboard";
 import { AddReceipt } from "./AddReceipt";
+import { AppBar } from "./AppBar";
 
 export function PaymentResultClient({
   paymentId,
@@ -51,7 +52,8 @@ export function PaymentResultClient({
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-6 pt-4 text-center">
+    <div className="mx-auto max-w-md space-y-5 text-center">
+      <AppBar title={dict.app.thanks} locale={locale} backLabel={dict.common.back} />
       <div
         className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full ${
           pending ? "bg-amber-100 text-amber-600" : "bg-rose-100 text-rose-600"
@@ -141,12 +143,13 @@ function PaidScreen({
   }
 
   return (
-    <div className="mx-auto max-w-md pt-4 text-center">
+    <div className="mx-auto max-w-md text-center">
+      <AppBar title={dict.app.thanks} locale={locale} backLabel={dict.common.back} />
       <div aria-hidden="true" className="lightup">
         <i />
       </div>
 
-      <h1 className="mt-[18px] mb-1 text-[28px] leading-tight font-extrabold tracking-tight text-balance text-[var(--ink)]">{d.title}</h1>
+      <h1 className="mt-3 mb-1 text-[28px] leading-tight font-extrabold tracking-tight text-balance text-[var(--ink)]">{d.title}</h1>
       <p className="text-[34px] font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)]">{money}</p>
       {utilityType && (
         <p className="mx-auto mt-2 max-w-[34ch] text-[15.5px] text-balance break-words text-[var(--ink-soft)]">
@@ -154,7 +157,7 @@ function PaidScreen({
         </p>
       )}
 
-      {receiptSlot && <div className="mt-6">{receiptSlot}</div>}
+      {receiptSlot && <div className="mt-5">{receiptSlot}</div>}
 
       {/* Private: only this donor sees it. */}
       {familiesThisMonth >= 1 && (
@@ -213,7 +216,7 @@ function PaidScreen({
         <p className="mx-0.5 mt-1.5 text-[13px] text-[var(--ink-soft)]">{d.shareNote}</p>
       </div>
 
-      <div className="mt-8 grid gap-2.5 text-left">
+      <div className="mt-6 grid gap-2.5 text-left">
         <button type="button" onClick={share} className="btn-primary">
           <Share2 size={20} aria-hidden="true" />
           {d.shareBtn}

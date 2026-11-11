@@ -1,16 +1,17 @@
 "use client";
 
-import { ArrowRight, Camera, Check, ChevronLeft, Copy, FlaskConical, Lightbulb, Smartphone, Trophy } from "lucide-react";
+import { ArrowRight, Ban, Camera, Check, ChevronLeft, ChevronRight, Copy, FlaskConical, ShieldCheck, Smartphone, TriangleAlert, Trophy, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PAYMENT_PROVIDERS, UTILITY_ICONS, type PaymentProviderId, type UtilityType } from "@/lib/domain";
+import { PAYMENT_PROVIDERS, UTILITY_ICONS, type PaymentProviderId, type UtilityType, type VerdictKind } from "@/lib/domain";
 import { MERCHANT_APPS } from "@/lib/merchants";
 import { encodeQrMatrix } from "@/lib/qr";
 import { decodeQrFromImageFile } from "@/lib/qrDecode";
 import { copyText, selectTextOf } from "@/lib/clipboard";
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
-import { DebtCheck } from "./DebtCheck";
+import { digitsOnly, groupDigits } from "@/lib/format";
 import { api, errorText } from "./api";
 
 export function DirectPaymentClient({
@@ -55,7 +56,13 @@ export function DirectPaymentClient({
   const [scanningQr, setScanningQr] = useState(false);
   const [qrStatus, setQrStatus] = useState<"idle" | "extracted" | "not_found">("idle");
 
-  const [step, setStep] = useState<"pay" | "check" | "receipt">("pay");
+  const [step, setStep] = useState<"check" | "pay" | "receipt">(billId ? "check" : "pay");
+  const [verdictBusy, setVerdictBusy] = useState<VerdictKind | null>(null);
+  const [amountOpen, setAmountOpen] = useState(false);
+  const [seenAmount, setSeenAmount] = useState("");
+  const [reportSaved, setReportSaved] = useState(false);
+  const [noDebtDone, setNoDebtDone] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const [busy, setBusy] = useState<"verified" | "skip" | "failure" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -150,172 +157,253 @@ export function DirectPaymentClient({
     router.push(`/${locale}/payment/${paymentId}`);
   }
 
-  const hasDebtStep = billId !== null;
-  const stepNo = step === "pay" ? 1 : step === "check" ? 2 : 3;
-  const stepTitle = step === "pay" ? t.stepPayTitle : step === "check" ? t.stepCheckTitle : t.stepReceiptTitle;
+  const f = dict.flow;
+  const hasCheck = billId !== null;
+  const stepNo = step === "check" ? 1 : step === "pay" ? 2 : 3;
+  const stepTitle = step === "check" ? f.stepCheck : step === "pay" ? f.stepPay : f.stepReceipt;
+  const billHref = billId ? `/${locale}/bill/${billId}` : `/${locale}`;
 
   function goBack() {
     setError(null);
-    if (step === "receipt") setStep(hasDebtStep ? "check" : "pay");
-    else if (step === "check") setStep("pay");
+    if (step === "receipt") setStep("pay");
+    else if (step === "pay" && hasCheck) setStep("check");
+    else router.back();
   }
 
-  return (
-    <div className="mx-auto max-w-lg space-y-5 pb-4">
-      {/* Header sits on the page, not in a box: progress, back, title. */}
-      <div className="space-y-3">
-        <div className="flex min-h-10 items-center gap-3">
-          {step !== "pay" && (
-            <button
-              type="button"
-              onClick={goBack}
-              disabled={busy !== null}
-              className="btn-ghost -ml-2 w-auto shrink-0 whitespace-nowrap px-2"
-            >
-              <ChevronLeft size={20} aria-hidden="true" />
-              {dict.common.back}
-            </button>
-          )}
-          <div className="ml-auto flex shrink-0 items-center gap-2.5">
-            <div className="flex gap-1.5" aria-hidden="true">
-              {[1, 2, 3].map((n) => (
-                <span
-                  key={n}
-                  className={`h-1.5 rounded-full transition-all ${n === stepNo ? "w-8 bg-amber-500" : n < stepNo ? "w-4 bg-amber-500/50" : "w-4 bg-stone-300"}`}
-                />
-              ))}
-            </div>
-            <span className="text-sm font-extrabold whitespace-nowrap text-stone-500">{fmt(t.stepOf, { n: stepNo })}</span>
-          </div>
+  /** Record what the donor saw in their app. A vote that can't count never blocks the flow. */
+  async function sendVerdict(kind: VerdictKind): Promise<boolean> {
+    if (!billId) return true;
+    const res = await api(`/api/bills/${billId}/verdict`, {
+      body: { kind, seenAmount: kind === "amount_differs" ? seenAmount : null },
+    });
+    if (res.ok) return true;
+    if (["already_voted", "verdict_not_allowed", "donor_required"].includes(res.data.error ?? "")) return true;
+    setError(errorText(res.data.error, dict, res.data.details));
+    return false;
+  }
+
+  async function answer(kind: VerdictKind) {
+    setError(null);
+    setVerdictBusy(kind);
+    const ok = await sendVerdict(kind);
+    if (!ok) {
+      setVerdictBusy(null);
+      return;
+    }
+    if (kind === "no_debt") {
+      // Nothing was paid: close this payment, then show a friendly end screen.
+      const res = await api("/api/payments/confirm", {
+        body: { paymentId, outcome: "failure", signature },
+      });
+      setVerdictBusy(null);
+      if (!res.ok) {
+        setError(errorText(res.data.error, dict, res.data.details));
+        return;
+      }
+      setNoDebtDone(true);
+      return;
+    }
+    setVerdictBusy(null);
+    setReportSaved(kind === "amount_differs");
+    setStep("pay");
+  }
+
+  const appTiles = (compact: boolean) => (
+    <div className="grid grid-cols-4 gap-2">
+      {PAYMENT_PROVIDERS.map((mId) => {
+        const m = MERCHANT_APPS[mId];
+        return (
+          <a
+            key={mId}
+            href={isMobile ? m.mobileAppUrl : m.webCheckoutUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => void copyValue(accountNumber, "account")}
+            className="flex min-w-0 flex-col items-center gap-1.5 rounded-[16px] bg-white px-1 py-2.5 shadow-[var(--lift)] transition-all active:scale-[0.96]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={m.icon} alt="" className={`${compact ? "h-9 w-9" : "h-11 w-11"} rounded-[12px] object-cover ring-1 ring-[var(--hairline)]`} />
+            <span className="w-full truncate text-center text-[12.5px] font-extrabold text-[var(--ink)]">{m.name}</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+
+  if (noDebtDone) {
+    return (
+      <div className="flow-step mx-auto flex max-w-lg flex-col items-center px-2 pt-10 text-center">
+        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(46,154,103,0.12)] text-[var(--hope)]">
+          <ShieldCheck size={40} aria-hidden="true" />
+        </span>
+        <h1 className="mt-6 text-[24px] leading-tight font-extrabold text-balance text-[var(--ink)]">{f.endTitle}</h1>
+        <p className="mt-3 text-[16px] leading-relaxed text-[var(--ink-soft)]">{f.endBody}</p>
+        <div className="mt-8 w-full space-y-2.5">
+          <Link href={`/${locale}`} className="btn-primary w-full text-lg">{f.endPrimary}</Link>
+          <Link href={billHref} className="btn-ghost w-full">{f.endBack}</Link>
         </div>
-        <h1 className="text-[26px] leading-[1.15] font-extrabold tracking-tight text-balance text-[var(--ink)]">{stepTitle}</h1>
+      </div>
+    );
+  }
+
+  const answers: { kind: VerdictKind; label: string; Icon: LucideIcon; tile: string }[] = [
+    { kind: "match", label: f.yes, Icon: Check, tile: "bg-[rgba(46,154,103,0.13)] text-[var(--hope)]" },
+    { kind: "amount_differs", label: f.differs, Icon: TriangleAlert, tile: "bg-[rgba(246,166,35,0.18)] text-[var(--lamp-deep)]" },
+    { kind: "no_debt", label: f.noDebt, Icon: Ban, tile: "bg-[var(--tone)] text-[var(--ink-soft)]" },
+  ];
+
+  return (
+    <div className="mx-auto flex max-w-lg flex-col gap-4 pb-2">
+      {/* Compact app-style header: back, title, progress. */}
+      <div className="flex min-h-11 items-center gap-1">
+        <button
+          type="button"
+          onClick={goBack}
+          disabled={busy !== null || verdictBusy !== null}
+          aria-label={dict.common.back}
+          className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--ink)] active:bg-[var(--tone)]"
+        >
+          <ChevronLeft size={24} aria-hidden="true" />
+        </button>
+        <h1 className="min-w-0 flex-1 truncate text-[20px] font-extrabold tracking-tight text-[var(--ink)]">{stepTitle}</h1>
+        <span className="shrink-0 text-sm font-extrabold whitespace-nowrap text-[var(--ink-soft)]">{fmt(t.stepOf, { n: stepNo })}</span>
+      </div>
+      <div className="flex gap-1.5" aria-hidden="true">
+        {[1, 2, 3].map((n) => (
+          <span key={n} className={`h-1 flex-1 rounded-full transition-colors ${n <= stepNo ? "bg-[var(--lamp)]" : "bg-[var(--tone)]"}`} />
+        ))}
       </div>
 
-      {step === "pay" && (
-        <>
-          {/* Banking-app style details: tap a row to copy it. */}
-          <div className="space-y-2">
-            <ul className="list">
-              <li>
-                <button type="button" onClick={() => copyValue(accountNumber, "account")} className="list-row-tap py-4">
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-stone-500">
-                      {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
-                    </span>
-                    <span
-                      ref={accountRef}
-                      className="mt-0.5 block tabular-nums text-2xl leading-tight font-extrabold tracking-wide break-all text-stone-900 select-all"
-                    >
-                      {accountNumber}
-                    </span>
-                  </span>
-                  <CopyMark done={copiedField === "account"} />
-                </button>
-              </li>
-              <li>
-                <button type="button" onClick={() => copyValue(String(amount), "amount")} className="list-row-tap">
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-stone-500">{t.amount}</span>
-                    <span ref={amountRef} className="block text-lg font-extrabold whitespace-nowrap text-stone-900 select-all">
-                      {formatMoney(amount, dict)}
-                    </span>
-                  </span>
-                  <CopyMark done={copiedField === "amount"} />
-                </button>
-              </li>
-              <li className="list-row">
+      {step === "check" && (
+        <div key="check" className="flow-step flex flex-col gap-3.5">
+          <ul className="list">
+            <li>
+              <button type="button" onClick={() => copyValue(accountNumber, "account")} className="list-row-tap py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-stone-500">{dict.bill.supplier}</span>
-                  <span className="block font-bold text-stone-800">{supplier}</span>
+                  <span className="block text-[13px] font-medium text-[var(--ink-soft)]">
+                    {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
+                  </span>
+                  <span ref={accountRef} className="block text-[22px] leading-tight font-extrabold tracking-wide break-all text-[var(--ink)] tabular-nums select-all">
+                    {accountNumber}
+                  </span>
                 </span>
-              </li>
-            </ul>
-            {copyFailed ? (
-              <p role="alert" className="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900">
-                {dict.common.copyFailed}
-              </p>
-            ) : (
-              <p className="px-1 text-sm text-stone-500">{t.tapToCopy}</p>
-            )}
-          </div>
+                <CopyMark done={copiedField === "account"} />
+              </button>
+            </li>
+            <li className="list-row">
+              <span className="min-w-0 flex-1 text-[13px] font-medium text-[var(--ink-soft)]">{t.amount}</span>
+              <span ref={amountRef} className="text-lg font-extrabold whitespace-nowrap text-[var(--ink)] select-all">{formatMoney(amount, dict)}</span>
+            </li>
+          </ul>
+          {copyFailed && (
+            <p role="alert" className="rounded-2xl bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-900">{dict.common.copyFailed}</p>
+          )}
 
-          <p className="flex items-start gap-2.5 rounded-[18px] bg-[rgba(246,166,35,0.13)] px-3.5 py-3 text-[14.5px] leading-snug font-medium text-[var(--ink)]">
-            <Lightbulb size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--lamp-deep)]" />
-            <span>{t.payHint}</span>
-          </p>
-
-          {/* Four equal launch buttons — opening an app, not choosing one. */}
-          <div className="space-y-2.5">
-            <h2 className="px-0.5 text-[15px] font-extrabold text-[var(--ink)]">{t.openApp}</h2>
-            <div className="grid grid-cols-2 gap-2.5">
-              {PAYMENT_PROVIDERS.map((mId) => {
-                const m = MERCHANT_APPS[mId];
-                return (
-                  <a
-                    key={mId}
-                    href={isMobile ? m.mobileAppUrl : m.webCheckoutUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => void copyValue(accountNumber, "account")}
-                    className="flex min-h-[60px] min-w-0 items-center gap-2.5 rounded-[18px] bg-white px-3 py-2.5 shadow-[var(--lift)] transition-all hover:shadow-[var(--lift-hover)] active:scale-[0.97]"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={m.icon} alt="" className="h-[38px] w-[38px] shrink-0 rounded-[11px] object-cover ring-1 ring-[var(--hairline)]" />
-                    <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold text-[var(--ink)]">{m.name}</span>
-                  </a>
-                );
-              })}
-            </div>
-          </div>
+          {appTiles(false)}
+          <p className="px-0.5 text-[14px] leading-snug text-[var(--ink-soft)]">{f.appsHint}</p>
 
           {!isMobile && qrMatrix.length > 0 && (
-            <div className="surface flex items-center gap-4 p-4">
-              <svg
-                viewBox={`0 0 ${qrMatrix.length + 4} ${qrMatrix.length + 4}`}
-                className="h-24 w-24 shrink-0 rounded-xl"
-                shapeRendering="crispEdges"
-                aria-hidden="true"
-              >
-                <rect width="100%" height="100%" fill="#ffffff" />
-                {qrMatrix.map((row, r) =>
-                  row.map((cell, c) =>
-                    cell ? <rect key={`${r}-${c}`} x={c + 2} y={r + 2} width={1} height={1} fill="#1c1917" /> : null,
-                  ),
-                )}
-              </svg>
-              <div className="min-w-0 space-y-1">
-                <div className="flex items-center gap-1.5 font-extrabold text-stone-900">
-                  <Smartphone size={18} aria-hidden="true" />
-                  {t.scanQrTitle}
+            <div>
+              <button type="button" onClick={() => setShowQr((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--ink-soft)] underline-offset-2 hover:underline">
+                <Smartphone size={16} aria-hidden="true" />
+                {f.phoneLink}
+              </button>
+              {showQr && (
+                <div className="flow-step surface mt-2 flex items-center gap-4 p-3">
+                  <svg viewBox={`0 0 ${qrMatrix.length + 4} ${qrMatrix.length + 4}`} className="h-28 w-28 shrink-0 rounded-xl" shapeRendering="crispEdges" aria-hidden="true">
+                    <rect width="100%" height="100%" fill="#ffffff" />
+                    {qrMatrix.map((row, r) =>
+                      row.map((cell, c) => (cell ? <rect key={`${r}-${c}`} x={c + 2} y={r + 2} width={1} height={1} fill="#1c1917" /> : null)),
+                    )}
+                  </svg>
+                  <p className="text-sm font-medium text-[var(--ink-soft)]">{t.scanQrTitle}</p>
                 </div>
-                <p className="text-sm text-stone-500">{t.continueOnPhone}</p>
-              </div>
+              )}
             </div>
           )}
 
-          {/* The one main action stays reachable while scrolling. */}
-          <div className="sticky bottom-0 z-30 -mx-4 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]">
-            <button type="button" onClick={() => setStep(hasDebtStep ? "check" : "receipt")} className="btn-primary w-full text-lg">
-              {t.paidBtn}
-              <ArrowRight size={20} aria-hidden="true" />
+          <h2 className="mt-1 px-0.5 text-[17px] font-extrabold text-[var(--ink)]">{f.question}</h2>
+          {amountOpen ? (
+            <div className="surface space-y-2.5 p-4">
+              <label className="label" htmlFor="seenAmount">{dict.check.seenLabel}</label>
+              <input
+                id="seenAmount"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                autoFocus
+                value={groupDigits(seenAmount)}
+                onChange={(e) => setSeenAmount(digitsOnly(e.target.value, 9))}
+                placeholder={dict.check.seenPlaceholder}
+                className="field text-lg font-bold"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" disabled={verdictBusy !== null || seenAmount.trim() === ""} onClick={() => answer("amount_differs")} className="btn-primary w-full">
+                  {verdictBusy ? dict.check.sending : f.seenSent}
+                </button>
+                <button type="button" disabled={verdictBusy !== null} onClick={() => setAmountOpen(false)} className="btn-ghost w-full">
+                  {dict.check.cancel}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <ul className="list">
+              {answers.map(({ kind, label, Icon, tile }) => (
+                <li key={kind}>
+                  <button
+                    type="button"
+                    disabled={verdictBusy !== null}
+                    onClick={() => (kind === "amount_differs" ? setAmountOpen(true) : void answer(kind))}
+                    className="list-row-tap min-h-[60px]"
+                  >
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tile}`}>
+                      <Icon size={20} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1 text-left text-[17px] font-extrabold text-[var(--ink)]">{label}</span>
+                    <ChevronRight size={20} aria-hidden="true" className="shrink-0 text-[var(--ink-soft)]" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="text-center">
+            <button type="button" disabled={verdictBusy !== null} onClick={() => setStep("pay")} className="text-sm font-bold text-[var(--ink-soft)] underline underline-offset-2">
+              {f.continueUnchecked}
             </button>
           </div>
-        </>
+        </div>
       )}
 
-      {step === "check" && billId && (
-        <div className="space-y-3">
-          <div>
-            <DebtCheck billId={billId} dict={dict} tone="step" onDone={() => setStep("receipt")} />
+      {step === "pay" && (
+        <div key="pay" className="flow-step flex flex-col gap-4">
+          {reportSaved && (
+            <p className="rounded-2xl bg-[rgba(246,166,35,0.13)] px-4 py-2.5 text-sm font-bold text-[var(--ink)]">{f.reportSaved}</p>
+          )}
+          <div className="pt-4 pb-2 text-center">
+            <div className="text-[30px] leading-tight font-extrabold text-balance text-[var(--ink)]">
+              {fmt(f.payBig, { amount: formatMoney(amount, dict) })}
+            </div>
+            <button type="button" onClick={() => copyValue(accountNumber, "account")} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--tone)] px-4 py-2 text-[15px] font-extrabold text-[var(--ink)] tabular-nums">
+              <span ref={accountRef}>{accountNumber}</span>
+              {copiedField === "account" ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+            </button>
           </div>
-          <button type="button" onClick={() => setStep("receipt")} className="btn-ghost w-full">
-            {t.skipStep}
-          </button>
+          {appTiles(true)}
+          <div className="sticky bottom-0 z-30 -mx-4 mt-auto space-y-1 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+            <button type="button" onClick={() => setStep("receipt")} className="btn-primary w-full text-lg">
+              {f.paid}
+              <ArrowRight size={20} aria-hidden="true" />
+            </button>
+            <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("failure")} className="btn-ghost w-full">
+              {busy === "failure" ? t.processing : f.notPaid}
+            </button>
+          </div>
         </div>
       )}
 
       {step === "receipt" && (
-        <div className="space-y-4">
+        <div key="receipt" className="flow-step space-y-4">
           <p className="flex items-start gap-2.5 rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-relaxed font-medium text-amber-950">
             <Trophy size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
             <span>{fmt(t.leaderboardAs, { nickname })}</span>
@@ -354,7 +442,7 @@ export function DirectPaymentClient({
             )}
           </div>
 
-          <div className="space-y-2.5">
+          <div className="sticky bottom-0 z-30 -mx-4 space-y-2.5 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]">
             <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("verified")} className="btn-primary w-full">
               {busy === "verified" ? t.processing : <><Trophy size={18} aria-hidden="true" />{t.verifyWithReceiptBtn}</>}
             </button>
@@ -370,12 +458,6 @@ export function DirectPaymentClient({
           {error}
         </div>
       )}
-
-      <div className="text-center">
-        <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("failure")} className="btn-ghost w-auto text-sm text-stone-500">
-          {busy === "failure" ? t.processing : t.cancelBtn}
-        </button>
-      </div>
 
       {copiedField && (
         <div role="status" className="toast flex items-center gap-2 rounded-full bg-stone-900 px-5 py-3 text-sm font-bold text-white shadow-lg">

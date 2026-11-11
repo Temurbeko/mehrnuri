@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { env } from "@/config/env";
@@ -13,6 +12,7 @@ import { canReactToBill } from "@/app/api/bills/[id]/react/route";
 import { isBillOwner, OWNER_COOKIE } from "@/lib/bills/owner";
 import { billRecentHelps, withHelpers } from "@/lib/community";
 import { DonatePanel } from "@/components/DonatePanel";
+import { AppBar } from "@/components/AppBar";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +29,14 @@ export default async function BillPage({
   const [billDoc, donor, cookieStore] = await Promise.all([getBill(id), currentDonor(), cookies()]);
   if (!billDoc) {
     return (
-      <div className="card mx-auto max-w-md space-y-4 text-center">
-        <h1 className="text-lg font-extrabold text-stone-900">{dict.bill.notFound}</h1>
-        <Link href={`/${locale}`} className="btn-tonal">
-          {dict.common.back}
-        </Link>
+      <div className="mx-auto max-w-md">
+        <AppBar title={dict.bill.notFound} locale={locale} backLabel={dict.common.back} />
+        <div className="card space-y-4 text-center">
+          <h1 className="text-lg font-extrabold text-stone-900">{dict.bill.notFound}</h1>
+          <Link href={`/${locale}`} className="btn-tonal">
+            {dict.common.back}
+          </Link>
+        </div>
       </div>
     );
   }
@@ -43,14 +46,7 @@ export default async function BillPage({
   const canReact = canReactToBill(cookieStore, billDoc._id.toHexString());
 
   return (
-    <div className="mx-auto max-w-lg space-y-2">
-      <Link
-        href={`/${locale}`}
-        className="btn-ghost -ml-2 w-auto whitespace-nowrap px-2"
-      >
-        <ChevronLeft size={18} aria-hidden="true" />
-        <span>{dict.common.back}</span>
-      </Link>
+    <div className="mx-auto max-w-lg">
       <DonatePanel
         initialBill={publicBill!}
         initialReviewStatus={billDoc.reviewStatus}

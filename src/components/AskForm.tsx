@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, Check, ChevronLeft, ChevronUp, MapPin, Phone, Plus, Wallet } from "lucide-react";
+import { ArrowRight, Building2, Check, ChevronUp, MapPin, Phone, Plus, Wallet } from "lucide-react";
 import { digitsOnly, groupDigits } from "@/lib/format";
 import { useState } from "react";
 import Link from "next/link";
@@ -17,9 +17,10 @@ import { DISTRICTS_BY_REGION, findDistrict, meterUnitFor, officialSupplierName }
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { Combobox } from "./Combobox";
+import { AppBar } from "./AppBar";
 import { api, errorText } from "./api";
 
-export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Dictionary; intro?: React.ReactNode }) {
   const [utilityType, setUtilityType] = useState<UtilityType>("electricity");
   const [region, setRegion] = useState<Region>("tashkent_city");
   const [district, setDistrict] = useState<string>(DISTRICTS_BY_REGION.tashkent_city[0]!.id);
@@ -135,7 +136,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
   if (created) {
     return (
-      <div className="mx-auto max-w-lg space-y-6 pt-4 text-center">
+      <div className="mx-auto max-w-lg space-y-5 text-center">
+        <AppBar title={dict.ask.title} locale={locale} backLabel={dict.common.back} />
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
           <Check size={44} strokeWidth={3} aria-hidden="true" />
         </div>
@@ -164,6 +166,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-lg">
+      <AppBar title={dict.ask.title} locale={locale} backLabel={dict.common.back} onBack={step > 1 && !submitting ? goBack : undefined} />
+      {intro && <div className="mb-4">{intro}</div>}
       <input
         type="text"
         name="website"
@@ -178,17 +182,6 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
       <div className="space-y-5">
         <div className="space-y-3">
           <div className="flex min-h-10 items-center gap-3">
-            {step !== 1 && (
-              <button
-                type="button"
-                onClick={goBack}
-                disabled={submitting}
-                className="btn-ghost -ml-2 w-auto shrink-0 whitespace-nowrap px-2"
-              >
-                <ChevronLeft size={18} aria-hidden="true" />
-                {dict.common.back}
-              </button>
-            )}
             <div className="ml-auto flex shrink-0 items-center gap-2">
               <div className="flex gap-1.5" aria-hidden="true">
                 {[1, 2, 3].map((n) => (

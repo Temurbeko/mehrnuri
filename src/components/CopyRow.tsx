@@ -6,7 +6,7 @@ import { copyText, selectTextOf } from "@/lib/clipboard";
 import type { Dictionary } from "@/i18n";
 
 /** Tap-to-copy row for a `.list`: label, value, round copy mark, "copied" toast. */
-export function CopyRow({ label, value, mono = false, dict }: { label: string; value: string; mono?: boolean; dict: Dictionary }) {
+export function CopyRow({ label, value, mono = false, compact = false, dict }: { label: string; value: string; mono?: boolean; compact?: boolean; dict: Dictionary }) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
   const valueRef = useRef<HTMLSpanElement | null>(null);
@@ -26,13 +26,13 @@ export function CopyRow({ label, value, mono = false, dict }: { label: string; v
 
   return (
     <li>
-      <button type="button" onClick={copy} className="list-row-tap py-4">
+      <button type="button" onClick={copy} className={`list-row-tap ${compact ? "py-2.5" : "py-4"}`}>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium text-stone-500">{label}</span>
           <span
             ref={valueRef}
             className={`mt-0.5 block font-extrabold break-all text-stone-900 select-all ${
-              mono ? "tabular-nums text-2xl leading-tight tracking-wide" : "text-lg"
+              mono ? (compact ? "tabular-nums text-xl leading-tight tracking-wide" : "tabular-nums text-2xl leading-tight tracking-wide") : "text-lg"
             }`}
           >
             {value}
@@ -45,7 +45,7 @@ export function CopyRow({ label, value, mono = false, dict }: { label: string; v
         </span>
         <span
           aria-hidden="true"
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
             copied ? "bg-emerald-100 text-emerald-700" : "bg-[var(--tone)] text-stone-600"
           }`}
         >

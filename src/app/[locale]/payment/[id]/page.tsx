@@ -6,6 +6,7 @@ import { getPayment } from "@/lib/payments/core";
 import { getBill } from "@/lib/bills/service";
 import { currentDonor } from "@/lib/donors/session";
 import { donorFamiliesThisMonth } from "@/lib/community";
+import { AppBar } from "@/components/AppBar";
 import { PaymentResultClient } from "@/components/PaymentResultClient";
 import { paymentSignature } from "@/lib/payments/providers";
 
@@ -23,11 +24,14 @@ export default async function PaymentResultPage({
   const payment = await getPayment(id);
   if (!payment) {
     return (
-      <div className="card space-y-4 text-center">
-        <p className="font-bold">{dict.checkout.invalid}</p>
-        <Link href={`/${locale}`} className="btn-primary">
-          {dict.common.back}
-        </Link>
+      <div className="mx-auto max-w-md">
+        <AppBar title={dict.app.thanks} locale={locale} backLabel={dict.common.back} />
+        <div className="card space-y-4 text-center">
+          <p className="font-bold">{dict.checkout.invalid}</p>
+          <Link href={`/${locale}`} className="btn-primary">
+            {dict.common.back}
+          </Link>
+        </div>
       </div>
     );
   }

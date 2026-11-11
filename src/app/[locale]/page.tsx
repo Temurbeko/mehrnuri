@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { Heart, Home } from "lucide-react";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { fmt, getDictionary } from "@/i18n";
@@ -11,7 +9,7 @@ import { LiveFeed } from "@/components/LiveFeed";
 import { LiveTicker } from "@/components/LiveTicker";
 import { ClosedStrip } from "@/components/ClosedStrip";
 import { HowItWorks } from "@/components/HowItWorks";
-import { BuildingArt } from "@/components/BuildingArt";
+import { HeroSlider } from "@/components/HeroSlider";
 
 export const dynamic = "force-dynamic";
 
@@ -46,35 +44,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <div className="mb-3 flex justify-end">
         <HowItWorks dict={dict} />
       </div>
-
-      {/* Hero: the night building */}
-      <section className="hero-mesh relative overflow-hidden rounded-[28px] px-5 py-[22px] text-[#f6efe3]">
-        <div className="relative flex items-end gap-3.5">
-          <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center gap-[7px] text-[13px] font-bold text-[var(--glow)]">
-              <span aria-hidden="true" className="lamp-dot shrink-0" />
-              {fmt(dict.home.stats, { count: waiting })}
-            </span>
-            <h1 className="mt-2.5 mb-2 text-[25px] leading-[1.12] font-extrabold tracking-tight text-balance min-[380px]:text-[28px]">
-              {dict.home.heroTitle}
-            </h1>
-            <p className="text-[14.5px] text-[#cfc6b8] min-[380px]:text-[15px]">
-              {weekCount > 0 ? fmt(dict.feed.heroWeek, { count: weekCount }) : dict.feed.heroWeekNone}
-            </p>
-          </div>
-          <BuildingArt className="-mr-1.5 -mb-1 h-[150px] w-[112px] shrink-0 min-[380px]:h-[168px] min-[380px]:w-[126px]" />
-        </div>
-        <div className="relative mt-5 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 min-[420px]:gap-2.5">
-          <a href="#feed" className="btn-primary min-w-0 px-4">
-            <Heart size={20} aria-hidden="true" />
-            {dict.home.wantHelp}
-          </a>
-          <Link href={`/${locale}/ask`} className="btn btn-glass min-w-0 px-4">
-            <Home size={20} aria-hidden="true" />
-            {dict.home.needHelp}
-          </Link>
-        </div>
-      </section>
+      <HeroSlider locale={locale} dict={dict} waiting={waiting} weekCount={weekCount} closed={closed} />
 
       {helps.length > 0 && <LiveTicker helps={helps} dict={dict} />}
 

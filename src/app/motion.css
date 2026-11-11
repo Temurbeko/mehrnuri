@@ -53,3 +53,95 @@
   .skel { animation: none; background-image: none; }
   .page-enter { animation: none; }
 }
+
+/* Payment flow: quick fade/slide between steps (transform + opacity only). */
+.flow-step {
+  animation: flow-step 160ms ease-out both;
+}
+@keyframes flow-step {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-step { animation: none; }
+}
+
+/* ---- App shell: compact sticky bar on inner pages ---- */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: calc(52px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 12px 0 8px;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.appbar-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.15s;
+}
+.appbar-btn:active { background: var(--tone); transform: scale(0.92); }
+
+/* ---- Bottom-sheet extras on the bill page ---- */
+.story-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+
+/* ---- Home hero slider ---- */
+.hs-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border-radius: 28px;
+  touch-action: pan-x pan-y;
+}
+.hs-track::-webkit-scrollbar { display: none; }
+.hs-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.hs-dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 9999px;
+  background: var(--tone);
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+.hs-dot[aria-current="true"] { width: 24px; background: var(--lamp); }
+@keyframes hs-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.hs-active .hs-rise { animation: hs-rise 0.6s ease both; }
+.hs-active .hs-rise:nth-child(2) { animation-delay: 0.1s; }
+.hs-active .hs-rise:nth-child(3) { animation-delay: 0.2s; }
+@media (prefers-reduced-motion: reduce) {
+  .hs-active .hs-rise { animation: none; }
+  .hs-dot { transition: none; }
+}
+.hs-warm {
+  background:
+    radial-gradient(closest-side at 20% 100%, rgba(255, 192, 77, 0.38), transparent 100%),
+    radial-gradient(closest-side at 85% 0%, rgba(214, 120, 60, 0.28), transparent 100%),
+    var(--night);
+}
