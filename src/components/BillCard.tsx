@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CardStory } from "./CardStory";
 import { ArrowRight, Check, Heart, MapPin } from "lucide-react";
 import { UTILITY_ICONS, type PublicBill, type UtilityType } from "@/lib/domain";
 import { findDistrict } from "@/lib/uzbekistan";
@@ -133,13 +134,7 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
         </span>
       </div>
 
-      {bill.story && (
-        <p className="line-clamp-3 text-[15.5px] leading-normal text-[var(--ink)]">
-          <span aria-hidden="true" className="font-extrabold text-[var(--lamp-deep)]">“</span>
-          {bill.story}
-          <span aria-hidden="true" className="font-extrabold text-[var(--lamp-deep)]">”</span>
-        </p>
-      )}
+      {bill.story && <CardStory story={bill.story} more={dict.app.more} less={dict.app.less} />}
 
       <div>
         <div className="flex items-end justify-between gap-2.5">

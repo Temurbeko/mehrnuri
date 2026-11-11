@@ -151,7 +151,7 @@ export function HeroSlider({
   function renderSlide(id: SlideId) {
     if (id === "main") {
       return (
-        <>
+        <div className="flex h-full flex-col justify-center">
           <div className="relative flex items-end gap-3.5">
             <div className="min-w-0 flex-1">
               <span className="inline-flex items-center gap-[7px] text-[13px] font-bold text-[var(--glow)]">
@@ -177,7 +177,7 @@ export function HeroSlider({
               {dict.home.needHelp}
             </Link>
           </div>
-        </>
+        </div>
       );
     }
     if (id === "closed" && thanks) {
@@ -250,7 +250,7 @@ export function HeroSlider({
             <p className="mt-1.5 text-[13.5px] leading-snug font-bold text-[#e6dccb] md:text-[15px]">{dict.app.liveOpen}</p>
           </div>
         </div>
-        <StreetArt lit={weekCount} className="-mx-5 -mb-[22px] mt-auto block h-auto w-[calc(100%+40px)] max-w-none md:-mt-28 md:h-[260px]" />
+        <StreetArt lit={weekCount} className="-mx-5 -mb-[22px] mt-auto block h-auto max-h-[190px] w-[calc(100%+40px)] max-w-none md:-mt-28 md:h-[260px] md:max-h-none" />
       </div>
     );
   }
