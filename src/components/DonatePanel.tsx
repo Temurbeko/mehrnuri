@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Heart, Lightbulb, Minus, Plus, Share2 } from "lucide-react";
+import { Check, Heart, Lightbulb, Minus, Plus, Share2, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { copyText } from "@/lib/clipboard";
 import { digitsOnly, groupDigits, timeAgo } from "@/lib/format";
@@ -484,6 +484,12 @@ export function DonatePanel({
               <span className="min-w-0">
                 {fullyCloses ? fmt(dict.pick.impactFull, { outcome: dict.outcome[bill.utilityType] }) : fmt(dict.pick.impactPart, { percent })}
               </span>
+            </p>
+
+            {/* Trust, right where the donor decides. */}
+            <p className="mt-3 flex items-start gap-2.5 rounded-2xl bg-[rgba(46,154,103,0.1)] px-3.5 py-3 text-left text-[13.5px] leading-snug font-semibold text-[#1f6b47]">
+              <ShieldCheck size={18} aria-hidden="true" className="mt-px shrink-0 text-[var(--hope)]" />
+              <span className="min-w-0">{dict.app.directNote}</span>
             </p>
 
             {error && (

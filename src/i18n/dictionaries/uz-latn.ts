@@ -158,6 +158,7 @@ const uzLatn = {
     } satisfies Record<ReactionType, string>,
   },
   app: {
+    directNote: "Pulingiz biz yoki boshqa vositachilar orqali o'tmaydi — to'g'ridan-to'g'ri oilaning kommunal hisobiga tushadi.",
     more: "Ko'proq",
     less: "Kamroq",
     noHelpsYet: "Hozircha yordam yo'q — birinchi bo'ling",

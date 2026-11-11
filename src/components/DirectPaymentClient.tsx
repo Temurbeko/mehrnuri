@@ -390,6 +390,10 @@ export function DirectPaymentClient({
             </button>
           </div>
           {appTiles(true)}
+          <p className=" flex items-start gap-2.5 rounded-2xl bg-[rgba(46,154,103,0.1)] px-3.5 py-3 text-left text-[13.5px] leading-snug font-semibold text-[#1f6b47]">
+              <ShieldCheck size={18} aria-hidden="true" className="mt-px shrink-0 text-[var(--hope)]" />
+              <span className="min-w-0">{dict.app.directNote}</span>
+            </p>
           <div className="sticky bottom-0 z-30 -mx-4 mt-auto space-y-1 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]">
             <button type="button" onClick={() => setStep("receipt")} className="btn-primary w-full text-lg">
               {f.paid}
