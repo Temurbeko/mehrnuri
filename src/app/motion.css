@@ -219,3 +219,9 @@
   .hs-active .hs-step, .hs-active .ta-heart, .hs-active .sa-on, .hs-active .sa-wait { animation: none; }
   .ta-heart { opacity: 1; }
 }
+
+/* Smaller lit window for the success screen, so the thanks + amount + share fit one screen. */
+.lightup.lightup-sm { width: 84px; height: 100px; margin: 2px auto 0; border-radius: 18px; box-shadow: inset 0 0 0 4px var(--night), 0 0 40px 4px rgba(246, 166, 35, 0.45); }
+.lightup.lightup-sm::before { width: 4px; }
+.lightup.lightup-sm::after { height: 4px; }
+.lightup.lightup-sm i { inset: 4px; border-radius: 14px; }

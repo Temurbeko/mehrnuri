@@ -2,13 +2,14 @@
 
 import { ArrowRight, Check, Clock, Heart, Lock, Share2, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PaymentStatus, UtilityType } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { copyText } from "@/lib/clipboard";
 import { AddReceipt } from "./AddReceipt";
 import { AppBar } from "./AppBar";
+import { BottomSheet } from "./BottomSheet";
 
 export function PaymentResultClient({
   paymentId,
@@ -117,6 +118,8 @@ function PaidScreen({
 }) {
   const d = dict.done;
   const [withAmount, setWithAmount] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const closeShare = useCallback(() => setShareOpen(false), []);
   const [origin, setOrigin] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,23 +162,50 @@ function PaidScreen({
   }
 
   return (
-    <div className="mx-auto max-w-md text-center">
+    <div className="mx-auto max-w-md">
       <AppBar title={dict.app.thanks} locale={locale} backLabel={dict.common.back} />
-      <div aria-hidden="true" className="lightup">
-        <i />
+
+      {/* Compact hero: the lit window, the thanks and the amount fit in the top of the screen. */}
+      <div className="text-center">
+        <div aria-hidden="true" className="lightup lightup-sm">
+          <i />
+        </div>
+        <h1 className="mt-3 text-[24px] leading-tight font-extrabold tracking-tight text-balance text-[var(--ink)]">{d.title}</h1>
+        <p className="mt-0.5 text-[30px] leading-tight font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)] tabular-nums">{money}</p>
+        {utilityType && (
+          <p className="mx-auto mt-2 max-w-[36ch] text-[14.5px] leading-snug text-balance break-words text-[var(--ink-soft)]">
+            {fmt(d.body, { account: d.account[utilityType], outcome: dict.outcome[utilityType] })}
+          </p>
+        )}
       </div>
 
-      <h1 className="mt-3 mb-1 text-[28px] leading-tight font-extrabold tracking-tight text-balance text-[var(--ink)]">{d.title}</h1>
-      <p className="text-[34px] font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)]">{money}</p>
-      {utilityType && (
-        <p className="mx-auto mt-2 max-w-[34ch] text-[15.5px] text-balance break-words text-[var(--ink-soft)]">
-          {fmt(d.body, { account: d.account[utilityType], outcome: dict.outcome[utilityType] })}
-        </p>
+      {receiptSlot && <div className="mt-5">{receiptSlot}</div>}
+
+      {/* Private: only this donor sees it. */}
+      {familiesThisMonth >= 1 && (
+        <div className="mt-4 flex items-center gap-3 rounded-[20px] bg-white p-3.5 text-left shadow-[var(--lift)]">
+          <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[rgba(46,154,103,0.12)] text-[var(--hope)]">
+            <Heart size={20} aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block text-[15px] leading-snug text-[var(--ink)]">{fmt(d.mineTitle, { count: familiesThisMonth })}</b>
+            <small className="mt-0.5 flex items-center gap-1 text-[12.5px] font-bold text-[var(--ink-soft)]">
+              <Lock size={14} aria-hidden="true" className="shrink-0" />
+              {d.mineLock}
+            </small>
+          </span>
+          <Link
+            href={`/${locale}/me`}
+            className="inline-flex h-[34px] shrink-0 items-center rounded-full bg-[var(--tone)] px-3 text-[13px] font-extrabold text-[var(--ink)]"
+          >
+            {d.mineLink}
+          </Link>
+        </div>
       )}
 
       {details && details.length > 0 && (
-        <section className="mt-6 text-left">
-          <h2 className="mx-0.5 mb-2.5 text-[15px] font-extrabold text-[var(--ink)]">{dict.details.title}</h2>
+        <section className="mt-5">
+          <h2 className="mx-1 mb-2 text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.details.title}</h2>
           <dl className="list m-0">
             {details.map((row) => (
               <div key={row.label} className="list-row flex min-w-0 items-center justify-between gap-3">
@@ -199,37 +229,29 @@ function PaidScreen({
         </section>
       )}
 
-      {receiptSlot && <div className="mt-5">{receiptSlot}</div>}
+      <div className="mt-4 grid gap-1">
+        <Link href={`/${locale}`} className="btn-tonal">
+          {d.another}
+        </Link>
+        <Link href={`/${locale}/bill/${billId}`} className="btn-ghost">
+          {d.viewBill}
+        </Link>
+      </div>
 
-      {/* Private: only this donor sees it. */}
-      {familiesThisMonth >= 1 && (
-        <div className="mt-6 flex items-center gap-3 rounded-[20px] bg-white p-3.5 text-left shadow-[var(--lift)]">
-          <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[rgba(46,154,103,0.12)] text-[var(--hope)]">
-            <Heart size={20} aria-hidden="true" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <b className="block text-[15px] leading-snug text-[var(--ink)]">{fmt(d.mineTitle, { count: familiesThisMonth })}</b>
-            <small className="mt-0.5 flex items-center gap-1 text-[12.5px] font-bold text-[var(--ink-soft)]">
-              <Lock size={14} aria-hidden="true" className="shrink-0" />
-              {d.mineLock}
-            </small>
-          </span>
-          <Link
-            href={`/${locale}/me`}
-            className="inline-flex h-[34px] shrink-0 items-center rounded-full bg-[var(--tone)] px-3 text-[13px] font-extrabold text-[var(--ink)]"
-          >
-            {d.mineLink}
-          </Link>
-        </div>
-      )}
+      {/* Always in reach: the one thing to do next. */}
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+68px)] z-30 -mx-4 mt-2 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-3 md:bottom-0 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
+        <button type="button" onClick={() => setShareOpen(true)} className="btn-primary w-full">
+          <Share2 size={20} aria-hidden="true" />
+          {d.shareBtn}
+        </button>
+      </div>
 
       {/* What will be shared: nothing about the family; the amount only if switched on. */}
-      <div className="mt-6 text-left">
-        <h2 className="mx-0.5 mb-2.5 text-[15px] font-extrabold text-[var(--ink)]">{d.shareTitle}</h2>
-        <figure
-          aria-label={d.shareAria}
-          className="m-0 flex items-center gap-3.5 rounded-[20px] hero-mesh p-4 text-[#f6efe3]"
-        >
+      <BottomSheet open={shareOpen} onClose={closeShare} labelledBy="share-title">
+        <h2 id="share-title" className="text-[22px] font-extrabold tracking-tight text-[var(--ink)]">
+          {d.shareTitle}
+        </h2>
+        <figure aria-label={d.shareAria} className="m-0 mt-3 flex items-center gap-3.5 rounded-[20px] hero-mesh p-4 text-[#f6efe3]">
           <svg viewBox="0 0 40 48" aria-hidden="true" className="h-[52px] w-11 shrink-0 drop-shadow-[0_0_10px_rgba(246,166,35,0.55)]">
             <rect x="1" y="1" width="38" height="46" rx="7" fill="#151826" />
             <rect x="5" y="5" width="30" height="38" rx="4" fill="#ffc94f" />
@@ -255,21 +277,12 @@ function PaidScreen({
           />
           <span aria-hidden="true" className="switch" />
         </label>
-        <p className="mx-0.5 mt-1.5 text-[13px] text-[var(--ink-soft)]">{d.shareNote}</p>
-      </div>
-
-      <div className="mt-6 grid gap-2.5 text-left">
-        <button type="button" onClick={share} className="btn-primary">
+        <p className="mx-0.5 mt-1.5 mb-4 text-[13px] text-[var(--ink-soft)]">{d.shareNote}</p>
+        <button type="button" onClick={share} className="btn-primary w-full">
           <Share2 size={20} aria-hidden="true" />
           {d.shareBtn}
         </button>
-        <Link href={`/${locale}`} className="btn-tonal">
-          {d.another}
-        </Link>
-        <Link href={`/${locale}/bill/${billId}`} className="btn-ghost">
-          {d.viewBill}
-        </Link>
-      </div>
+      </BottomSheet>
 
       {toast && (
         <div role="status" className="toast flex max-w-[90vw] items-center gap-2 rounded-full bg-[var(--ink)] px-5 py-3 text-center text-sm font-bold text-[var(--paper)] shadow-lg">
