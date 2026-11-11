@@ -8,6 +8,7 @@ import type { ClosedThanks } from "@/lib/community";
 import type { Locale } from "@/i18n/config";
 import { fmt, type Dictionary } from "@/i18n";
 import { BuildingArt } from "./BuildingArt";
+import { JourneyArt, StreetArt, ThanksArt } from "./HeroArt";
 import { HowItWorks } from "./HowItWorks";
 
 const AUTO_MS = 5000;
@@ -164,7 +165,7 @@ export function HeroSlider({
                 {weekCount > 0 ? fmt(dict.feed.heroWeek, { count: weekCount }) : dict.feed.heroWeekNone}
               </p>
             </div>
-            <BuildingArt className="-mr-1.5 -mb-1 h-[150px] w-[112px] shrink-0 min-[380px]:h-[168px] min-[380px]:w-[126px]" />
+            <BuildingArt className="-mr-1.5 -mb-1 h-[150px] w-[112px] shrink-0 min-[380px]:h-[168px] min-[380px]:w-[126px] md:h-[230px] md:w-[172px]" />
           </div>
           <div className="relative mt-5 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 min-[420px]:gap-2.5">
             <a href="#feed" className="btn-primary min-w-0 px-4">
@@ -181,68 +182,75 @@ export function HeroSlider({
     }
     if (id === "closed" && thanks) {
       return (
-        <div className="flex h-full flex-col justify-center gap-4">
-          <div className="hs-rise flex items-center gap-2 text-[13px] font-extrabold text-[var(--glow)]">
-            <span aria-hidden="true" className="text-[28px] leading-none">{UTILITY_ICONS[thanks.utilityType]}</span>
-            {dict.feed.closedTitle}
-          </div>
-          <blockquote className="hs-rise m-0 text-[24px] leading-[1.2] font-extrabold tracking-tight text-balance break-words">
-            <span aria-hidden="true" className="text-[var(--glow)]">“</span>
-            {dict.reactions.items[thanks.reaction]}
-            <span aria-hidden="true" className="text-[var(--glow)]">”</span>
-          </blockquote>
-          <div className="hs-rise flex flex-wrap items-center gap-2 text-[13px] font-bold">
-            <span className="rounded-full bg-[rgba(255,255,255,0.12)] px-3 py-1 whitespace-nowrap">{dict.app.closedLine}</span>
-            <span className="rounded-full bg-[var(--glow)] px-3 py-1 font-extrabold whitespace-nowrap text-[#3b2508]">
+        <div className="flex h-full items-center gap-3 md:gap-8">
+          <div className="flex min-w-0 flex-1 flex-col gap-3.5">
+            <div className="hs-rise flex items-center gap-2 text-[13px] font-extrabold text-[var(--glow)]">
+              <span aria-hidden="true" className="text-[20px] leading-none">{UTILITY_ICONS[thanks.utilityType]}</span>
+              {dict.feed.closedTitle}
+            </div>
+            <blockquote className="hs-rise m-0 text-[22px] leading-[1.18] font-extrabold tracking-tight text-balance break-words min-[380px]:text-[24px] md:text-[32px]">
+              <span aria-hidden="true" className="text-[var(--glow)]">“</span>
+              {dict.reactions.items[thanks.reaction]}
+              <span aria-hidden="true" className="text-[var(--glow)]">”</span>
+            </blockquote>
+            <p className="hs-rise text-[14px] font-semibold text-[#e6dccb]">{dict.app.closedLine}</p>
+            <span className="hs-rise inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--glow)] px-3 py-1 text-[13px] font-extrabold whitespace-nowrap text-[#3b2508]">
+              <Heart size={14} aria-hidden="true" />
               {fmt(dict.feed.helpersCount, { count: thanks.helpers })}
             </span>
           </div>
+          <ThanksArt className="h-[150px] w-[112px] shrink-0 min-[380px]:h-[168px] min-[380px]:w-[126px] md:h-[240px] md:w-[180px]" />
         </div>
       );
     }
     if (id === "how") {
       return (
-        <div className="flex h-full flex-col justify-center gap-3.5">
-          <h2 className="hs-rise text-[22px] leading-tight font-extrabold tracking-tight">{dict.app.howTitle}</h2>
-          <ol className="m-0 grid list-none gap-2.5 p-0">
-            {steps.map(({ Icon, text }, i) => (
-              <li key={text} className="hs-rise flex min-w-0 items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.12)] text-[var(--glow)]">
-                  <Icon size={20} aria-hidden="true" />
-                </span>
-                <span className="min-w-0 text-[15px] leading-snug font-bold">
-                  <span aria-hidden="true" className="mr-1.5 text-[var(--glow)]">{i + 1}.</span>
-                  {text}
-                </span>
-              </li>
-            ))}
-          </ol>
-          <button type="button" onClick={() => setHowOpen(true)} className="btn btn-glass mt-1 min-h-11 w-auto self-start px-5">
-            {dict.app.howMore}
-          </button>
+        <div className="flex h-full flex-col justify-center gap-3 md:flex-row md:items-center md:gap-8">
+          <JourneyArt className="mx-auto h-[118px] w-auto shrink-0 md:order-last md:mx-0 md:h-[200px]" />
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <h2 className="text-[22px] leading-tight font-extrabold tracking-tight md:text-[30px]">{dict.app.howTitle}</h2>
+            <ol className="m-0 grid list-none gap-2 p-0 md:gap-3">
+              {steps.map(({ Icon, text }, i) => (
+                <li key={text} className="hs-step flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(255,255,255,0.12)] text-[var(--glow)] md:h-11 md:w-11">
+                    <Icon size={18} aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 text-[14px] leading-snug font-bold md:text-[17px]">
+                    <span aria-hidden="true" className="mr-1 text-[var(--glow)]">{i + 1}.</span>
+                    {text}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <button type="button" onClick={() => setHowOpen(true)} className="btn btn-glass mt-1 min-h-11 w-auto self-start px-5">
+              {dict.app.howMore}
+            </button>
+          </div>
         </div>
       );
     }
+    const liveOn = index === slides.indexOf("live");
     return (
-      <div className="flex h-full flex-col justify-center gap-4">
+      <div className="flex h-full flex-col">
         <h2 className="hs-rise flex items-center gap-2 text-[13px] font-extrabold text-[var(--glow)]">
           <span aria-hidden="true" className="lamp-dot shrink-0" />
           {dict.app.liveTitle}
         </h2>
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="hs-rise min-w-0 rounded-[20px] bg-[rgba(255,255,255,0.1)] p-3.5">
-            <div className="text-[40px] leading-none font-extrabold tracking-tight text-[var(--glow)] tabular-nums">
-              <CountUp to={weekCount} run={index === slides.indexOf("live")} />
+        <div className="mt-4 grid grid-cols-2 gap-4 md:max-w-xl">
+          <div className="hs-rise min-w-0">
+            <div className="text-[44px] leading-none font-extrabold tracking-tight text-[var(--glow)] tabular-nums md:text-[60px]">
+              <CountUp to={weekCount} run={liveOn} />
             </div>
-            <p className="mt-2 text-[13.5px] leading-snug font-bold text-[#e6dccb]">{dict.app.liveWeek}</p>
+            <p className="mt-1.5 text-[13.5px] leading-snug font-bold text-[#e6dccb] md:text-[15px]">{dict.app.liveWeek}</p>
           </div>
-          <div className="hs-rise min-w-0 rounded-[20px] bg-[rgba(255,255,255,0.1)] p-3.5">
-            <div className="text-[40px] leading-none font-extrabold tracking-tight tabular-nums">
-              <CountUp to={waiting} run={index === slides.indexOf("live")} />
+          <div className="hs-rise min-w-0">
+            <div className="text-[44px] leading-none font-extrabold tracking-tight tabular-nums md:text-[60px]">
+              <CountUp to={waiting} run={liveOn} />
             </div>
-            <p className="mt-2 text-[13.5px] leading-snug font-bold text-[#e6dccb]">{dict.app.liveOpen}</p>
+            <p className="mt-1.5 text-[13.5px] leading-snug font-bold text-[#e6dccb] md:text-[15px]">{dict.app.liveOpen}</p>
           </div>
         </div>
+        <StreetArt lit={weekCount} className="-mx-5 -mb-[22px] mt-auto block h-auto w-[calc(100%+40px)] max-w-none md:-mt-28 md:h-[260px]" />
       </div>
     );
   }

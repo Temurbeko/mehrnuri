@@ -145,3 +145,77 @@
     radial-gradient(closest-side at 85% 0%, rgba(214, 120, 60, 0.28), transparent 100%),
     var(--night);
 }
+
+/* ---- Slider illustrations (HeroArt.tsx). Static by default = finished state;
+   animated only on the visible slide. One 4.8s cycle for "how it works":
+   0-33% request arrives, 33-66% payment travels, 66-100% the home lights up. ---- */
+.ja-doc { opacity: 1; transform-box: fill-box; transform-origin: center; }
+.ja-coin { opacity: 0; offset-path: path("M40 60 C 58 22, 84 26, 92 86"); offset-rotate: 0deg; }
+.ja-win { opacity: 1; }
+.ja-heart { opacity: 0; transform-box: fill-box; }
+.hs-active .ja-doc { animation: ja-doc 4.8s ease-in-out infinite; }
+.hs-active .ja-pay { animation: ja-pay 4.8s ease-in-out infinite; }
+.hs-active .ja-coin { animation: ja-coin 4.8s ease-in-out infinite; }
+.hs-active .ja-win { animation: ja-win 4.8s ease-in-out infinite; }
+.hs-active .ja-heart { animation: ja-heart 4.8s ease-out infinite; }
+@keyframes ja-doc {
+  0% { opacity: 0; transform: translateY(6px) scale(0.7); }
+  8%, 30% { opacity: 1; transform: none; }
+  38%, 100% { opacity: 0; transform: translateY(-4px) scale(0.9); }
+}
+@keyframes ja-pay {
+  0%, 33% { opacity: 0.55; }
+  40% { opacity: 1; }
+  46% { opacity: 0.7; }
+  52% { opacity: 1; }
+  66%, 100% { opacity: 0.55; }
+}
+@keyframes ja-coin {
+  0%, 36% { opacity: 0; offset-distance: 0%; }
+  40% { opacity: 1; }
+  62% { opacity: 1; offset-distance: 100%; }
+  66%, 100% { opacity: 0; offset-distance: 100%; }
+}
+@keyframes ja-win {
+  0%, 63% { opacity: 0; }
+  68%, 94% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes ja-heart {
+  0%, 68% { opacity: 0; transform: translate(83px, 74px) scale(0.6); }
+  74% { opacity: 1; transform: translate(83px, 68px) scale(1); }
+  92%, 100% { opacity: 0; transform: translate(83px, 56px) scale(0.9); }
+}
+
+/* steps on the left follow the same cycle */
+.hs-active .hs-step { animation: hs-step 4.8s ease-in-out infinite; }
+.hs-active .hs-step:nth-child(2) { animation-delay: -3.2s; }
+.hs-active .hs-step:nth-child(3) { animation-delay: -1.6s; }
+@keyframes hs-step {
+  0%, 30% { opacity: 1; transform: none; }
+  36%, 97% { opacity: 0.42; transform: translateX(0); }
+  100% { opacity: 1; }
+}
+
+/* thank-you hearts */
+.ta-heart { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.hs-active .ta-heart { animation: ta-float 3.6s ease-out infinite; }
+.hs-active .ta-h2 { animation-delay: 1.2s; }
+.hs-active .ta-h3 { animation-delay: 2.4s; }
+@keyframes ta-float {
+  0% { opacity: 0; translate: 0 8px; scale: 0.6; }
+  20% { opacity: 1; translate: 0 0; scale: 1; }
+  100% { opacity: 0; translate: 0 -30px; scale: 0.9; }
+}
+
+/* the street: helped homes light up one after another, waiting ones pulse */
+.hs-active .sa-on { animation: sa-on 0.6s ease-out both; }
+@keyframes sa-on { from { opacity: 0; } to { opacity: 1; } }
+.hs-active .sa-wait { animation: sa-wait 1.8s ease-in-out infinite; }
+@keyframes sa-wait { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hs-active .ja-doc, .hs-active .ja-pay, .hs-active .ja-coin, .hs-active .ja-win, .hs-active .ja-heart,
+  .hs-active .hs-step, .hs-active .ta-heart, .hs-active .sa-on, .hs-active .sa-wait { animation: none; }
+  .ta-heart { opacity: 1; }
+}
