@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   allowedDevOrigins: lanAddresses(),
+  // No floating "N" badge while developing (it only ever showed locally); build
+  // and runtime errors still appear.
+  devIndicators: false,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
