@@ -113,9 +113,10 @@ export function DirectPaymentClient({
    * can only be used once.
    */
   function fillSampleReceipt() {
-    const d = new Date();
+    // receipt times are Tashkent time (UTC+5), whatever the tester's time zone
+    const d = new Date(Date.now() + 5 * 60 * 60_000);
     const pad = (n: number) => String(n).padStart(2, "0");
-    const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    const stamp = `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
     const rand = () => Math.floor(Math.random() * 1e9).toString().padStart(9, "0");
     setReceiptRaw(`https://ofd.soliq.uz/epi?t=EP000000TEST&r=${rand()}&c=${stamp}&s=${rand()}${rand().slice(0, 3)}`);
     setQrStatus("extracted");

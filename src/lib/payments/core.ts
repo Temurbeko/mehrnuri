@@ -5,6 +5,7 @@ import { collections } from "@/lib/db/mongo";
 import type { BillDoc, DonorDoc, PaymentDoc } from "@/lib/db/models";
 import type { PaymentProviderId, PaymentStatus } from "@/lib/domain";
 import { HttpError } from "@/lib/security/http";
+import { isRetryableReceiptError, verifyAndLockReceipt } from "@/lib/payments/verifyReceipt";
 import { markAccountProven } from "@/lib/bills/verdicts";
 import { notify } from "@/lib/notify";
 
@@ -86,7 +87,7 @@ async function releaseReservation(billId: ObjectId, amount: number): Promise<voi
   ]);
 }
 
-type TxPatch = Partial<Pick<PaymentDoc, "receiptKey" | "receiptLabel" | "leaderboardCredited">>;
+type TxPatch = Partial<Pick<PaymentDoc, "receiptKey" | "receiptLabel" | "leaderboardCredited" | "receiptPending">>;
 
 export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<PaymentDoc> {
   const { payments, bills, donors } = await collections();
@@ -189,4 +190,127 @@ export async function sweepExpired(force = false): Promise<void> {
   const { payments } = await collections();
   const expired = await payments.find({ status: "created", expiresAt: { $lt: new Date() } }, { projection: { _id: 1 } }).limit(200).toArray();
   for (const p of expired) await markUnsuccessful(p._id, "expired");
+  void retryPendingReceipts().catch((err: unknown) => console.warn("[receipts] retry failed", err));
+}
+
+/** How long a receipt Soliq has not seen yet keeps being re-checked. */
+const RECEIPT_RETRY_DAYS = 3;
+
+export function pendingReceipt(raw: string, tries = 0): NonNullable<PaymentDoc["receiptPending"]> {
+  const now = Date.now();
+  // 10 min, 20, 40 ... capped at 6 h between tries
+  const wait = Math.min(10 * 60_000 * 2 ** tries, 6 * 60 * 60_000);
+  return { raw, nextTryAt: new Date(now + wait), until: new Date(now + RECEIPT_RETRY_DAYS * 24 * 60 * 60_000), tries };
+}
+
+/**
+ * Adds a fiscal receipt to a payment that is already counted as paid but has
+ * none yet (donor skipped it, or Soliq did not have it at the time). Gives the
+ * donor their leaderboard credit and proves the account, exactly as if the
+ * receipt had come with the confirmation. Returns "pending" when Soliq still
+ * does not know the receipt; it is then re-checked in the background.
+ */
+export async function attachReceipt(paymentId: ObjectId, raw: string): Promise<"verified" | "pending"> {
+  const { payments, bills, donors } = await collections();
+  const p = await payments.findOne({ _id: paymentId });
+  if (!p) throw new HttpError(404, "payment_not_found");
+  if (p.status !== "paid") throw new HttpError(409, "payment_not_paid");
+  if (p.receiptKey) return "verified";
+
+  let verified;
+  try {
+    verified = await verifyAndLockReceipt(raw, p.amount, p.createdAt);
+  } catch (err) {
+    if (!isRetryableReceiptError(err)) throw err;
+    const tries = p.receiptPending?.raw === raw ? p.receiptPending.tries + 1 : 0;
+    const pending = pendingReceipt(raw, tries);
+    // keep the original deadline when re-trying the same receipt
+    if (p.receiptPending?.raw === raw) pending.until = p.receiptPending.until;
+    await payments.updateOne({ _id: p._id }, { $set: { receiptPending: pending, updatedAt: new Date() } });
+    return "pending";
+  }
+
+  let updated: PaymentDoc | null;
+  try {
+    updated = await payments.findOneAndUpdate(
+      { _id: p._id, status: "paid", receiptKey: { $in: [null, undefined] } as never },
+      {
+        $set: { receiptKey: verified.receiptKey, receiptLabel: verified.receiptLabel, leaderboardCredited: true, receiptPending: null, updatedAt: new Date() },
+      },
+      { returnDocument: "before" },
+    );
+  } catch (err) {
+    if (err instanceof MongoServerError && err.code === 11000) throw new HttpError(409, "duplicate_receipt");
+    throw err;
+  }
+  if (!updated) return "verified"; // another request attached it first
+
+  if (updated.leaderboardCredited !== true) {
+    await donors.updateOne({ _id: p.donorId }, { $inc: { totalDonated: p.amount, donationsCount: 1 } });
+  }
+  const bill = await bills.findOne({ _id: p.billId }, { projection: { utilityType: 1, accountNumber: 1, ipHash: 1 } });
+  if (bill && !(p.ipHash && p.ipHash === bill.ipHash)) {
+    void markAccountProven({ billId: bill._id, utilityType: bill.utilityType, accountNumber: bill.accountNumber }).catch(
+      (err: unknown) => console.warn("[trust] markAccountProven failed", err),
+    );
+  }
+  return "verified";
+}
+
+let lastReceiptRetry = 0;
+
+/** Re-checks a few pending receipts whose next try is due (runs with the expiry sweep). */
+export async function retryPendingReceipts(): Promise<void> {
+  if (Date.now() - lastReceiptRetry < 5 * 60_000) return;
+  lastReceiptRetry = Date.now();
+  const { payments } = await collections();
+  const now = new Date();
+  // give up on receipts past their deadline
+  await payments.updateMany({ "receiptPending.until": { $lt: now } }, { $set: { receiptPending: null } });
+  const due = await payments
+    .find({ status: "paid", "receiptPending.nextTryAt": { $lte: now } }, { projection: { _id: 1, receiptPending: 1 } })
+    .limit(5)
+    .toArray();
+  for (const p of due) {
+    await attachReceipt(p._id, p.receiptPending!.raw).catch(async () => {
+      // a final answer (wrong amount, used receipt...): stop trying
+      await payments.updateOne({ _id: p._id }, { $set: { receiptPending: null } });
+    });
+  }
+}
+
+export interface DonorOpenPayment {
+  id: string;
+  amount: number;
+  at: string;
+  /** "paid": counted, but no verified receipt yet; "unconfirmed": the donor never confirmed it. */
+  kind: "paid" | "unconfirmed";
+  pending: boolean;
+}
+
+/** A donor's payments that still need something from them (shown in their profile). */
+export async function donorOpenPayments(donorId: ObjectId): Promise<DonorOpenPayment[]> {
+  const { payments } = await collections();
+  const now = Date.now();
+  const rows = await payments
+    .find(
+      {
+        donorId,
+        $or: [
+          { status: "paid", receiptKey: { $in: [null, undefined] } as never, paidAt: { $gte: new Date(now - 30 * 24 * 60 * 60_000) } },
+          { status: { $in: [...OPEN_STATES, "expired"] }, createdAt: { $gte: new Date(now - 3 * 24 * 60 * 60_000) } },
+        ],
+      },
+      { projection: { amount: 1, status: 1, createdAt: 1, paidAt: 1, receiptPending: 1 } },
+    )
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .toArray();
+  return rows.map((p) => ({
+    id: p._id.toHexString(),
+    amount: p.amount,
+    at: (p.paidAt ?? p.createdAt).toISOString(),
+    kind: p.status === "paid" ? "paid" : "unconfirmed",
+    pending: Boolean(p.receiptPending),
+  }));
 }

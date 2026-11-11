@@ -213,7 +213,26 @@ body {
 .bw .pane,
 .bw .halo {
   opacity: 0;
-  transition: opacity 1.1s ease;
+  transition: opacity 0.55s ease;
+}
+/* stars twinkle (opacity only: cheap, no layout) */
+@keyframes bw-twinkle {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 0.2; }
+}
+.bw-star {
+  animation: bw-twinkle 3.2s ease-in-out infinite;
+}
+/* a small heart rises from a window that just lit up */
+@keyframes bw-rise {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  25% { opacity: 1; transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-16px) scale(0.9); }
+}
+.bw-heart {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bw-rise 1.3s ease-out forwards;
 }
 .bw.on .pane {
   opacity: 1;
@@ -233,7 +252,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .lamp-dot, .sheet-in { animation: none; }
-  .bw .pane, .bw .halo { transition: none; }
+  .bw-star { animation: none; }
 }
 
 /* "Copied" toast. */

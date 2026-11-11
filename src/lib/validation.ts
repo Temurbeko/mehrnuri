@@ -75,6 +75,12 @@ export const confirmPaymentSchema = z.object({
   skipLeaderboard: z.boolean().optional(),
 });
 
+export const attachReceiptSchema = z.object({
+  paymentId: z.string().regex(/^[a-f0-9]{24}$/),
+  signature: z.string().min(10).max(200),
+  receiptRaw: z.string().trim().min(10).max(500),
+});
+
 /**
  * A donor reporting what their payment app actually showed for the account.
  * `seenAmount` is only meaningful for `amount_differs`.

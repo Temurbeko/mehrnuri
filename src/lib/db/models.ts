@@ -81,6 +81,12 @@ export interface PaymentDoc {
   ipHash?: string;
   receiptLabel?: string | null;
   leaderboardCredited?: boolean;
+  /**
+   * A receipt Soliq did not know yet (payment services can register it hours
+   * later). Re-checked in the background until `until`; on success the payment
+   * gets its receiptKey and leaderboard credit.
+   */
+  receiptPending?: { raw: string; nextTryAt: Date; until: Date; tries: number } | null;
   createdAt: Date;
   updatedAt: Date;
 }

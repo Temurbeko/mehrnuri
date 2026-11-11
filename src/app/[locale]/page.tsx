@@ -62,7 +62,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {weekCount > 0 ? fmt(dict.feed.heroWeek, { count: weekCount }) : dict.feed.heroWeekNone}
             </p>
           </div>
-          <BuildingArt className="h-[125px] w-[94px] shrink-0 min-[380px]:h-36 min-[380px]:w-[108px]" />
+          <BuildingArt className="-mr-1.5 -mb-1 h-[150px] w-[112px] shrink-0 min-[380px]:h-[168px] min-[380px]:w-[126px]" />
         </div>
         <div className="relative mt-5 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 min-[420px]:gap-2.5">
           <a href="#feed" className="btn-primary min-w-0 px-4">

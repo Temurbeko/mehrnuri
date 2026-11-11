@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { BRAND } from "@/config/brand";
 import "./globals.css";
+import "./motion.css";
 
 const manrope = Manrope({
   subsets: ["latin", "cyrillic"],

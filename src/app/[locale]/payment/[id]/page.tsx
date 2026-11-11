@@ -7,6 +7,7 @@ import { getBill } from "@/lib/bills/service";
 import { currentDonor } from "@/lib/donors/session";
 import { donorFamiliesThisMonth } from "@/lib/community";
 import { PaymentResultClient } from "@/components/PaymentResultClient";
+import { paymentSignature } from "@/lib/payments/providers";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,11 @@ export default async function PaymentResultPage({
       billId={payment.billId.toHexString()}
       utilityType={bill?.utilityType ?? null}
       familiesThisMonth={familiesThisMonth}
+      receipt={
+        paid && !payment.receiptKey
+          ? { signature: paymentSignature(payment._id.toHexString()), pending: Boolean(payment.receiptPending) }
+          : null
+      }
       locale={locale}
       dict={dict}
     />

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getPayment, markPaid, markUnsuccessful } from "@/lib/payments/core";
+import { getPayment, markPaid, markUnsuccessful, pendingReceipt } from "@/lib/payments/core";
 import { paymentSignature } from "@/lib/payments/providers";
-import { verifyAndLockReceipt } from "@/lib/payments/verifyReceipt";
+import { verifyAndLockReceipt, isRetryableReceiptError } from "@/lib/payments/verifyReceipt";
 import { safeEqual } from "@/lib/security/crypto";
 import { handler, HttpError, readJson } from "@/lib/security/http";
 import { enforceRateLimit } from "@/lib/security/rateLimit";
@@ -36,7 +36,17 @@ export const POST = handler(async (req: NextRequest) => {
     return NextResponse.json({ ok: true, status: cancelled.status });
   }
 
-  const verified = await verifyAndLockReceipt(skipLeaderboard ? null : receiptRaw, payment.amount);
+  const raw = skipLeaderboard ? null : (receiptRaw ?? null);
+  let verified;
+  try {
+    verified = await verifyAndLockReceipt(raw, payment.amount, payment.createdAt);
+  } catch (err) {
+    // Soliq does not have the receipt yet (or is unreachable): the payment is
+    // recorded now and the receipt is re-checked in the background.
+    if (!raw || !isRetryableReceiptError(err)) throw err;
+    const result = await markPaid(payment._id, { leaderboardCredited: false, receiptPending: pendingReceipt(raw) });
+    return NextResponse.json({ ok: true, status: result.status, leaderboardCredited: false, receiptPending: true });
+  }
   const creditLeaderboard = !skipLeaderboard && verified.verifiedForLeaderboard;
 
   const result = await markPaid(payment._id, {

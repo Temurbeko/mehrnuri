@@ -7,8 +7,11 @@ import type { PaymentStatus, UtilityType } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { copyText } from "@/lib/clipboard";
+import { AddReceipt } from "./AddReceipt";
 
 export function PaymentResultClient({
+  paymentId,
+  receipt = null,
   initialStatus,
   amount,
   billId,
@@ -25,6 +28,8 @@ export function PaymentResultClient({
   utilityType?: UtilityType | null;
   /** Families this donor helped this month: private, shown only to them. */
   familiesThisMonth?: number;
+  /** Set when the payment is paid but has no verified fiscal receipt yet. */
+  receipt?: { signature: string; pending: boolean } | null;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -38,6 +43,7 @@ export function PaymentResultClient({
         billId={billId}
         utilityType={utilityType}
         familiesThisMonth={familiesThisMonth}
+        receiptSlot={receipt ? <AddReceipt paymentId={paymentId} signature={receipt.signature} pending={receipt.pending} dict={dict} /> : null}
         locale={locale}
         dict={dict}
       />
@@ -79,6 +85,7 @@ export function PaymentResultClient({
 
 /** Paid: a window lights up, thanks, the donor's private impact, and a share card with no family details. */
 function PaidScreen({
+  receiptSlot,
   amount,
   billId,
   utilityType,
@@ -90,6 +97,7 @@ function PaidScreen({
   billId: string;
   utilityType: UtilityType | null;
   familiesThisMonth: number;
+  receiptSlot: React.ReactNode;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -145,6 +153,8 @@ function PaidScreen({
           {fmt(d.body, { account: d.account[utilityType], outcome: dict.outcome[utilityType] })}
         </p>
       )}
+
+      {receiptSlot && <div className="mt-6">{receiptSlot}</div>}
 
       {/* Private: only this donor sees it. */}
       {familiesThisMonth >= 1 && (

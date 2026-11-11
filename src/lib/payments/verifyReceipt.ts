@@ -177,7 +177,48 @@ async function verifyWithSoliqServer(params: SoliqQueryParams, expectedAmountUzs
  * 3. Enforces anti-replay uniqueness (`receiptKey` unique index in MongoDB) so
  *    the same receipt can never be used twice.
  */
-export async function verifyAndLockReceipt(rawInput: string | null | undefined, expectedAmountUzs: number): Promise<VerifiedReceipt> {
+/**
+ * The receipt time is printed in the QR itself (`c=YYYYMMDDHHmmss`, Tashkent
+ * time, UTC+5), so it can be checked without asking Soliq. Returns null when
+ * the format is unknown (then the date is simply not checked).
+ */
+export function receiptTime(c: string): Date | null {
+  const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(c.trim());
+  if (!m) return null;
+  const [, y, mo, d, h, mi, s] = m.map(Number) as number[];
+  const t = Date.UTC(y!, mo! - 1, d!, h! - 5, mi!, s!);
+  return Number.isFinite(t) ? new Date(t) : null;
+}
+
+/** A receipt may be made a little before the payment record (clock skew), never long before. */
+const RECEIPT_EARLY_SLACK_MS = 30 * 60_000;
+const RECEIPT_FUTURE_SLACK_MS = 15 * 60_000;
+
+/**
+ * Soliq has not got the receipt yet (payment services may send it to the tax
+ * office hours later) or could not be reached. Such a receipt is kept and
+ * checked again later instead of being refused.
+ */
+export function isRetryableReceiptError(err: unknown): boolean {
+  return err instanceof HttpError && (err.code === "soliq_receipt_not_found" || err.code === "soliq_unavailable");
+}
+
+/** Cheap checks that need no network: link format and date window. Throws on a bad receipt. */
+export function precheckReceipt(rawInput: string, paymentCreatedAt: Date): void {
+  const parsed = parseSoliqQrUrl(rawInput.trim());
+  if (!parsed) throw new HttpError(422, "invalid_receipt_format");
+  const at = receiptTime(parsed.paymentDate);
+  if (!at) return;
+  if (at.getTime() < paymentCreatedAt.getTime() - RECEIPT_EARLY_SLACK_MS || at.getTime() > Date.now() + RECEIPT_FUTURE_SLACK_MS) {
+    throw new HttpError(422, "receipt_date_mismatch");
+  }
+}
+
+export async function verifyAndLockReceipt(
+  rawInput: string | null | undefined,
+  expectedAmountUzs: number,
+  paymentCreatedAt?: Date,
+): Promise<VerifiedReceipt> {
   const trimmed = (rawInput ?? "").trim();
   if (!trimmed) {
     return {
@@ -192,6 +233,9 @@ export async function verifyAndLockReceipt(rawInput: string | null | undefined, 
   if (!parsed) {
     throw new HttpError(422, "invalid_receipt_format");
   }
+
+  // The receipt must be from this payment, not an old one from another day.
+  if (paymentCreatedAt) precheckReceipt(trimmed, paymentCreatedAt);
 
   const canonical = `soliq:${parsed.terminalId}:${parsed.paymentNo}:${parsed.paymentDate}:${parsed.fiscalSign ?? parsed.fiscalSignHash ?? ""}`.toLowerCase();
   const receiptKey = sha256(canonical);
