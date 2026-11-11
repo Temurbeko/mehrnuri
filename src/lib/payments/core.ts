@@ -125,7 +125,15 @@ export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<
           updatedAt: "$$NOW",
         },
       },
-      { $set: { isOpen: { $cond: [{ $gte: ["$paidAmount", "$amountOwed"] }, false, "$isOpen"] } } },
+      {
+        $set: {
+          isOpen: { $cond: [{ $gte: ["$paidAmount", "$amountOwed"] }, false, "$isOpen"] },
+          // when the bill became fully paid (feeds "this week N homes" and "recently closed")
+          fundedAt: {
+            $cond: [{ $and: [{ $gte: ["$paidAmount", "$amountOwed"] }, { $not: ["$fundedAt"] }] }, "$$NOW", "$fundedAt"],
+          },
+        },
+      },
     ],
     { returnDocument: "after" },
   );

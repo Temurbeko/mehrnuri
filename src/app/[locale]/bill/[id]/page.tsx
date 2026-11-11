@@ -11,6 +11,7 @@ import { sweepExpired } from "@/lib/payments/core";
 import { enabledProviders } from "@/lib/payments/providers";
 import { canReactToBill } from "@/app/api/bills/[id]/react/route";
 import { isBillOwner, OWNER_COOKIE } from "@/lib/bills/owner";
+import { billRecentHelps, withHelpers } from "@/lib/community";
 import { DonatePanel } from "@/components/DonatePanel";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,8 @@ export default async function BillPage({
     );
   }
 
+  const recentHelps = await billRecentHelps(billDoc._id, 3).catch(() => []);
+  const [publicBill] = await withHelpers([toPublicBill(billDoc)]).catch(() => [toPublicBill(billDoc)]);
   const canReact = canReactToBill(cookieStore, billDoc._id.toHexString());
 
   return (
@@ -49,9 +52,10 @@ export default async function BillPage({
         <span>{dict.common.back}</span>
       </Link>
       <DonatePanel
-        initialBill={toPublicBill(billDoc)}
+        initialBill={publicBill!}
         initialReviewStatus={billDoc.reviewStatus}
         initialNickname={donor?.nickname ?? null}
+        recentHelps={recentHelps}
         providers={enabledProviders()}
         minAmount={env().MIN_DONATION_UZS}
         canReact={canReact}

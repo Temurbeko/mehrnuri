@@ -187,7 +187,7 @@ export function DirectPaymentClient({
             <span className="text-sm font-extrabold whitespace-nowrap text-stone-500">{fmt(t.stepOf, { n: stepNo })}</span>
           </div>
         </div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{stepTitle}</h1>
+        <h1 className="text-[26px] leading-[1.15] font-extrabold tracking-tight text-balance text-[var(--ink)]">{stepTitle}</h1>
       </div>
 
       {step === "pay" && (
@@ -238,14 +238,14 @@ export function DirectPaymentClient({
             )}
           </div>
 
-          <p className="flex items-start gap-2.5 rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-relaxed font-medium text-amber-950">
-            <Lightbulb size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
+          <p className="flex items-start gap-2.5 rounded-[18px] bg-[rgba(246,166,35,0.13)] px-3.5 py-3 text-[14.5px] leading-snug font-medium text-[var(--ink)]">
+            <Lightbulb size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--lamp-deep)]" />
             <span>{t.payHint}</span>
           </p>
 
           {/* Four equal launch buttons — opening an app, not choosing one. */}
           <div className="space-y-2.5">
-            <h2 className="px-1 text-base font-extrabold text-stone-900">{t.openApp}</h2>
+            <h2 className="px-0.5 text-[15px] font-extrabold text-[var(--ink)]">{t.openApp}</h2>
             <div className="grid grid-cols-2 gap-2.5">
               {PAYMENT_PROVIDERS.map((mId) => {
                 const m = MERCHANT_APPS[mId];
@@ -256,11 +256,11 @@ export function DirectPaymentClient({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => void copyValue(accountNumber, "account")}
-                    className="surface flex min-h-16 min-w-0 items-center gap-2.5 px-3 py-3 transition-all hover:shadow-[var(--lift-hover)] active:scale-[0.97]"
+                    className="flex min-h-[60px] min-w-0 items-center gap-2.5 rounded-[18px] bg-white px-3 py-2.5 shadow-[var(--lift)] transition-all hover:shadow-[var(--lift-hover)] active:scale-[0.97]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={m.icon} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover" />
-                    <span className="min-w-0 flex-1 truncate text-base font-extrabold text-stone-900">{m.name}</span>
+                    <img src={m.icon} alt="" className="h-[38px] w-[38px] shrink-0 rounded-[11px] object-cover ring-1 ring-[var(--hairline)]" />
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold text-[var(--ink)]">{m.name}</span>
                   </a>
                 );
               })}
@@ -304,7 +304,7 @@ export function DirectPaymentClient({
 
       {step === "check" && billId && (
         <div className="space-y-3">
-          <div className="surface p-5">
+          <div>
             <DebtCheck billId={billId} dict={dict} tone="step" onDone={() => setStep("receipt")} />
           </div>
           <button type="button" onClick={() => setStep("receipt")} className="btn-ghost w-full">

@@ -2,18 +2,21 @@
 
 import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { REGIONS, UTILITY_ICONS, UTILITY_TYPES, type PublicBill, type Region, type UtilityType } from "@/lib/domain";
+import { UTILITY_ICONS, UTILITY_TYPES, type PublicBill, type Region, type UtilityType } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
-import type { Dictionary } from "@/i18n";
+import { fmt, type Dictionary } from "@/i18n";
 import { BillCard } from "./BillCard";
-import { Combobox } from "./Combobox";
+import { RegionPicker } from "./RegionPicker";
 
 export function LiveFeed({
   initialBills,
+  regionCounts,
   locale,
   dict,
 }: {
   initialBills: PublicBill[];
+  /** Open requests per region (for the region picker). */
+  regionCounts: Partial<Record<Region, number>>;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -51,74 +54,45 @@ export function LiveFeed({
     return true;
   });
 
-  const countByUtility = (u: UtilityType) => bills.filter((b) => b.utilityType === u).length;
+  const totalOpen = Object.values(regionCounts).reduce((sum, n) => sum + (n ?? 0), 0);
 
   return (
-    <section id="feed" className="min-w-0 space-y-3 scroll-mt-20">
-      {/* Section Header */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <h2 className="truncate text-lg font-extrabold tracking-tight text-stone-900 sm:text-2xl">
-            {dict.home.feedTitle}
-          </h2>
-          <span className="shrink-0 rounded-full bg-[var(--tone)] px-2.5 py-0.5 text-xs font-extrabold text-stone-700">
-            {filtered.length}
-          </span>
-        </div>
-
-        <span className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700">
-          <span className="relative h-2 w-2 rounded-full bg-emerald-500 live-dot" />
-          {dict.bill.live}
+    <section id="feed" className="min-w-0 scroll-mt-20">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 className="min-w-0 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">{dict.home.feedTitle}</h2>
+        <span className="shrink-0 text-sm font-bold whitespace-nowrap text-[var(--ink-soft)]">
+          {fmt(dict.feed.familiesCount, { count: filtered.length })}
         </span>
       </div>
 
-      {/* Region + category chips in one swipeable row */}
-      <div className="relative">
-        <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-          <Combobox
-            id="regionFilter"
-            variant="chip"
-            hideLabel
-            label={dict.ask.region}
-            value={regionFilter}
-            onChange={(v) => setRegionFilter(v as Region | "all")}
-            options={[
-              { value: "all", label: `${dict.ask.region}: —` },
-              ...REGIONS.map((r) => ({ value: r, label: dict.region[r] })),
-            ]}
-            placeholder={dict.ask.region}
-            searchPlaceholder={dict.common.search}
-            emptyText={dict.common.nothingFound}
-            className="shrink-0"
-          />
+      <RegionPicker value={regionFilter} onChange={setRegionFilter} counts={regionCounts} total={totalOpen} dict={dict} />
 
+      <div className="relative">
+        <div
+          role="group"
+          aria-label={dict.ask.utility}
+          className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 pt-0.5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+        >
           <button
             type="button"
+            aria-pressed={utilityFilter === "all"}
             onClick={() => setUtilityFilter("all")}
             className={utilityFilter === "all" ? "chip-active" : "chip"}
           >
-            ({bills.length})
+            {dict.feed.filterAll}
           </button>
-
           {UTILITY_TYPES.map((u) => {
-            const count = countByUtility(u);
             const active = utilityFilter === u;
             return (
               <button
                 key={u}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setUtilityFilter(active ? "all" : u)}
                 className={active ? "chip-active" : "chip"}
               >
-                <span>{UTILITY_ICONS[u]}</span>
+                <span aria-hidden="true">{UTILITY_ICONS[u]}</span>
                 <span>{dict.utility[u]}</span>
-                {count > 0 && (
-                  <span
-                    className={`rounded-full px-1.5 text-xs ${active ? "bg-white/20 text-white" : "bg-white/70 text-stone-600"}`}
-                  >
-                    {count}
-                  </span>
-                )}
               </button>
             );
           })}
@@ -126,14 +100,13 @@ export function LiveFeed({
         <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 -right-4 w-10 bg-gradient-to-r from-transparent to-[var(--paper)] sm:hidden" />
       </div>
 
-      {/* Cards Grid */}
       {filtered.length === 0 ? (
-        <div className="card py-12 text-center space-y-2">
+        <div className="card mt-4 space-y-2 py-12 text-center">
           <Sparkles size={32} aria-hidden="true" className="mx-auto text-amber-500" />
           <p className="text-sm font-bold text-stone-600">{dict.home.empty}</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {filtered.map((bill) => (
             <BillCard key={bill.id} bill={bill} locale={locale} dict={dict} />
           ))}

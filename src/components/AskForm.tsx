@@ -16,7 +16,6 @@ import {
 import { DISTRICTS_BY_REGION, findDistrict, meterUnitFor, officialSupplierName } from "@/lib/uzbekistan";
 import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
-import { UTILITY_THEMES } from "./BillCard";
 import { Combobox } from "./Combobox";
 import { api, errorText } from "./api";
 
@@ -196,30 +195,26 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
         {step === 1 && (
           <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
           {UTILITY_TYPES.map((u) => {
             const active = utilityType === u;
-            const theme = UTILITY_THEMES[u];
             return (
               <button
                 key={u}
                 type="button"
                 onClick={() => setUtilityType(u)}
                 aria-pressed={active}
-                className={active ? "tile-active px-1.5" : "tile px-1.5"}
+                className={active ? "tile-active min-h-[88px] px-1.5" : "tile min-h-[88px] px-1.5"}
               >
                 {active && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
+                  <span className="absolute top-2 right-2 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[var(--lamp)] text-[#2b1a04]">
                     <Check size={13} strokeWidth={3} aria-hidden="true" />
                   </span>
                 )}
-                <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg ${theme.bg} ${theme.text}`}
-                  aria-hidden="true"
-                >
+                <span className="text-[28px] leading-none" aria-hidden="true">
                   {UTILITY_ICONS[u]}
                 </span>
-                <span className="line-clamp-1 text-xs font-extrabold leading-tight">{dict.utility[u]}</span>
+                <span className="line-clamp-1 text-sm font-extrabold leading-tight">{dict.utility[u]}</span>
               </button>
             );
           })}

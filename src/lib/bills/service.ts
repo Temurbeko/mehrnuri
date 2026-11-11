@@ -17,6 +17,7 @@ import { hashIp } from "@/lib/security/crypto";
 import type { CreateBillInput } from "@/lib/validation";
 import { findDistrict, officialSupplierName } from "@/lib/uzbekistan";
 import { notify } from "@/lib/notify";
+import { withHelpers } from "@/lib/community";
 
 export function maskAccount(acc: string): string {
   return acc.length <= 4 ? acc : `${"•".repeat(Math.min(acc.length - 4, 6))}${acc.slice(-4)}`;
@@ -227,7 +228,8 @@ export async function listOpenBills(q: FeedQuery = {}): Promise<PublicBill[]> {
     .sort({ paidAmount: 1, createdAt: 1 })
     .limit(Math.min(q.limit ?? 50, 100))
     .toArray();
-  return docs.map(toPublicBill);
+  // helper counts + initials for each card
+  return withHelpers(docs.map(toPublicBill));
 }
 
 export async function countOpenBills(): Promise<number> {
@@ -260,5 +262,5 @@ export async function billsChangedSince(since: Date, limit = 100): Promise<Publi
     .sort({ updatedAt: 1 })
     .limit(limit)
     .toArray();
-  return docs.map(toPublicBill);
+  return withHelpers(docs.map(toPublicBill));
 }

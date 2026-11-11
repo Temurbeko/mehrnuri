@@ -18,7 +18,7 @@ import { api, errorText } from "./api";
 
 const BADGES: Record<TrustLevel, { Icon: LucideIcon; className: string; key: "badgeNew" | "badgeChecked" | "badgeProven" }> = {
   new: { Icon: Sparkles, className: "bg-slate-500/10 text-slate-600 ring-slate-500/20", key: "badgeNew" },
-  donor_checked: { Icon: Eye, className: "bg-slate-500/10 text-slate-700 ring-slate-500/20", key: "badgeChecked" },
+  donor_checked: { Icon: Eye, className: "bg-[rgba(46,154,103,0.1)] text-[var(--hope)] ring-[rgba(46,154,103,0.2)]", key: "badgeChecked" },
   proven: { Icon: BadgeCheck, className: "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25", key: "badgeProven" },
 };
 
@@ -93,7 +93,7 @@ export function DebtCheck({
 
   const wrapper =
     tone === "step"
-      ? "space-y-4" // the payment page already puts this in a surface
+      ? "space-y-4" // the payment page shows it straight on the page
       : "surface space-y-4 p-5";
 
   if (stage === "sent" && result) {
@@ -113,7 +113,7 @@ export function DebtCheck({
     <div className={wrapper}>
       <div>
         {tone !== "step" && <div className="text-xs font-extrabold text-slate-900">{t.title}</div>}
-        <p className={`text-base leading-relaxed text-stone-600 ${tone === "step" ? "" : "mt-1"}`}>{t.hint}</p>
+        <p className={`text-base leading-relaxed text-[var(--ink-soft)] ${tone === "step" ? "" : "mt-1"}`}>{t.hint}</p>
       </div>
 
       {stage === "ask" ? (
@@ -122,7 +122,7 @@ export function DebtCheck({
             type="button"
             disabled={busy}
             onClick={() => send("match")}
-            className="btn-emerald w-full"
+            className={tone === "step" ? "btn-emerald min-h-[58px] w-full rounded-[18px] text-[17px]" : "btn-emerald w-full"}
           >
             <Check size={18} aria-hidden="true" />{t.match}
           </button>

@@ -41,6 +41,8 @@ export interface BillDoc {
     /** Latest report, so the admin sees why a bill was auto-hidden. */
     lastMismatch: { kind: VerdictKind; seenAmount: number | null; at: Date } | null;
   };
+  /** When the bill became fully paid. */
+  fundedAt?: Date | null;
   /** Auto-close date: utility debt is only current for about a month. */
   expiresAt?: Date | null;
   verification: {

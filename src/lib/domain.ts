@@ -126,6 +126,8 @@ export interface PublicBill {
   expiresAt: string | null;
   payoutStatus: PayoutStatus;
   thanksReactions?: ReactionType[];
+  /** People who paid towards this bill, and initials of the latest three (public nicknames). */
+  helpers?: { count: number; initials: string[] };
   createdAt: string;
   updatedAt: string;
 }

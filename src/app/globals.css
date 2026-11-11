@@ -27,13 +27,24 @@ html {
  * 14px for controls, 24px for surfaces.
  */
 :root {
-  --paper: #f7f5f0; /* page background */
-  --tone: #efebe4; /* filled fields, chips, tonal buttons */
-  --tone-hover: #e7e2d9;
-  --ink-soft: #57534e; /* secondary text */
-  --hairline: rgba(28, 25, 23, 0.07); /* only for dividers inside a list */
-  --lift: 0 1px 2px rgba(28, 25, 23, 0.04), 0 10px 30px -14px rgba(28, 25, 23, 0.16);
-  --lift-hover: 0 2px 4px rgba(28, 25, 23, 0.05), 0 18px 40px -16px rgba(28, 25, 23, 0.22);
+  --paper: #f6f1e8; /* warm evening paper */
+  --tone: #ece5d8; /* filled fields, chips, tonal buttons */
+  --tone-hover: #e3dacb;
+  --ink: #1f1b16;
+  --ink-soft: #6d6458; /* secondary text */
+  --hairline: rgba(31, 27, 22, 0.08); /* only for dividers inside a list */
+  --night: #151826; /* the building at night */
+  --night-2: #232740;
+  --lamp: #f6a623; /* window light = the one action colour */
+  --lamp-deep: #df7f0e;
+  --glow: #ffe2a1;
+  --hope: #2e9a67; /* paid / thank you */
+  --lift: 0 1px 2px rgba(31, 27, 22, 0.05), 0 14px 34px -18px rgba(31, 27, 22, 0.28);
+  --lift-hover: 0 2px 4px rgba(31, 27, 22, 0.06), 0 20px 42px -18px rgba(31, 27, 22, 0.34);
+  /* one spacing scale: inside a block 16, between blocks 24, between sections 32 */
+  --s-in: 16px;
+  --s-block: 24px;
+  --s-section: 32px;
 }
 
 body {
@@ -63,12 +74,13 @@ body {
 }
 
 @utility btn {
-  @apply relative inline-flex min-h-12 w-full cursor-pointer select-none items-center justify-center gap-2 rounded-xl px-5 py-3 text-center text-base font-bold transition-all duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  @apply relative inline-flex min-h-13 w-full cursor-pointer select-none items-center justify-center gap-2 rounded-2xl px-5 py-3 text-center text-base font-extrabold whitespace-nowrap transition-all duration-150 active:translate-y-px active:scale-[0.985] disabled:pointer-events-none disabled:opacity-50;
 }
 
 /* The ONE main action per screen. */
 @utility btn-primary {
-  @apply btn bg-light text-night shadow-[0_6px_16px_-6px_rgba(217,119,6,0.55)] hover:bg-light-deep;
+  /* lamp light: warm gradient, a top highlight and a soft glow underneath */
+  @apply btn bg-[linear-gradient(180deg,#ffc04d_0%,var(--lamp)_55%,var(--lamp-deep)_100%)] text-[#2b1a04] shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_10px_22px_-10px_rgba(223,127,14,0.75)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_14px_28px_-10px_rgba(223,127,14,0.85)];
 }
 
 /* Everything that is not the main action: filled, no outline. */
@@ -140,7 +152,7 @@ body {
 }
 
 @utility tile-active {
-  @apply tile bg-amber-50 text-stone-900 ring-2 ring-amber-500 hover:bg-amber-50;
+  @apply tile bg-white text-stone-900 shadow-[var(--lift)] ring-[3px] ring-[var(--lamp)] hover:bg-white;
 }
 
 /* Grouped list (banking-app style): one surface, rows split by hairlines. */
@@ -167,10 +179,61 @@ body {
 
 /* Night sky with one warm lamp glow — the brand moment. */
 .hero-mesh {
+  /* night sky with the warm glow of lit windows rising from the bottom right */
   background:
-    radial-gradient(90% 80% at 85% 10%, rgba(245, 158, 11, 0.32) 0%, rgba(245, 158, 11, 0) 60%),
-    radial-gradient(60% 50% at 10% 100%, rgba(251, 191, 36, 0.1) 0%, rgba(251, 191, 36, 0) 70%),
-    linear-gradient(160deg, #111827 0%, #1c1917 100%);
+    radial-gradient(closest-side at 75% 110%, rgba(246, 166, 35, 0.32), transparent 100%),
+    var(--night);
+}
+
+/* glass button on the night hero */
+.btn-glass {
+  color: #f6efe3;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* live dot */
+@keyframes lamp-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(246, 166, 35, 0.55); }
+  70% { box-shadow: 0 0 0 9px rgba(246, 166, 35, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(246, 166, 35, 0); }
+}
+.lamp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--lamp);
+  animation: lamp-pulse 2s infinite;
+}
+
+/* the building: windows fade on and off */
+.bw .pane,
+.bw .halo {
+  opacity: 0;
+  transition: opacity 1.1s ease;
+}
+.bw.on .pane {
+  opacity: 1;
+}
+.bw.on .halo {
+  opacity: 0.55;
+}
+
+/* bottom sheet */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+.sheet-in {
+  animation: sheet-up 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lamp-dot, .sheet-in { animation: none; }
+  .bw .pane, .bw .halo { transition: none; }
 }
 
 /* "Copied" toast. */
@@ -215,3 +278,74 @@ body {
   background-color: #10b981;
   animation: pulse-ring 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
 }
+
+/* Success screen: the family's window lights up. */
+@keyframes lightup-on {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes lightup-glow {
+  from { box-shadow: inset 0 0 0 6px var(--night), 0 0 0 0 rgba(246, 166, 35, 0); }
+  to { box-shadow: inset 0 0 0 6px var(--night), 0 0 60px 6px rgba(246, 166, 35, 0.45); }
+}
+.lightup {
+  position: relative;
+  width: 150px;
+  height: 178px;
+  margin: 6px auto;
+  border-radius: 26px;
+  background: var(--night-2);
+  box-shadow: inset 0 0 0 6px var(--night), 0 0 60px 6px rgba(246, 166, 35, 0.45);
+  animation: lightup-glow 1.6s ease 0.3s backwards;
+}
+.lightup::before,
+.lightup::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  background: var(--night);
+}
+.lightup::before { left: 50%; top: 0; bottom: 0; width: 6px; transform: translateX(-50%); }
+.lightup::after { top: 45%; left: 0; right: 0; height: 6px; }
+.lightup i {
+  position: absolute;
+  inset: 6px;
+  border-radius: 20px;
+  background: radial-gradient(circle at 50% 60%, var(--glow), var(--lamp) 70%);
+  animation: lightup-on 1.4s ease 0.2s backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lightup, .lightup i { animation: none; }
+}
+
+/* On/off switch (a real checkbox with role=switch sits visually hidden before it). */
+.switch {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: var(--tone-hover);
+  transition: background 0.2s;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+input:checked + .switch { background: var(--hope); }
+input:checked + .switch::after { transform: translateX(18px); }
+input:focus-visible + .switch { outline: 3px solid var(--lamp); outline-offset: 2px; }
+
+/* Live ticker line fades between helps. */
+.ticker-text { transition: opacity 0.35s ease, transform 0.35s ease; }
+.ticker-text.out { opacity: 0; transform: translateY(6px); }
+.thanks-strip::-webkit-scrollbar { display: none; }
+.thanks-strip { scrollbar-width: none; }
