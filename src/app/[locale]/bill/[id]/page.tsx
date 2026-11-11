@@ -28,8 +28,8 @@ export default async function BillPage({
   if (!billDoc) {
     return (
       <div className="card mx-auto max-w-md space-y-4 text-center">
-        <h1 className="text-lg font-extrabold text-slate-900">{dict.bill.notFound}</h1>
-        <Link href={`/${locale}`} className="btn-primary">
+        <h1 className="text-lg font-extrabold text-stone-900">{dict.bill.notFound}</h1>
+        <Link href={`/${locale}`} className="btn-tonal">
           {dict.common.back}
         </Link>
       </div>
@@ -39,10 +39,10 @@ export default async function BillPage({
   const canReact = canReactToBill(cookieStore, billDoc._id.toHexString());
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
+    <div className="mx-auto max-w-lg space-y-2">
       <Link
         href={`/${locale}`}
-        className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-sm font-bold text-slate-600 border border-slate-200/80 hover:text-slate-900 transition active:scale-95"
+        className="btn-ghost -ml-2 w-auto whitespace-nowrap px-2"
       >
         <ChevronLeft size={18} aria-hidden="true" />
         <span>{dict.common.back}</span>

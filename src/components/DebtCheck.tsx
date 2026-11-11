@@ -28,7 +28,7 @@ export function TrustBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary 
   return (
     <span
       title={title}
-      className={`inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-extrabold ring-1 ${badge.className}`}
+      className={`inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-extrabold ${badge.className}`}
     >
       <badge.Icon size={14} aria-hidden="true" />
       <span>{label}</span>

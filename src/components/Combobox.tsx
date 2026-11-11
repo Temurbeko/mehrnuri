@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown, MapPin, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 export type ComboOption = { value: string; label: string };
@@ -26,6 +26,7 @@ export function Combobox({
   icon,
   className = "",
   hideLabel = false,
+  variant = "field",
 }: {
   id: string;
   label: string;
@@ -38,6 +39,7 @@ export function Combobox({
   icon?: React.ReactNode;
   className?: string;
   hideLabel?: boolean;
+  variant?: "field" | "chip";
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -135,17 +137,35 @@ export function Combobox({
             openPanel();
           }
         }}
-        className="input flex cursor-pointer items-center justify-between gap-2 text-left font-semibold active:scale-[0.99]"
+        className={
+          variant === "chip"
+            ? "chip max-w-[14rem]"
+            : "field flex cursor-pointer items-center justify-between gap-2 text-left font-semibold active:scale-[0.99]"
+        }
       >
-        {icon && <span className="shrink-0 text-slate-400">{icon}</span>}
-        <span className={`min-w-0 flex-1 truncate ${selected ? "text-slate-900" : "text-slate-400"}`}>
-          {selected ? selected.label : placeholder}
-        </span>
-        <ChevronDown
-          size={18}
-          aria-hidden="true"
-          className={`shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        {variant === "chip" ? (
+          <>
+            <MapPin size={15} aria-hidden="true" className="shrink-0 text-stone-500" />
+            <span className="min-w-0 truncate">{selected ? selected.label : placeholder}</span>
+            <ChevronDown
+              size={15}
+              aria-hidden="true"
+              className={`shrink-0 text-stone-500 transition-transform ${open ? "rotate-180" : ""}`}
+            />
+          </>
+        ) : (
+          <>
+            {icon && <span className="shrink-0 text-stone-400">{icon}</span>}
+            <span className={`min-w-0 flex-1 truncate ${selected ? "text-stone-900" : "text-stone-400"}`}>
+              {selected ? selected.label : placeholder}
+            </span>
+            <ChevronDown
+              size={18}
+              aria-hidden="true"
+              className={`shrink-0 text-stone-400 transition-transform ${open ? "rotate-180" : ""}`}
+            />
+          </>
+        )}
       </button>
 
       {open && (
@@ -153,15 +173,15 @@ export function Combobox({
           <div
             aria-hidden="true"
             onClick={() => close()}
-            className="fixed inset-0 z-40 bg-slate-900/40 sm:hidden"
+            className="fixed inset-0 z-40 bg-stone-900/40 sm:hidden"
           />
           <div
             onKeyDown={onKeyDown}
-            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70vh] flex-col rounded-t-3xl border border-slate-200 bg-white p-3 shadow-2xl sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:right-0 sm:top-full sm:mt-1.5 sm:max-h-80 sm:rounded-2xl sm:p-2"
+            className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[70vh] flex-col rounded-t-3xl bg-white p-3 shadow-[var(--lift-hover)] sm:absolute sm:inset-x-auto sm:bottom-auto ${variant === "chip" ? "sm:left-0 sm:w-64" : "sm:left-0 sm:right-0"} sm:top-full sm:mt-1.5 sm:max-h-80 sm:rounded-2xl sm:p-2`}
           >
-            <div aria-hidden="true" className="mx-auto mb-2 h-1.5 w-10 shrink-0 rounded-full bg-slate-300 sm:hidden" />
+            <div aria-hidden="true" className="mx-auto mb-2 h-1.5 w-10 shrink-0 rounded-full bg-stone-300 sm:hidden" />
             <div className="relative shrink-0">
-              <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -transtone-y-1/2 text-stone-400" />
               <input
                 autoFocus
                 type="text"
@@ -178,7 +198,7 @@ export function Combobox({
                   setActive(0);
                 }}
                 placeholder={searchPlaceholder}
-                className="input pl-11"
+                className="field pl-11"
               />
             </div>
             <ul
@@ -189,7 +209,7 @@ export function Combobox({
               className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain"
             >
               {filtered.length === 0 && (
-                <li className="px-4 py-6 text-center text-sm font-semibold text-slate-500">{emptyText}</li>
+                <li className="px-4 py-6 text-center text-sm font-semibold text-stone-500">{emptyText}</li>
               )}
               {filtered.map((o, i) => {
                 const isSel = o.value === value;
@@ -205,7 +225,7 @@ export function Combobox({
                     onClick={() => choose(o.value)}
                     className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl px-4 py-2 text-base font-semibold transition-colors ${
                       isAct ? "bg-amber-50" : ""
-                    } ${isSel ? "text-slate-900" : "text-slate-700"}`}
+                    } ${isSel ? "text-stone-900" : "text-stone-700"}`}
                   >
                     <span className="min-w-0">{o.label}</span>
                     {isSel && <Check size={18} aria-hidden="true" className="shrink-0 text-amber-600" />}

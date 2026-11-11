@@ -58,10 +58,10 @@ export function LiveFeed({
       {/* Section Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <h2 className="truncate text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+          <h2 className="truncate text-xl font-extrabold tracking-tight text-stone-900 sm:text-2xl">
             {dict.home.feedTitle}
           </h2>
-          <span className="shrink-0 rounded-full bg-slate-200/80 px-2.5 py-0.5 text-xs font-extrabold text-slate-700">
+          <span className="shrink-0 rounded-full bg-[var(--tone)] px-2.5 py-0.5 text-xs font-extrabold text-stone-700">
             {filtered.length}
           </span>
         </div>
@@ -72,18 +72,30 @@ export function LiveFeed({
         </span>
       </div>
 
-      {/* Horizontal Swipeable Category Chips + Region Select */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative sm:contents">
-        <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:px-0">
+      {/* Region + category chips in one swipeable row */}
+      <div className="relative">
+        <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+          <Combobox
+            id="regionFilter"
+            variant="chip"
+            hideLabel
+            label={dict.ask.region}
+            value={regionFilter}
+            onChange={(v) => setRegionFilter(v as Region | "all")}
+            options={[
+              { value: "all", label: `${dict.ask.region}: —` },
+              ...REGIONS.map((r) => ({ value: r, label: dict.region[r] })),
+            ]}
+            placeholder={dict.ask.region}
+            searchPlaceholder={dict.common.search}
+            emptyText={dict.common.nothingFound}
+            className="shrink-0"
+          />
+
           <button
             type="button"
             onClick={() => setUtilityFilter("all")}
-            className={`shrink-0 cursor-pointer rounded-2xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95 ${
-              utilityFilter === "all"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "border border-slate-200/90 bg-white text-slate-700 hover:border-slate-300"
-            }`}
+            className={utilityFilter === "all" ? "chip-active" : "chip"}
           >
             ({bills.length})
           </button>
@@ -96,19 +108,13 @@ export function LiveFeed({
                 key={u}
                 type="button"
                 onClick={() => setUtilityFilter(active ? "all" : u)}
-                className={`shrink-0 cursor-pointer inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95 ${
-                  active
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "border border-slate-200/90 bg-white text-slate-700 hover:border-slate-300"
-                }`}
+                className={active ? "chip-active" : "chip"}
               >
                 <span>{UTILITY_ICONS[u]}</span>
                 <span>{dict.utility[u]}</span>
                 {count > 0 && (
                   <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                      active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                    }`}
+                    className={`rounded-full px-1.5 text-[10px] ${active ? "bg-white/20 text-white" : "bg-white/70 text-stone-600"}`}
                   >
                     {count}
                   </span>
@@ -117,31 +123,14 @@ export function LiveFeed({
             );
           })}
         </div>
-        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 -right-4 w-10 bg-gradient-to-r from-transparent to-[#f4f6fb] sm:hidden" />
-        </div>
-
-        <Combobox
-          id="regionFilter"
-          hideLabel
-          label={dict.ask.region}
-          value={regionFilter}
-          onChange={(v) => setRegionFilter(v as Region | "all")}
-          options={[
-            { value: "all", label: `${dict.ask.region}: —` },
-            ...REGIONS.map((r) => ({ value: r, label: dict.region[r] })),
-          ]}
-          placeholder={dict.ask.region}
-          searchPlaceholder={dict.common.search}
-          emptyText={dict.common.nothingFound}
-          className="w-full sm:w-64"
-        />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 -right-4 w-10 bg-gradient-to-r from-transparent to-[var(--paper)] sm:hidden" />
       </div>
 
       {/* Cards Grid */}
       {filtered.length === 0 ? (
         <div className="card py-12 text-center space-y-2">
           <Sparkles size={32} aria-hidden="true" className="mx-auto text-amber-500" />
-          <p className="text-sm font-bold text-slate-600">{dict.home.empty}</p>
+          <p className="text-sm font-bold text-stone-600">{dict.home.empty}</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">

@@ -36,7 +36,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
 
   return (
     <div className="mx-auto max-w-xl space-y-5">
-      <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{dict.me.title}</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{dict.me.title}</h1>
       <MyRequests items={myRequests} locale={locale} dict={dict} />
       <ProfileClient
         initialDonor={
@@ -46,7 +46,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
         dict={dict}
       />
       <div className="pt-4 text-center">
-        <Link href={`/${locale}/admin`} className="text-[11px] font-semibold text-slate-400 hover:text-slate-600">
+        <Link href={`/${locale}/admin`} className="text-[11px] font-semibold text-stone-400 hover:text-stone-600">
           <span className="inline-flex items-center gap-1.5"><Shield size={16} aria-hidden="true" />{dict.nav.admin}</span>
         </Link>
       </div>

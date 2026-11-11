@@ -30,7 +30,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <section className="hero-mesh relative overflow-hidden rounded-3xl p-5 text-white shadow-[0_16px_40px_-12px_rgba(15,23,42,0.45)] sm:p-8">
         <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-amber-300 backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-amber-300 backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
               <span>{fmt(dict.home.stats, { count: bills.length })}</span>
             </div>
@@ -39,7 +39,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {dict.home.heroTitle}
             </h1>
 
-            <p className="max-w-lg text-sm font-medium text-slate-300 leading-relaxed sm:text-base">
+            <p className="max-w-lg text-sm font-medium text-stone-300 leading-relaxed sm:text-base">
               {dict.home.heroSubtitle}
             </p>
 
@@ -64,7 +64,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <img
               src={BRAND.logoUrl}
               alt={BRAND.name}
-              className="h-28 w-28 rounded-3xl object-cover shadow-2xl ring-2 ring-amber-400/40 md:h-32 md:w-32"
+              className="h-28 w-28 rounded-3xl object-cover shadow-2xl md:h-32 md:w-32"
             />
           </div>
         </div>
@@ -75,7 +75,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* How it works */}
       <section aria-labelledby="how-title" className="panel p-5">
-        <h2 id="how-title" className="text-sm font-extrabold text-slate-900">
+        <h2 id="how-title" className="text-sm font-extrabold text-stone-900">
           {dict.home.howTitle}
         </h2>
         <ol className="mt-3 space-y-2.5">
@@ -84,7 +84,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-xs font-extrabold text-amber-700">
                 {i + 1}
               </span>
-              <span className="min-w-0 text-sm font-medium leading-snug text-slate-700">{text}</span>
+              <span className="min-w-0 text-sm font-medium leading-snug text-stone-700">{text}</span>
             </li>
           ))}
         </ol>

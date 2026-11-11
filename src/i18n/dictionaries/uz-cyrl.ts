@@ -279,7 +279,7 @@ const uzCyrl: Dictionary = {
     recoveryText: "Пароль керак эмас. Бошқа қурилмадан кириш учун шу кодни сақлаб қўйинг:",
     show: "Тиклаш кодини кўрсатиш",
     restoreTitle: "Бошқа қурилмада тиклаш",
-    restorePlaceholder: "Тиклаш кодини шу ерга жойлаштиринг",
+    restorePlaceholder: "Тиклаш коди",
     restore: "Профилни тиклаш",
     logout: "Ушбу қурилмадан чиқиш",
     donorBadge: "Сахий",

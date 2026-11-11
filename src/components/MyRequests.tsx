@@ -20,34 +20,31 @@ export function MyRequests({ items, locale, dict }: { items: MyRequest[]; locale
   const t = dict.me;
 
   return (
-    <section id="my-requests" className="card space-y-3">
-      <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
+    <section id="my-requests" className="space-y-3">
+      <h2 className="flex items-center gap-2 text-lg font-extrabold text-stone-900">
         <FileText size={20} aria-hidden="true" className="text-amber-600" />
         {t.myRequests}
       </h2>
-      <ul className="space-y-2">
+      <ul className="list">
         {items.map(({ bill, reviewStatus, isOpen }) => {
           const remaining = Math.max(0, bill.amountOwed - bill.paidAmount);
           const status = statusText({ bill, reviewStatus, isOpen }, dict);
           return (
             <li key={bill.id}>
-              <Link
-                href={`/${locale}/bill/${bill.id}`}
-                className="panel flex min-w-0 items-center gap-3 transition hover:bg-slate-100 active:scale-[0.99]"
-              >
+              <Link href={`/${locale}/bill/${bill.id}`} className="list-row-tap min-w-0">
                 <span className="text-2xl" aria-hidden="true">
                   {UTILITY_ICONS[bill.utilityType]}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-extrabold whitespace-nowrap text-slate-900">{bill.code}</span>
+                    <span className="font-mono text-sm font-extrabold whitespace-nowrap text-stone-900">{bill.code}</span>
                     <span className={`truncate text-xs font-bold ${status.tone}`}>{status.label}</span>
                   </span>
-                  <span className="block truncate text-sm text-slate-600">
+                  <span className="block truncate text-sm text-stone-600">
                     {dict.utility[bill.utilityType]} · {t.remainingShort} {formatMoney(remaining, dict)}
                   </span>
                 </span>
-                <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-slate-400" />
+                <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-stone-400" />
               </Link>
             </li>
           );
@@ -64,6 +61,6 @@ function statusText(item: MyRequest, dict: Dictionary): { label: string; tone: s
   if (reviewStatus === "rejected") return { label: dict.status.rejected, tone: "text-rose-700" };
   if (bill.payoutStatus === "paid_out") return { label: dict.status.paid_out, tone: "text-emerald-700" };
   if (bill.fundingStatus === "fully_paid") return { label: dict.status.fully_paid, tone: "text-emerald-700" };
-  if (!isOpen) return { label: dict.me.closed, tone: "text-slate-500" };
-  return { label: dict.status[bill.fundingStatus], tone: "text-slate-600" };
+  if (!isOpen) return { label: dict.me.closed, tone: "text-stone-500" };
+  return { label: dict.status[bill.fundingStatus], tone: "text-stone-600" };
 }

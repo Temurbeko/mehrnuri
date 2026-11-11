@@ -30,16 +30,8 @@ export default async function LocaleLayout({
     <div lang={LOCALE_HTML_LANG[locale as Locale]} className="flex min-h-dvh flex-col pb-20 md:pb-0">
       <Header locale={locale as Locale} dict={dict} />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-5 sm:py-8">{children}</main>
-      <footer className="border-t border-slate-200/70 bg-white/60 py-6 text-center text-xs text-slate-500">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 px-4">
-          <span className="inline-flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={BRAND.logoUrl} alt="" className="h-5 w-5 rounded-md object-cover ring-1 ring-slate-300" />
-            <span>
-              <strong className="text-slate-700">{BRAND.name}</strong> — {dict.common.tagline}
-            </span>
-          </span>
-        </div>
+      <footer className="px-4 py-6 text-center text-xs text-stone-400">
+        {BRAND.name} — {dict.common.tagline}
       </footer>
     </div>
   );

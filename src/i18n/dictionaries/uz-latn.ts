@@ -281,7 +281,7 @@ const uzLatn = {
     recoveryText: "Parol kerak emas. Boshqa qurilmadan kirish uchun shu kodni saqlab qo'ying:",
     show: "Tiklash kodini ko'rsatish",
     restoreTitle: "Boshqa qurilmada tiklash",
-    restorePlaceholder: "Tiklash kodini shu yerga joylashtiring",
+    restorePlaceholder: "Tiklash kodi",
     restore: "Profilni tiklash",
     logout: "Ushbu qurilmadan chiqish",
     donorBadge: "Saxiy",

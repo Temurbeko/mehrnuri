@@ -122,27 +122,29 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
   if (created) {
     return (
-      <div className="card mx-auto max-w-md space-y-5 text-center p-6">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/25">
-          <Check size={28} aria-hidden="true" />
+      <div className="mx-auto max-w-lg space-y-6 pt-4 text-center">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+          <Check size={44} strokeWidth={3} aria-hidden="true" />
         </div>
-        <div className="space-y-1">
-          <h2 className="text-xl font-extrabold text-slate-900">{dict.ask.successTitle}</h2>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{created.held ? dict.ask.heldText : dict.ask.successText}</p>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{dict.ask.successTitle}</h1>
+          <p className="text-sm leading-relaxed text-stone-600">{created.held ? dict.ask.heldText : dict.ask.successText}</p>
         </div>
-        <div className="panel">
-          <div className="text-sm font-semibold text-slate-600">{dict.ask.yourCode}</div>
-          <div className="mt-0.5 font-mono text-xl font-extrabold tracking-widest text-slate-900 select-all">
+        <div className="surface px-4 py-6">
+          <div className="text-sm font-semibold text-stone-500">{dict.ask.yourCode}</div>
+          <div className="mt-1 font-mono text-[2.5rem] leading-tight font-extrabold tracking-wider text-stone-900 select-all">
             {created.code}
           </div>
         </div>
-        <Link href={`/${locale}/bill/${created.id}`} className="btn-primary">
-          <span>{dict.ask.viewBill}</span>
-          <ArrowRight size={18} aria-hidden="true" />
-        </Link>
-        <Link href={`/${locale}/me#my-requests`} className="btn-ghost w-full">
-          {dict.ask.viewMyRequests}
-        </Link>
+        <div className="space-y-2.5">
+          <Link href={`/${locale}/bill/${created.id}`} className="btn-primary">
+            <span>{dict.ask.viewBill}</span>
+            <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+          <Link href={`/${locale}/me#my-requests`} className="btn-tonal w-full">
+            {dict.ask.viewMyRequests}
+          </Link>
+        </div>
       </div>
     );
   }
@@ -160,15 +162,15 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
         aria-hidden="true"
       />
 
-      <div className="card space-y-5 p-5 sm:p-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
+      <div className="space-y-5">
+        <div className="space-y-3">
+          <div className="flex min-h-10 items-center gap-3">
             {step !== 1 && (
               <button
                 type="button"
                 onClick={goBack}
                 disabled={submitting}
-                className="btn-ghost w-auto shrink-0 whitespace-nowrap px-2"
+                className="btn-ghost -ml-2 w-auto shrink-0 whitespace-nowrap px-2"
               >
                 <ChevronLeft size={18} aria-hidden="true" />
                 {dict.common.back}
@@ -177,14 +179,19 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             <div className="ml-auto flex shrink-0 items-center gap-2">
               <div className="flex gap-1.5" aria-hidden="true">
                 {[1, 2, 3].map((n) => (
-                  <span key={n} className={`h-2 w-6 rounded-full ${n <= step ? "bg-amber-500" : "bg-slate-200"}`} />
+                  <span
+                    key={n}
+                    className={`h-1.5 rounded-full transition-all ${n === step ? "w-8 bg-amber-500" : n < step ? "w-4 bg-amber-500/50" : "w-4 bg-stone-300"}`}
+                  />
                 ))}
               </div>
-              <span className="text-sm font-extrabold whitespace-nowrap text-slate-500">{fmt(dict.checkout.stepOf, { n: step })}</span>
+              <span className="text-sm font-extrabold whitespace-nowrap text-stone-500">{fmt(dict.checkout.stepOf, { n: step })}</span>
             </div>
           </div>
-          <h1 className="text-xl font-extrabold text-slate-900">{stepTitle}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{stepTitle}</h1>
         </div>
+
+        <div className="surface space-y-4 p-5">
 
         {step === 1 && (
           <div className="space-y-4">
@@ -198,11 +205,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 type="button"
                 onClick={() => setUtilityType(u)}
                 aria-pressed={active}
-                className={`relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 px-1.5 py-3 text-center transition-all duration-150 active:scale-95 ${
-                  active
-                    ? "border-amber-500 bg-amber-50 text-slate-900 ring-4 ring-amber-500/20"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                }`}
+                className={active ? "tile-active px-1.5" : "tile px-1.5"}
               >
                 {active && (
                   <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
@@ -251,7 +254,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             />
           </div>
 
-          <div className="px-1 text-[11px] font-semibold text-slate-400 truncate">
+          <div className="px-1 text-xs font-semibold text-stone-400 truncate">
             {supplier}
           </div>
         </div>
@@ -276,7 +279,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 placeholder={dict.ask.accountHint}
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
-                className="input font-mono text-lg font-extrabold tracking-[0.15em]"
+                className="field font-mono text-lg font-extrabold tracking-[0.15em]"
               />
             </div>
 
@@ -285,7 +288,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 {dict.ask.amount}
               </label>
               <div className="relative">
-                <Wallet size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Wallet size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -transtone-y-1/2 text-stone-400" />
                 <input
                   id="amountOwed"
                   type="text"
@@ -294,9 +297,9 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                   placeholder="150 000"
                   value={amountOwed}
                   onChange={(e) => setAmountOwed(e.target.value.replace(/\D/g, "").slice(0, 7))}
-                  className="input pl-11 pr-16 font-mono text-lg font-extrabold"
+                  className="field pl-11 pr-16 font-mono text-lg font-extrabold"
                 />
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
+                <span className="pointer-events-none absolute right-4 top-1/2 -transtone-y-1/2 text-sm font-bold text-stone-500">
                   {dict.common.som}
                 </span>
               </div>
@@ -306,11 +309,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                     key={v}
                     type="button"
                     onClick={() => setAmountOwed(String(v))}
-                    className={`min-h-10 cursor-pointer whitespace-nowrap rounded-full border px-4 text-sm font-extrabold transition-all active:scale-95 ${
-                      amountNum === v
-                        ? "border-amber-500 bg-amber-50 text-amber-800"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    }`}
+                    className={amountNum === v ? "chip-active" : "chip"}
                   >
                     {v.toLocaleString("ru-RU")}
                   </button>
@@ -322,16 +321,16 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           <button
             type="button"
             onClick={() => setShowExtra((v) => !v)}
-            className="flex w-full cursor-pointer items-center justify-between text-xs font-extrabold text-slate-600 hover:text-slate-900"
+            className="flex min-h-10 w-full cursor-pointer items-center justify-between gap-2 text-sm font-extrabold text-stone-700 hover:text-stone-900"
           >
             <span className="inline-flex items-center gap-1.5"><Plus size={18} aria-hidden="true" />{dict.ask.moreToggle}</span>
-            <span className="rounded-md bg-slate-200/70 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+            <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-stone-600">
               {showExtra ? <ChevronUp size={14} aria-hidden="true" /> : dict.ask.optionalBadge}
             </span>
           </button>
 
           {showExtra && (
-            <div className="mt-3 space-y-3 border-t border-slate-200/70 pt-3">
+            <div className="mt-3 space-y-3 pt-1">
               <div>
                 <label className="label" htmlFor="story">
                   {dict.ask.story}
@@ -343,7 +342,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                   placeholder={dict.ask.storyHint}
                   value={story}
                   onChange={(e) => setStory(e.target.value)}
-                  className="input bg-white py-2 text-xs sm:text-sm"
+                  className="field text-sm"
                 />
               </div>
 
@@ -359,7 +358,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                     placeholder={dict.ask.familyNameHint}
                     value={familyName}
                     onChange={(e) => setFamilyName(e.target.value)}
-                    className="input bg-white py-2 text-xs sm:text-sm"
+                    className="field text-sm"
                   />
                 </div>
 
@@ -377,7 +376,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                       placeholder="00425"
                       value={meterReading}
                       onChange={(e) => setMeterReading(e.target.value)}
-                      className="input bg-white py-2 font-mono text-xs sm:text-sm"
+                      className="field font-mono text-sm"
                     />
                   </div>
                 )}
@@ -391,11 +390,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                       key={p}
                       type="button"
                       onClick={() => setPaymentPurpose(p)}
-                      className={`cursor-pointer rounded-xl border py-2 px-2.5 text-xs font-bold transition-all ${
-                        active
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-600"
-                      }`}
+                      className={`${active ? "chip-active" : "chip bg-white hover:bg-white/70"} justify-center whitespace-normal py-2 text-center`}
                     >
                       {p === "main" ? dict.bill.purposeMain : dict.bill.purposePenalty}
                     </button>
@@ -410,7 +405,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
               <span>{dict.common.next}</span>
               <ArrowRight size={18} aria-hidden="true" />
             </button>
-            {!step2Valid && <p className="text-center text-sm font-semibold text-slate-500">{dict.ask.needAccountAmount}</p>}
+            {!step2Valid && <p className="text-center text-sm font-semibold text-stone-500">{dict.ask.needAccountAmount}</p>}
           </div>
         )}
 
@@ -421,8 +416,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 {dict.ask.phone}
               </label>
               <div className="relative">
-                <Phone size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <span className="pointer-events-none absolute left-11 top-1/2 -translate-y-1/2 font-mono text-base font-bold text-slate-500">
+                <Phone size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -transtone-y-1/2 text-stone-400" />
+                <span className="pointer-events-none absolute left-11 top-1/2 -transtone-y-1/2 font-mono text-base font-bold text-stone-500">
                   +998
                 </span>
                 <input
@@ -436,14 +431,14 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                   placeholder="90 123 45 67"
                   value={phone.slice(4)}
                   onChange={(e) => setPhone("+998" + e.target.value.replace(/\D/g, "").slice(0, 9))}
-                  className="input pl-[5.5rem] font-mono text-lg font-bold tracking-wide"
+                  className="field pl-[5.5rem] font-mono text-lg font-bold tracking-wide"
                 />
               </div>
             </div>
 
             <label
-              className={`flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-4 text-sm font-semibold transition-all active:scale-[0.99] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-amber-500/20 ${
-                consent ? "border-amber-500 bg-amber-50 text-slate-800" : "border-slate-200 bg-white text-slate-600"
+              className={`panel flex cursor-pointer items-start gap-3 text-sm font-semibold transition-all active:scale-[0.99] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-amber-500/70 ${
+                consent ? "bg-amber-50 text-stone-800" : "text-stone-600"
               }`}
             >
               <input
@@ -455,8 +450,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
               />
               <span
                 aria-hidden="true"
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors ${
-                  consent ? "border-amber-500 bg-amber-500 text-white" : "border-slate-300 bg-white"
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                  consent ? "bg-amber-500 text-white" : "bg-[var(--tone-hover)]"
                 }`}
               >
                 {consent && <Check size={16} strokeWidth={3} />}
@@ -465,7 +460,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             </label>
 
             {error && (
-              <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-sm font-bold text-rose-700">
+              <div role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-700">
                 {error}
               </div>
             )}
@@ -476,6 +471,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             </button>
           </div>
         )}
+        </div>
       </div>
     </form>
   );
