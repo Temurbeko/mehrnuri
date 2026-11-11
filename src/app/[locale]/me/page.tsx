@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Clock, Receipt, Shield } from "lucide-react";
+import { Check, ChevronRight, Clock, Receipt, Shield } from "lucide-react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { OWNER_COOKIE, ownedBillIds } from "@/lib/bills/owner";
@@ -9,7 +9,8 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
 import { currentDonor, currentRecoveryCode } from "@/lib/donors/session";
 import { ProfileClient } from "@/components/ProfileClient";
-import { donorOpenPayments, type DonorOpenPayment } from "@/lib/payments/core";
+import { donorHistory, donorOpenPayments, type DonorOpenPayment, type HistoryItem } from "@/lib/payments/core";
+import { UTILITY_ICONS } from "@/lib/domain";
 import { formatMoney } from "@/i18n";
 import { timeAgo } from "@/lib/format";
 
@@ -24,6 +25,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
   let code = null;
   let myRequests: MyRequest[] = [];
   let openPayments: DonorOpenPayment[] = [];
+  let history: HistoryItem[] = [];
   try {
     const jar = await cookies();
     const [d, c, owned] = await Promise.all([
@@ -32,7 +34,12 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
       getBillsByIds(ownedBillIds(jar.get(OWNER_COOKIE)?.value)),
     ]);
     donor = d;
-    if (d) openPayments = await donorOpenPayments(d._id);
+    if (d) {
+      const [open, past] = await Promise.all([donorOpenPayments(d._id), donorHistory(d._id)]);
+      // paid ones without a receipt show in the history with an "add receipt" badge
+      openPayments = open.filter((p) => p.kind === "unconfirmed");
+      history = past;
+    }
     code = c;
     myRequests = owned.map((b) => ({ bill: toPublicBill(b), reviewStatus: b.reviewStatus, isOpen: b.isOpen }));
   } catch {
@@ -70,6 +77,54 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
               </li>
             ))}
           </ul>
+        </section>
+      )}
+      {donor && (
+        <section className="space-y-2.5">
+          <div className="flex items-end justify-between gap-3">
+            <h2 className="text-lg font-extrabold text-[var(--ink)]">{dict.history.title}</h2>
+          </div>
+          {history.length === 0 ? (
+            <p className="surface p-4 text-sm text-[var(--ink-soft)]">{dict.history.empty}</p>
+          ) : (
+            <ul className="list">
+              {history.map((h) => (
+                <li key={h.id}>
+                  <Link href={`/${locale}/payment/${h.id}`} className="list-row-tap flex min-w-0 items-center gap-3">
+                    <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--tone)] text-[19px]">
+                      {UTILITY_ICONS[h.utilityType]}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <b className="block truncate text-[15px] text-[var(--ink)]">{dict.utilityBill[h.utilityType]}</b>
+                      <small className="block truncate text-[13px] text-[var(--ink-soft)]">
+                        {h.district ? `${dict.districts[h.district as keyof typeof dict.districts] ?? ""} · ` : ""}
+                        {timeAgo(h.at, dict.time)}
+                      </small>
+                    </span>
+                    <span className="flex shrink-0 flex-col items-end gap-1">
+                      <b className="text-[15px] whitespace-nowrap text-[var(--ink)] tabular-nums">{formatMoney(h.amount, dict)}</b>
+                      {h.receipt === "verified" ? (
+                        <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--hope)]">
+                          <Check size={13} aria-hidden="true" />
+                          {dict.history.receiptOk}
+                        </small>
+                      ) : h.receipt === "pending" ? (
+                        <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--lamp-deep)]">
+                          <Clock size={13} aria-hidden="true" />
+                          {dict.history.receiptPending}
+                        </small>
+                      ) : (
+                        <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--lamp-deep)]">
+                          <Receipt size={13} aria-hidden="true" />
+                          {dict.history.receiptNone}
+                        </small>
+                      )}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
       <ProfileClient

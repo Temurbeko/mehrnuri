@@ -50,6 +50,7 @@ async function ensureIndexes(db: Db): Promise<void> {
       { key: { status: 1, expiresAt: 1 } },
       { key: { donorId: 1, createdAt: -1 } },
       { key: { receiptKey: 1 }, unique: true, partialFilterExpression: { receiptKey: { $type: "string" } } },
+      { key: { shareCode: 1 }, unique: true, partialFilterExpression: { shareCode: { $type: "string" } } },
     ]),
     db.collection<DonorDoc>("donors").createIndexes([
       { key: { nicknameKey: 1 }, unique: true },

@@ -14,6 +14,8 @@ const manrope = Manrope({
 
 
 export const metadata: Metadata = {
+  // absolute URLs for link previews (og:image) and the sitemap
+  metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
   title: BRAND.name,
   description: "Kommunal to'lovlarda o'zaro yordam platformasi",
   icons: {
@@ -24,7 +26,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: BRAND.name,
     description: "Kommunal to'lovlarda o'zaro yordam platformasi",
-    images: [BRAND.logoUrl],
   },
 };
 

@@ -13,6 +13,8 @@ import { AppBar } from "./AppBar";
 export function PaymentResultClient({
   paymentId,
   receipt = null,
+  details = null,
+  shareCode = null,
   initialStatus,
   amount,
   billId,
@@ -31,6 +33,10 @@ export function PaymentResultClient({
   familiesThisMonth?: number;
   /** Set when the payment is paid but has no verified fiscal receipt yet. */
   receipt?: { signature: string; pending: boolean } | null;
+  /** Ready-made rows for the "payment details" list (formatted on the server). */
+  details?: Array<{ label: string; value: string; href?: string; tone?: "ok" | "wait" }> | null;
+  /** Random code of the public share page (never the payment id). */
+  shareCode?: string | null;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -44,6 +50,8 @@ export function PaymentResultClient({
         billId={billId}
         utilityType={utilityType}
         familiesThisMonth={familiesThisMonth}
+        details={details}
+        shareCode={shareCode}
         receiptSlot={receipt ? <AddReceipt paymentId={paymentId} signature={receipt.signature} pending={receipt.pending} dict={dict} /> : null}
         locale={locale}
         dict={dict}
@@ -87,6 +95,8 @@ export function PaymentResultClient({
 
 /** Paid: a window lights up, thanks, the donor's private impact, and a share card with no family details. */
 function PaidScreen({
+  details,
+  shareCode,
   receiptSlot,
   amount,
   billId,
@@ -100,6 +110,8 @@ function PaidScreen({
   utilityType: UtilityType | null;
   familiesThisMonth: number;
   receiptSlot: React.ReactNode;
+  details: Array<{ label: string; value: string; href?: string; tone?: "ok" | "wait" }> | null;
+  shareCode: string | null;
   locale: Locale;
   dict: Dictionary;
 }) {
@@ -128,17 +140,21 @@ function PaidScreen({
   const shareText = withAmount ? fmt(d.shareTextSum, { amount: money }) : fmt(d.shareText);
   const siteLabel = origin.replace(/^https?:\/\//, "");
 
+  // The branded share page (with its own preview image); falls back to the home page.
+  const base = origin || (typeof window !== "undefined" ? window.location.origin : "");
+  const shareUrl = shareCode ? `${base}/${locale}/h/${shareCode}${withAmount ? "-a" : ""}` : base;
+
   async function share() {
     const text = `${shareText} ${d.cardJoin}`;
     if (typeof navigator.share === "function") {
       try {
-        await navigator.share({ text, url: origin || window.location.origin });
+        await navigator.share({ text, url: shareUrl });
       } catch {
         /* the user closed the share sheet */
       }
       return;
     }
-    const ok = await copyText(`${text} ${origin || window.location.origin}`);
+    const ok = await copyText(`${text} ${shareUrl}`);
     showToast(ok ? d.copiedToast : d.copyFailToast);
   }
 
@@ -155,6 +171,32 @@ function PaidScreen({
         <p className="mx-auto mt-2 max-w-[34ch] text-[15.5px] text-balance break-words text-[var(--ink-soft)]">
           {fmt(d.body, { account: d.account[utilityType], outcome: dict.outcome[utilityType] })}
         </p>
+      )}
+
+      {details && details.length > 0 && (
+        <section className="mt-6 text-left">
+          <h2 className="mx-0.5 mb-2.5 text-[15px] font-extrabold text-[var(--ink)]">{dict.details.title}</h2>
+          <dl className="list m-0">
+            {details.map((row) => (
+              <div key={row.label} className="list-row flex min-w-0 items-center justify-between gap-3">
+                <dt className="shrink-0 text-[14px] text-[var(--ink-soft)]">{row.label}</dt>
+                <dd
+                  className={`m-0 min-w-0 truncate text-right text-[14.5px] font-bold ${
+                    row.tone === "ok" ? "text-[var(--hope)]" : row.tone === "wait" ? "text-[var(--lamp-deep)]" : "text-[var(--ink)]"
+                  }`}
+                >
+                  {row.href ? (
+                    <Link href={row.href} className="underline decoration-[var(--tone-hover)] underline-offset-4">
+                      {row.value}
+                    </Link>
+                  ) : (
+                    row.value
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       )}
 
       {receiptSlot && <div className="mt-5">{receiptSlot}</div>}

@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
-import { getPayment } from "@/lib/payments/core";
+import { ensureShareCode, getPayment } from "@/lib/payments/core";
+import { MERCHANT_APPS } from "@/lib/merchants";
+import { fmt, formatMoney } from "@/i18n";
+import { LOCALE_HTML_LANG } from "@/i18n/config";
 import { getBill } from "@/lib/bills/service";
 import { currentDonor } from "@/lib/donors/session";
 import { donorFamiliesThisMonth } from "@/lib/community";
@@ -41,6 +44,44 @@ export default async function PaymentResultPage({
   const bill = await getBill(payment.billId.toHexString()).catch(() => null);
   const donor = paid ? await currentDonor().catch(() => null) : null;
   const familiesThisMonth = donor ? await donorFamiliesThisMonth(donor._id).catch(() => 0) : 0;
+  const shareCode = paid ? await ensureShareCode(payment).catch(() => null) : null;
+
+  // Details, formatted here (Tashkent time) so the client only prints them.
+  const t = dict.details;
+  const when = payment.paidAt ?? payment.updatedAt;
+  const details = paid
+    ? [
+        {
+          label: t.date,
+          value: new Intl.DateTimeFormat(LOCALE_HTML_LANG[locale], { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tashkent" }).format(when),
+        },
+        ...(bill
+          ? [
+              {
+                label: t.service,
+                value: [dict.utilityBill[bill.utilityType], bill.district ? dict.districts[bill.district as keyof typeof dict.districts] : null]
+                  .filter(Boolean)
+                  .join(" · "),
+              },
+            ]
+          : []),
+        { label: t.app, value: MERCHANT_APPS[payment.provider]?.name ?? payment.provider },
+        ...(bill ? [{ label: t.request, value: bill.code, href: `/${locale}/bill/${bill._id.toHexString()}` }] : []),
+        {
+          label: t.receipt,
+          value: payment.receiptKey ? (payment.receiptLabel ?? dict.history.receiptOk) : payment.receiptPending ? t.receiptPending : t.receiptNone,
+          tone: (payment.receiptKey ? "ok" : payment.receiptPending ? "wait" : undefined) as "ok" | "wait" | undefined,
+        },
+        ...(bill
+          ? [
+              {
+                label: t.progress,
+                value: `${fmt(t.progressValue, { pct: Math.min(100, Math.round((bill.paidAmount / Math.max(1, bill.amountOwed)) * 100)) })} · ${formatMoney(bill.amountOwed, dict)}`,
+              },
+            ]
+          : []),
+      ]
+    : null;
 
   return (
     <PaymentResultClient
@@ -50,6 +91,8 @@ export default async function PaymentResultPage({
       billId={payment.billId.toHexString()}
       utilityType={bill?.utilityType ?? null}
       familiesThisMonth={familiesThisMonth}
+      details={details}
+      shareCode={shareCode}
       receipt={
         paid && !payment.receiptKey
           ? { signature: paymentSignature(payment._id.toHexString()), pending: Boolean(payment.receiptPending) }

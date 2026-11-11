@@ -29,6 +29,10 @@ const nextConfig: NextConfig = {
   // No floating "N" badge while developing (it only ever showed locally); build
   // and runtime errors still appear.
   devIndicators: false,
+  // The link-preview images read these with fs at runtime; make sure deploys ship them.
+  outputFileTracingIncludes: {
+    "/*": ["./src/assets/fonts/**", "./public/brand/logo.jpg"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -314,3 +314,80 @@ export async function donorOpenPayments(donorId: ObjectId): Promise<DonorOpenPay
     pending: Boolean(p.receiptPending),
   }));
 }
+
+/* ---------- Sharing and history ---------- */
+
+const SHARE_ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function randomShareCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  return Array.from(bytes, (b) => SHARE_ALPHABET[b % SHARE_ALPHABET.length]).join("");
+}
+
+/**
+ * A public share link must not be the payment id: the payment page lets
+ * whoever opens it add a receipt. So each paid payment gets its own random
+ * share code the first time its donor opens the success page.
+ */
+export async function ensureShareCode(p: PaymentDoc): Promise<string> {
+  if (p.shareCode) return p.shareCode;
+  const { payments } = await collections();
+  const code = randomShareCode();
+  const res = await payments.findOneAndUpdate(
+    { _id: p._id, shareCode: { $exists: false } },
+    { $set: { shareCode: code } },
+    { returnDocument: "after" },
+  );
+  if (res?.shareCode) return res.shareCode;
+  const again = await payments.findOne({ _id: p._id }, { projection: { shareCode: 1 } });
+  return again?.shareCode ?? code;
+}
+
+export interface SharedHelp {
+  nickname: string;
+  amount: number;
+  utilityType: BillDoc["utilityType"];
+  at: string;
+}
+
+/** What a share link may show: nickname, amount, utility, date. Never anything about the family. */
+export async function getSharedHelp(code: string): Promise<SharedHelp | null> {
+  if (!/^[A-Za-z0-9]{6,20}$/.test(code)) return null;
+  const { payments, bills } = await collections();
+  const p = await payments.findOne({ shareCode: code, status: "paid" });
+  if (!p) return null;
+  const bill = await bills.findOne({ _id: p.billId }, { projection: { utilityType: 1 } });
+  if (!bill) return null;
+  return { nickname: p.donorNickname, amount: p.amount, utilityType: bill.utilityType, at: (p.paidAt ?? p.updatedAt).toISOString() };
+}
+
+export interface HistoryItem {
+  id: string;
+  amount: number;
+  at: string;
+  utilityType: BillDoc["utilityType"];
+  district: string | null;
+  receipt: "verified" | "pending" | "none";
+}
+
+/** A donor's paid helps, newest first (their profile history). */
+export async function donorHistory(donorId: ObjectId, limit = 30): Promise<HistoryItem[]> {
+  const { payments } = await collections();
+  const rows = await payments
+    .aggregate<PaymentDoc & { bill: Pick<BillDoc, "utilityType" | "district"> }>([
+      { $match: { donorId, status: "paid" } },
+      { $sort: { paidAt: -1 } },
+      { $limit: limit },
+      { $lookup: { from: "bills", localField: "billId", foreignField: "_id", as: "bill", pipeline: [{ $project: { utilityType: 1, district: 1 } }] } },
+      { $unwind: "$bill" },
+    ])
+    .toArray();
+  return rows.map((p) => ({
+    id: p._id.toHexString(),
+    amount: p.amount,
+    at: (p.paidAt ?? p.updatedAt).toISOString(),
+    utilityType: p.bill.utilityType,
+    district: p.bill.district ?? null,
+    receipt: p.receiptKey ? "verified" : p.receiptPending ? "pending" : "none",
+  }));
+}

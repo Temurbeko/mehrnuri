@@ -87,6 +87,8 @@ export interface PaymentDoc {
    * gets its receiptKey and leaderboard credit.
    */
   receiptPending?: { raw: string; nextTryAt: Date; until: Date; tries: number } | null;
+  /** Random code for the public share link (never the payment id). */
+  shareCode?: string;
   createdAt: Date;
   updatedAt: Date;
 }
