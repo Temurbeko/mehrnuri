@@ -82,11 +82,11 @@ export function AdminClient({
       <div key={b.id} className="card space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-xl">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-lg">
               {UTILITY_ICONS[b.utilityType]}
             </span>
             <div>
-              <div className="font-mono text-[11px] font-bold text-stone-400">{b.code}</div>
+              <div className="tabular-nums text-xs font-bold text-stone-400">{b.code}</div>
               <h3 className="text-base font-extrabold text-stone-900">
                 {dict.utility[b.utilityType]} · {dict.region[b.region]}
               </h3>
@@ -113,20 +113,20 @@ export function AdminClient({
 
         <div className="grid grid-cols-2 gap-2 panel text-xs">
           <div>
-            <span className="text-stone-400 font-semibold">{dict.bill.account}: </span>
-            <span className="font-mono font-extrabold text-stone-900">{b.accountNumber}</span>
+            <span className="text-stone-400 font-medium">{dict.bill.account}: </span>
+            <span className="tabular-nums font-extrabold text-stone-900">{b.accountNumber}</span>
           </div>
           <div>
-            <span className="text-stone-400 font-semibold">{dict.admin.phone}: </span>
-            <span className="font-mono font-bold text-stone-800">{b.phone}</span>
+            <span className="text-stone-400 font-medium">{dict.admin.phone}: </span>
+            <span className="tabular-nums font-bold text-stone-800">{b.phone}</span>
           </div>
           <div>
-            <span className="text-stone-400 font-semibold">{dict.admin.entered}: </span>
+            <span className="text-stone-400 font-medium">{dict.admin.entered}: </span>
             <span className="font-extrabold text-stone-900">{formatMoney(b.amountOwed, dict)}</span>
           </div>
           {b.lastMismatch && (
             <div>
-              <span className="text-stone-400 font-semibold">{dict.admin.donorSaw}: </span>
+              <span className="text-stone-400 font-medium">{dict.admin.donorSaw}: </span>
               <span className="font-extrabold text-rose-700">
                 {b.lastMismatch.kind === "no_debt"
                   ? dict.check.noDebt
@@ -138,7 +138,7 @@ export function AdminClient({
           )}
         </div>
 
-        {b.story && <p className="text-xs italic text-stone-600">“{b.story}”</p>}
+        {b.story && <p className="text-xs text-stone-600">“{b.story}”</p>}
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <button
@@ -170,7 +170,7 @@ export function AdminClient({
           </div>
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2 text-[11px] font-bold text-stone-600">
+        <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-stone-600">
           <input
             type="checkbox"
             checked={blockAccount[b.id] === true}
@@ -188,7 +188,7 @@ export function AdminClient({
       <form onSubmit={handleLogin} className="card mx-auto max-w-md space-y-4">
         <div className="flex items-center gap-2.5">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-stone-900 text-white"><Shield size={20} aria-hidden="true" /></span>
-          <h1 className="text-xl font-extrabold text-stone-900">{dict.admin.title}</h1>
+          <h1 className="text-lg font-extrabold text-stone-900">{dict.admin.title}</h1>
         </div>
         <div>
           <label className="label" htmlFor="admin-pw">
@@ -241,7 +241,7 @@ export function AdminClient({
         <p className="text-xs font-medium text-stone-500">{dict.admin.reportedHint}</p>
 
         {reported.length === 0 ? (
-          <div className="card py-8 text-center text-sm font-semibold text-stone-400">{dict.admin.empty}</div>
+          <div className="card py-8 text-center text-sm font-medium text-stone-400">{dict.admin.empty}</div>
         ) : (
           reported.map(reviewCard)
         )}
@@ -258,7 +258,7 @@ export function AdminClient({
         <p className="text-xs font-medium text-stone-500">{dict.admin.pendingHint}</p>
 
         {pending.length === 0 ? (
-          <div className="card py-8 text-center text-sm font-semibold text-stone-400">{dict.admin.empty}</div>
+          <div className="card py-8 text-center text-sm font-medium text-stone-400">{dict.admin.empty}</div>
         ) : (
           pending.map(reviewCard)
         )}
@@ -274,13 +274,13 @@ export function AdminClient({
         </div>
 
         {payouts.length === 0 ? (
-          <div className="card py-8 text-center text-sm font-semibold text-stone-400">{dict.admin.empty}</div>
+          <div className="card py-8 text-center text-sm font-medium text-stone-400">{dict.admin.empty}</div>
         ) : (
           payouts.map((b) => (
             <div key={b.id} className="card space-y-3.5">
               <div className="flex justify-between items-center">
                 <div>
-                  <span className="font-mono text-[11px] font-bold text-stone-400">{b.code}</span>
+                  <span className="tabular-nums text-xs font-bold text-stone-400">{b.code}</span>
                   <h3 className="text-base font-extrabold text-stone-900">
                     {dict.utility[b.utilityType]} · {dict.region[b.region]}
                   </h3>
@@ -289,12 +289,12 @@ export function AdminClient({
               </div>
               <div className="grid grid-cols-2 gap-2 panel text-xs">
                 <div>
-                  <span className="text-stone-400 font-semibold">{dict.bill.account}: </span>
-                  <span className="font-mono font-bold text-stone-900">{b.accountNumber}</span>
+                  <span className="text-stone-400 font-medium">{dict.bill.account}: </span>
+                  <span className="tabular-nums font-bold text-stone-900">{b.accountNumber}</span>
                 </div>
                 <div>
-                  <span className="text-stone-400 font-semibold">{dict.admin.phone}: </span>
-                  <span className="font-mono font-bold text-stone-800">{b.phone}</span>
+                  <span className="text-stone-400 font-medium">{dict.admin.phone}: </span>
+                  <span className="tabular-nums font-bold text-stone-800">{b.phone}</span>
                 </div>
               </div>
               <div className="flex gap-2">

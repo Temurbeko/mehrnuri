@@ -45,7 +45,7 @@ export const UTILITY_THEMES: Record<
 export function StatusBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary }) {
   if (bill.payoutStatus === "paid_out") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2.5 py-1 text-xs font-extrabold text-emerald-700">
         <Check size={14} aria-hidden="true" />{dict.status.paid_out}
       </span>
     );
@@ -56,7 +56,7 @@ export function StatusBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary
     fully_paid: "bg-emerald-500/12 text-emerald-700",
   } as const;
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-extrabold ${styles[bill.fundingStatus]}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-extrabold ${styles[bill.fundingStatus]}`}>
       {dict.status[bill.fundingStatus]}
     </span>
   );
@@ -79,10 +79,11 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
   const paidLine = `${formatMoney(bill.paidAmount, dict)} / ${formatMoney(bill.amountOwed, dict)}`;
 
   return (
-    <article className="group relative flex min-w-0 flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--lift)] transition-all duration-200 hover:-transtone-y-0.5 hover:shadow-[var(--lift-hover)] active:scale-[0.99]">
+    <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--lift)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--lift-hover)] active:scale-[0.99]">
       <div aria-hidden="true" className={`h-1.5 w-full bg-gradient-to-r ${theme.bar}`} />
 
-      <div className="flex min-w-0 flex-col gap-4 p-4 sm:p-5">
+      {/* flex-1 + the footer's mt-auto: footers line up across a row even when one card has a story and its neighbour doesn't. */}
+      <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <span className={`inline-flex min-w-0 items-center gap-1.5 rounded-full py-1 pl-2 pr-3 text-sm font-extrabold ${theme.bg} ${theme.text}`}>
             <span aria-hidden="true" className="text-base leading-none">{UTILITY_ICONS[bill.utilityType]}</span>
@@ -101,15 +102,15 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
 
         <div className="min-w-0">
           <div className="text-xs font-bold text-stone-500">{dict.bill.remaining}</div>
-          <div className="whitespace-nowrap text-[2rem] font-extrabold leading-tight tracking-tight text-stone-900">
+          <div className="whitespace-nowrap text-4xl font-extrabold leading-tight tracking-tight text-stone-900">
             {money}
           </div>
-          <div className="mt-0.5 truncate text-xs font-semibold text-stone-500">{paidLine}</div>
+          <div className="mt-0.5 truncate text-xs font-medium text-stone-500">{paidLine}</div>
         </div>
 
         <div className="flex items-center gap-2.5">
           <div
-            className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-stone-100"
+            className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-stone-200/70"
             role="progressbar"
             aria-valuenow={pct}
             aria-valuemin={0}
@@ -122,7 +123,7 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-stone-500">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-stone-500">
           <span className="inline-flex min-w-0 items-center gap-1">
             <MapPin size={14} aria-hidden="true" className="shrink-0" />
             <span className="truncate">{dict.districts[districtInfo.id]}</span>
@@ -137,7 +138,7 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
         </div>
 
         {bill.story && (
-          <p className="line-clamp-2 rounded-xl bg-[var(--paper)] px-3 py-2 text-sm font-medium italic leading-snug text-stone-600">
+          <p className="line-clamp-2 rounded-xl bg-[var(--paper)] px-3 py-2 text-sm font-medium leading-snug text-stone-600">
             {bill.story}
           </p>
         )}
@@ -145,23 +146,23 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
         {isDone ? (
           <Link
             href={`/${locale}/bill/${bill.id}`}
-            className="flex items-center justify-between gap-3 text-sm font-extrabold text-emerald-700 after:absolute after:inset-0 after:content-['']"
+            className="mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-[var(--hairline)] pt-3 text-sm font-extrabold text-emerald-700 after:absolute after:inset-0 after:content-['']"
           >
             <span className="inline-flex min-w-0 items-center gap-1.5">
               <Check size={18} aria-hidden="true" className="shrink-0" />
               <span className="truncate">{dict.bill.thanks}</span>
             </span>
-            <ArrowRight size={18} aria-hidden="true" className="shrink-0 transition-transform group-hover:transtone-x-0.5" />
+            <ArrowRight size={18} aria-hidden="true" className="shrink-0 transition-transform group-hover:translate-x-0.5" />
           </Link>
         ) : (
           <Link
             href={`/${locale}/bill/${bill.id}`}
-            className="flex items-center justify-between gap-3 after:absolute after:inset-0 after:content-['']"
+            className="mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-[var(--hairline)] pt-3 after:absolute after:inset-0 after:content-['']"
           >
             <span className="text-sm font-bold text-stone-500">{pct}%</span>
             <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-extrabold text-amber-700">
               {dict.bill.help}
-              <ArrowRight size={18} aria-hidden="true" className="transition-transform group-hover:transtone-x-0.5" />
+              <ArrowRight size={18} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>
         )}

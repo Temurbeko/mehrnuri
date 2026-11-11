@@ -35,7 +35,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <span>{fmt(dict.home.stats, { count: bills.length })}</span>
             </div>
 
-            <h1 className="max-w-xl text-2xl font-extrabold tracking-tight leading-tight sm:text-3xl">
+            <h1 className="max-w-xl text-2xl font-extrabold tracking-tight leading-tight sm:text-2xl">
               {dict.home.heroTitle}
             </h1>
 

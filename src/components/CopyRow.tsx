@@ -28,17 +28,17 @@ export function CopyRow({ label, value, mono = false, dict }: { label: string; v
     <li>
       <button type="button" onClick={copy} className="list-row-tap py-4">
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-stone-500">{label}</span>
+          <span className="block text-sm font-medium text-stone-500">{label}</span>
           <span
             ref={valueRef}
             className={`mt-0.5 block font-extrabold break-all text-stone-900 select-all ${
-              mono ? "font-mono text-[1.45rem] leading-tight tracking-wide" : "text-lg"
+              mono ? "tabular-nums text-2xl leading-tight tracking-wide" : "text-lg"
             }`}
           >
             {value}
           </span>
           {failed && (
-            <span role="alert" className="mt-2 block rounded-xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900">
+            <span role="alert" className="mt-2 block rounded-xl bg-amber-100 px-3 py-2 text-sm font-medium text-amber-900">
               {dict.common.copyFailed}
             </span>
           )}

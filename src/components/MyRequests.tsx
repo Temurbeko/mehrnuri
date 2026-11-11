@@ -37,7 +37,7 @@ export function MyRequests({ items, locale, dict }: { items: MyRequest[]; locale
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-extrabold whitespace-nowrap text-stone-900">{bill.code}</span>
+                    <span className="tabular-nums text-sm font-extrabold whitespace-nowrap text-stone-900">{bill.code}</span>
                     <span className={`truncate text-xs font-bold ${status.tone}`}>{status.label}</span>
                   </span>
                   <span className="block truncate text-sm text-stone-600">

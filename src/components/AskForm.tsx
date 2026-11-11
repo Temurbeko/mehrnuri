@@ -131,8 +131,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           <p className="text-sm leading-relaxed text-stone-600">{created.held ? dict.ask.heldText : dict.ask.successText}</p>
         </div>
         <div className="surface px-4 py-6">
-          <div className="text-sm font-semibold text-stone-500">{dict.ask.yourCode}</div>
-          <div className="mt-1 font-mono text-[2.5rem] leading-tight font-extrabold tracking-wider text-stone-900 select-all">
+          <div className="text-sm font-medium text-stone-500">{dict.ask.yourCode}</div>
+          <div className="mt-1 tabular-nums text-4xl leading-tight font-extrabold tracking-wider text-stone-900 select-all">
             {created.code}
           </div>
         </div>
@@ -218,7 +218,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 >
                   {UTILITY_ICONS[u]}
                 </span>
-                <span className="line-clamp-1 text-[11px] font-extrabold leading-tight">{dict.utility[u]}</span>
+                <span className="line-clamp-1 text-xs font-extrabold leading-tight">{dict.utility[u]}</span>
               </button>
             );
           })}
@@ -254,7 +254,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             />
           </div>
 
-          <div className="px-1 text-xs font-semibold text-stone-400 truncate">
+          <div className="px-1 text-xs font-medium text-stone-400 truncate">
             {supplier}
           </div>
         </div>
@@ -279,7 +279,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 placeholder={dict.ask.accountHint}
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
-                className="field font-mono text-lg font-extrabold tracking-[0.15em]"
+                className="field tabular-nums text-lg font-extrabold tracking-[0.15em]"
               />
             </div>
 
@@ -288,7 +288,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 {dict.ask.amount}
               </label>
               <div className="relative">
-                <Wallet size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -transtone-y-1/2 text-stone-400" />
+                <Wallet size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                 <input
                   id="amountOwed"
                   type="text"
@@ -297,9 +297,9 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                   placeholder="150 000"
                   value={amountOwed}
                   onChange={(e) => setAmountOwed(e.target.value.replace(/\D/g, "").slice(0, 7))}
-                  className="field pl-11 pr-16 font-mono text-lg font-extrabold"
+                  className="field pl-11 pr-16 tabular-nums text-lg font-extrabold"
                 />
-                <span className="pointer-events-none absolute right-4 top-1/2 -transtone-y-1/2 text-sm font-bold text-stone-500">
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-500">
                   {dict.common.som}
                 </span>
               </div>
@@ -324,7 +324,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
             className="flex min-h-10 w-full cursor-pointer items-center justify-between gap-2 text-sm font-extrabold text-stone-700 hover:text-stone-900"
           >
             <span className="inline-flex items-center gap-1.5"><Plus size={18} aria-hidden="true" />{dict.ask.moreToggle}</span>
-            <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-stone-600">
+            <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-stone-600">
               {showExtra ? <ChevronUp size={14} aria-hidden="true" /> : dict.ask.optionalBadge}
             </span>
           </button>
@@ -376,7 +376,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                       placeholder="00425"
                       value={meterReading}
                       onChange={(e) => setMeterReading(e.target.value)}
-                      className="field font-mono text-sm"
+                      className="field tabular-nums text-sm"
                     />
                   </div>
                 )}
@@ -405,7 +405,7 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
               <span>{dict.common.next}</span>
               <ArrowRight size={18} aria-hidden="true" />
             </button>
-            {!step2Valid && <p className="text-center text-sm font-semibold text-stone-500">{dict.ask.needAccountAmount}</p>}
+            {!step2Valid && <p className="text-center text-sm font-medium text-stone-500">{dict.ask.needAccountAmount}</p>}
           </div>
         )}
 
@@ -416,8 +416,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                 {dict.ask.phone}
               </label>
               <div className="relative">
-                <Phone size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -transtone-y-1/2 text-stone-400" />
-                <span className="pointer-events-none absolute left-11 top-1/2 -transtone-y-1/2 font-mono text-base font-bold text-stone-500">
+                <Phone size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                <span className="pointer-events-none absolute left-11 top-1/2 -translate-y-1/2 tabular-nums text-base font-bold text-stone-500">
                   +998
                 </span>
                 <input
@@ -431,13 +431,13 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
                   placeholder="90 123 45 67"
                   value={phone.slice(4)}
                   onChange={(e) => setPhone("+998" + e.target.value.replace(/\D/g, "").slice(0, 9))}
-                  className="field pl-[5.5rem] font-mono text-lg font-bold tracking-wide"
+                  className="field pl-[5.5rem] tabular-nums text-lg font-bold tracking-wide"
                 />
               </div>
             </div>
 
             <label
-              className={`panel flex cursor-pointer items-start gap-3 text-sm font-semibold transition-all active:scale-[0.99] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-amber-500/70 ${
+              className={`panel flex cursor-pointer items-start gap-3 text-sm font-medium transition-all active:scale-[0.99] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-amber-500/70 ${
                 consent ? "bg-amber-50 text-stone-800" : "text-stone-600"
               }`}
             >

@@ -140,7 +140,7 @@ export function Combobox({
         className={
           variant === "chip"
             ? "chip max-w-[14rem]"
-            : "field flex cursor-pointer items-center justify-between gap-2 text-left font-semibold active:scale-[0.99]"
+            : "field flex cursor-pointer items-center justify-between gap-2 text-left font-medium active:scale-[0.99]"
         }
       >
         {variant === "chip" ? (
@@ -181,7 +181,7 @@ export function Combobox({
           >
             <div aria-hidden="true" className="mx-auto mb-2 h-1.5 w-10 shrink-0 rounded-full bg-stone-300 sm:hidden" />
             <div className="relative shrink-0">
-              <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -transtone-y-1/2 text-stone-400" />
+              <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
               <input
                 autoFocus
                 type="text"
@@ -209,7 +209,7 @@ export function Combobox({
               className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain"
             >
               {filtered.length === 0 && (
-                <li className="px-4 py-6 text-center text-sm font-semibold text-stone-500">{emptyText}</li>
+                <li className="px-4 py-6 text-center text-sm font-medium text-stone-500">{emptyText}</li>
               )}
               {filtered.map((o, i) => {
                 const isSel = o.value === value;
@@ -223,7 +223,7 @@ export function Combobox({
                     data-active={isAct}
                     onMouseMove={() => setActive(i)}
                     onClick={() => choose(o.value)}
-                    className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl px-4 py-2 text-base font-semibold transition-colors ${
+                    className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-xl px-4 py-2 text-base font-medium transition-colors ${
                       isAct ? "bg-amber-50" : ""
                     } ${isSel ? "text-stone-900" : "text-stone-700"}`}
                   >

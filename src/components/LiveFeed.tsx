@@ -58,7 +58,7 @@ export function LiveFeed({
       {/* Section Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <h2 className="truncate text-xl font-extrabold tracking-tight text-stone-900 sm:text-2xl">
+          <h2 className="truncate text-lg font-extrabold tracking-tight text-stone-900 sm:text-2xl">
             {dict.home.feedTitle}
           </h2>
           <span className="shrink-0 rounded-full bg-[var(--tone)] px-2.5 py-0.5 text-xs font-extrabold text-stone-700">
@@ -114,7 +114,7 @@ export function LiveFeed({
                 <span>{dict.utility[u]}</span>
                 {count > 0 && (
                   <span
-                    className={`rounded-full px-1.5 text-[10px] ${active ? "bg-white/20 text-white" : "bg-white/70 text-stone-600"}`}
+                    className={`rounded-full px-1.5 text-xs ${active ? "bg-white/20 text-white" : "bg-white/70 text-stone-600"}`}
                   >
                     {count}
                   </span>

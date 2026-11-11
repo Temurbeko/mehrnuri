@@ -187,11 +187,11 @@ export function DonatePanel({
       {/* Hero: the amount left, with progress. */}
       <div className="surface space-y-3 p-5">
         <div>
-          <div className="text-sm font-semibold text-stone-500">{dict.bill.remaining}</div>
-          <div className="text-[2.25rem] leading-tight font-extrabold tracking-tight whitespace-nowrap text-stone-900">
+          <div className="text-sm font-medium text-stone-500">{dict.bill.remaining}</div>
+          <div className="text-4xl leading-tight font-extrabold tracking-tight whitespace-nowrap text-stone-900">
             {formatMoney(remaining, dict)}
           </div>
-          <div className="mt-0.5 text-sm font-semibold text-stone-500">
+          <div className="mt-0.5 text-sm font-medium text-stone-500">
             {formatMoney(bill.paidAmount, dict)} / {formatMoney(bill.amountOwed, dict)} · {pct}%
           </div>
         </div>
@@ -208,7 +208,7 @@ export function DonatePanel({
           />
         </div>
         {bill.story && (
-          <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-relaxed font-medium text-amber-950 italic">“{bill.story}”</p>
+          <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-relaxed font-medium text-amber-950">“{bill.story}”</p>
         )}
         {bill.thanksReactions && bill.thanksReactions.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
@@ -226,20 +226,20 @@ export function DonatePanel({
         <CopyRow label={bill.holderMasked ? `${dict.bill.account} · ${bill.holderMasked}` : dict.bill.account} value={bill.accountNumber} mono dict={dict} />
         <li className="list-row">
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-stone-500">{dict.bill.supplier}</span>
+            <span className="block text-sm font-medium text-stone-500">{dict.bill.supplier}</span>
             <span className="block font-bold text-stone-800">{bill.supplier}</span>
           </span>
         </li>
         <li className="list-row">
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-stone-500">{dict.bill.code}</span>
-            <span className="block font-mono font-bold text-stone-800">{bill.code}</span>
+            <span className="block text-sm font-medium text-stone-500">{dict.bill.code}</span>
+            <span className="block tabular-nums font-bold text-stone-800">{bill.code}</span>
           </span>
         </li>
         {bill.addressMasked && (
           <li className="list-row">
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-stone-500">{dict.bill.address}</span>
+              <span className="block text-sm font-medium text-stone-500">{dict.bill.address}</span>
               <span className="block font-bold break-words text-stone-800">{bill.addressMasked}</span>
             </span>
           </li>
@@ -247,8 +247,8 @@ export function DonatePanel({
         {bill.meterReading !== null && meterUnit && (
           <li className="list-row">
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-stone-500">{dict.bill.meterReading}</span>
-              <span className="block font-mono font-bold text-stone-800">
+              <span className="block text-sm font-medium text-stone-500">{dict.bill.meterReading}</span>
+              <span className="block tabular-nums font-bold text-stone-800">
                 {bill.meterReading} {meterUnit}
               </span>
             </span>

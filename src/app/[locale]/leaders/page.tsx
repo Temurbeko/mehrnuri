@@ -37,7 +37,7 @@ export default async function LeadersPage({ params }: { params: Promise<{ locale
               <li key={d.nickname} className={`flex min-h-16 items-center gap-3 px-4 py-3 ${top ? "bg-amber-50/60" : ""}`}>
                 <span
                   className={`flex shrink-0 items-center justify-center ${
-                    top ? "w-10 text-3xl" : "h-8 w-10 rounded-xl bg-[var(--tone)] text-xs font-extrabold text-stone-600"
+                    top ? "w-10 text-2xl" : "h-8 w-10 rounded-xl bg-[var(--tone)] text-xs font-extrabold text-stone-600"
                   }`}
                   aria-hidden={top ? "true" : undefined}
                 >
@@ -45,7 +45,7 @@ export default async function LeadersPage({ params }: { params: Promise<{ locale
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className={`truncate font-extrabold text-stone-900 ${top ? "text-base" : "text-sm"}`}>{d.nickname}</div>
-                  <div className="truncate text-xs font-semibold text-stone-400">
+                  <div className="truncate text-xs font-medium text-stone-400">
                     {fmt(dict.leaders.donations, { count: d.donationsCount })}
                   </div>
                 </div>

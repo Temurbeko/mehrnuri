@@ -46,7 +46,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
         dict={dict}
       />
       <div className="pt-4 text-center">
-        <Link href={`/${locale}/admin`} className="text-[11px] font-semibold text-stone-400 hover:text-stone-600">
+        <Link href={`/${locale}/admin`} className="text-xs font-medium text-stone-400 hover:text-stone-600">
           <span className="inline-flex items-center gap-1.5"><Shield size={16} aria-hidden="true" />{dict.nav.admin}</span>
         </Link>
       </div>

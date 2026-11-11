@@ -28,7 +28,7 @@ export function TrustBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary 
   return (
     <span
       title={title}
-      className={`inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-extrabold ${badge.className}`}
+      className={`inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-extrabold ${badge.className}`}
     >
       <badge.Icon size={14} aria-hidden="true" />
       <span>{label}</span>
@@ -112,7 +112,7 @@ export function DebtCheck({
     <div className={wrapper}>
       <div>
         {tone !== "step" && <div className="text-xs font-extrabold text-slate-900">{t.title}</div>}
-        <p className={`text-[15px] leading-relaxed text-stone-600 ${tone === "step" ? "" : "mt-1"}`}>{t.hint}</p>
+        <p className={`text-base leading-relaxed text-stone-600 ${tone === "step" ? "" : "mt-1"}`}>{t.hint}</p>
       </div>
 
       {stage === "ask" ? (
@@ -182,7 +182,7 @@ export function DebtCheck({
       )}
 
       {error && (
-        <div role="alert" className="rounded-xl bg-rose-500/10 px-3 py-2 text-[11px] font-bold text-rose-700">
+        <div role="alert" className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-700">
           {error}
         </div>
       )}

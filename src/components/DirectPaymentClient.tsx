@@ -198,12 +198,12 @@ export function DirectPaymentClient({
               <li>
                 <button type="button" onClick={() => copyValue(accountNumber, "account")} className="list-row-tap py-4">
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-stone-500">
+                    <span className="block text-sm font-medium text-stone-500">
                       {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
                     </span>
                     <span
                       ref={accountRef}
-                      className="mt-0.5 block font-mono text-[1.65rem] leading-tight font-extrabold tracking-wide break-all text-stone-900 select-all"
+                      className="mt-0.5 block tabular-nums text-2xl leading-tight font-extrabold tracking-wide break-all text-stone-900 select-all"
                     >
                       {accountNumber}
                     </span>
@@ -214,7 +214,7 @@ export function DirectPaymentClient({
               <li>
                 <button type="button" onClick={() => copyValue(String(amount), "amount")} className="list-row-tap">
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-stone-500">{t.amount}</span>
+                    <span className="block text-sm font-medium text-stone-500">{t.amount}</span>
                     <span ref={amountRef} className="block text-lg font-extrabold whitespace-nowrap text-stone-900 select-all">
                       {formatMoney(amount, dict)}
                     </span>
@@ -224,13 +224,13 @@ export function DirectPaymentClient({
               </li>
               <li className="list-row">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-stone-500">{dict.bill.supplier}</span>
+                  <span className="block text-sm font-medium text-stone-500">{dict.bill.supplier}</span>
                   <span className="block font-bold text-stone-800">{supplier}</span>
                 </span>
               </li>
             </ul>
             {copyFailed ? (
-              <p role="alert" className="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900">
+              <p role="alert" className="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900">
                 {dict.common.copyFailed}
               </p>
             ) : (
@@ -260,7 +260,7 @@ export function DirectPaymentClient({
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={m.icon} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover" />
-                    <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold text-stone-900">{m.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-base font-extrabold text-stone-900">{m.name}</span>
                   </a>
                 );
               })}
@@ -334,7 +334,7 @@ export function DirectPaymentClient({
               </div>
             )}
             {qrStatus === "not_found" && (
-              <div className="rounded-xl bg-amber-100 px-3 py-2.5 text-sm font-semibold text-amber-900">{t.qrNotFoundHint}</div>
+              <div className="rounded-xl bg-amber-100 px-3 py-2.5 text-sm font-medium text-amber-900">{t.qrNotFoundHint}</div>
             )}
 
             <input
@@ -342,7 +342,7 @@ export function DirectPaymentClient({
               value={receiptRaw}
               onChange={(e) => setReceiptRaw(e.target.value)}
               placeholder={t.manualPlaceholder}
-              className="field font-mono text-sm"
+              className="field tabular-nums text-sm"
             />
 
             {testMode && (

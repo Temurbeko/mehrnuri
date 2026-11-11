@@ -134,7 +134,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center gap-0.5 rounded-2xl py-1.5 text-[11px] font-bold transition-all active:scale-90 ${
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-2xl py-1.5 text-xs font-bold transition-all active:scale-90 ${
                   active ? "text-amber-600" : "text-slate-500 hover:text-slate-900"
                 }`}
               >

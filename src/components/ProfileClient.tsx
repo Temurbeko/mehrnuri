@@ -75,11 +75,11 @@ export function ProfileClient({
         <div className="surface space-y-4 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-xl font-extrabold text-amber-700">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-lg font-extrabold text-amber-700">
                 {donor.nickname.slice(0, 1).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <h2 className="truncate text-xl font-extrabold text-stone-900">{donor.nickname}</h2>
+                <h2 className="truncate text-lg font-extrabold text-stone-900">{donor.nickname}</h2>
                 <span className="inline-flex items-center gap-1 text-sm font-bold text-emerald-600"><Check size={16} aria-hidden="true" />{dict.me.donorBadge}</span>
               </div>
             </div>
@@ -99,7 +99,7 @@ export function ProfileClient({
               <div className="mt-1 text-lg font-extrabold text-emerald-700">{formatMoney(donor.totalDonated, dict)}</div>
             </div>
             <div className="panel">
-              <div className="text-[11px] font-bold text-stone-500">{dict.me.count}</div>
+              <div className="text-xs font-bold text-stone-500">{dict.me.count}</div>
               <div className="mt-1 text-lg font-extrabold text-stone-900">{donor.donationsCount}</div>
             </div>
           </div>
@@ -110,7 +110,7 @@ export function ProfileClient({
             <h3 className="text-base font-extrabold text-stone-900"><KeyRound size={18} aria-hidden="true" className="mr-1.5 -mt-0.5 inline" />{dict.me.recoveryTitle}</h3>
             <p className="text-xs font-medium text-stone-500 leading-relaxed">{dict.me.recoveryText}</p>
             {showCode ? (
-              <div className="panel font-mono text-xs break-all font-bold text-stone-800 select-all">
+              <div className="panel tabular-nums text-xs break-all font-bold text-stone-800 select-all">
                 {code}
               </div>
             ) : (
