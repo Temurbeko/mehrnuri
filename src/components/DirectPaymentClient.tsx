@@ -1,10 +1,10 @@
 "use client";
 
-import { Camera, Check, ChevronLeft, Copy, FlaskConical, Lightbulb, Smartphone, Trophy } from "lucide-react";
+import { ArrowRight, Camera, Check, ChevronLeft, Copy, FlaskConical, Lightbulb, Smartphone, Trophy } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PAYMENT_PROVIDERS, UTILITY_ICONS, type PaymentProviderId, type UtilityType } from "@/lib/domain";
-import { MERCHANT_APPS, type MerchantId } from "@/lib/merchants";
+import { MERCHANT_APPS } from "@/lib/merchants";
 import { encodeQrMatrix } from "@/lib/qr";
 import { decodeQrFromImageFile } from "@/lib/qrDecode";
 import { copyText, selectTextOf } from "@/lib/clipboard";
@@ -16,7 +16,6 @@ import { api, errorText } from "./api";
 export function DirectPaymentClient({
   paymentId,
   billId,
-  provider,
   amount,
   utilityType,
   supplier,
@@ -44,7 +43,7 @@ export function DirectPaymentClient({
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [activeMerchant, setActiveMerchant] = useState<MerchantId>(provider);
+  const [pageUrl, setPageUrl] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   // Only set after a copy really succeeded (it used to start as "copied" before any tap).
   const [copiedField, setCopiedField] = useState<"account" | "amount" | null>(null);
@@ -61,17 +60,18 @@ export function DirectPaymentClient({
   const [error, setError] = useState<string | null>(null);
 
   const t = dict.checkout;
-  const merchant = MERCHANT_APPS[activeMerchant];
-  const merchantText = dict.merchants[activeMerchant];
 
   useEffect(() => {
     const ua = navigator.userAgent || "";
     setIsMobile(/Android|iPhone|iPad|iPod|Mobile/i.test(ua));
+    setPageUrl(window.location.href);
     // No automatic copy on page load: browsers refuse it without a tap, and
     // the page then claimed "copied" while the clipboard was empty.
   }, []);
 
-  const qrMatrix = useMemo(() => encodeQrMatrix(merchant.qrUrl), [merchant.qrUrl]);
+  // On a computer, the QR lets the donor continue THIS payment on their phone
+  // (where the payment apps are), instead of opening a generic app page.
+  const qrMatrix = useMemo(() => (pageUrl ? encodeQrMatrix(pageUrl) : []), [pageUrl]);
 
   async function copyValue(val: string, field: "account" | "amount"): Promise<boolean> {
     const ok = await copyText(val);
@@ -160,169 +160,181 @@ export function DirectPaymentClient({
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-4">
-      <div className="card space-y-5 p-5 sm:p-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            {step !== "pay" && (
-              <button
-                type="button"
-                onClick={goBack}
-                disabled={busy !== null}
-                className="btn-ghost w-auto shrink-0 whitespace-nowrap px-2"
-              >
-                <ChevronLeft size={18} aria-hidden="true" />
-                {dict.common.back}
-              </button>
-            )}
-            <div className="ml-auto flex shrink-0 items-center gap-2">
-              <div className="flex gap-1.5" aria-hidden="true">
-                {[1, 2, 3].map((n) => (
-                  <span key={n} className={`h-2 w-6 rounded-full ${n <= stepNo ? "bg-amber-500" : "bg-slate-200"}`} />
-                ))}
-              </div>
-              <span className="text-sm font-extrabold whitespace-nowrap text-slate-500">{fmt(t.stepOf, { n: stepNo })}</span>
-            </div>
-          </div>
-          <h1 className="text-xl font-extrabold text-slate-900">{stepTitle}</h1>
-        </div>
-
-        {step === "pay" && (
-          <div className="space-y-4">
-            <div className="panel space-y-3">
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-slate-500">
-                  {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
-                </div>
-                <div
-                  ref={accountRef}
-                  className="mt-1 w-full font-mono text-2xl font-extrabold tracking-wide break-all text-slate-900 select-all"
-                >
-                  {accountNumber}
-                </div>
-              </div>
-              <button type="button" onClick={() => copyValue(accountNumber, "account")} className="btn-secondary w-full whitespace-nowrap">
-                {copiedField === "account" ? <><Check size={18} aria-hidden="true" />{t.copiedBtn}</> : <><Copy size={18} aria-hidden="true" />{t.copyBtn}</>}
-              </button>
-              {copyFailed === "account" && (
-                <p role="alert" className="rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-semibold text-amber-900">
-                  {dict.common.copyFailed}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-3">
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-slate-500">{t.amount}: </span>
-                  <span ref={amountRef} className="font-extrabold whitespace-nowrap text-slate-900 select-all">
-                    {formatMoney(amount, dict)}
-                  </span>
-                  {copyFailed === "amount" && (
-                    <p role="alert" className="mt-1 text-xs font-semibold text-amber-800">
-                      {dict.common.copyFailed}
-                    </p>
-                  )}
-                </div>
-                <button type="button" onClick={() => copyValue(String(amount), "amount")} className="btn-secondary w-auto shrink-0 whitespace-nowrap px-3 py-1.5 text-sm">
-                  {copiedField === "amount" ? <><Check size={16} aria-hidden="true" />{t.copiedBtn}</> : <><Copy size={16} aria-hidden="true" />{t.copyBtn}</>}
-                </button>
-              </div>
-              <p className="text-xs font-semibold text-slate-500">{supplier}</p>
-            </div>
-
-            <p className="flex items-start gap-2 text-sm font-medium leading-relaxed text-slate-600">
-              <Lightbulb size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
-              <span>{t.payHint}</span>
-            </p>
-
-            <div className="space-y-2">
-              <div className="text-sm font-extrabold text-slate-700">{t.openApp}</div>
-              <div className="grid grid-cols-2 gap-2.5">
-                {PAYMENT_PROVIDERS.map((mId) => {
-                  const m = MERCHANT_APPS[mId];
-                  return (
-                    <a
-                      key={mId}
-                      href={isMobile ? m.mobileAppUrl : m.webCheckoutUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        copyValue(accountNumber, "account");
-                        setActiveMerchant(mId);
-                      }}
-                      className={`flex min-h-14 min-w-0 items-center justify-center gap-2 rounded-2xl border-2 px-2 py-2.5 transition-all active:scale-95 ${
-                        activeMerchant === mId ? m.activeClass : "border-slate-200 bg-white text-slate-800 hover:border-slate-300"
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={m.icon} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover shadow-2xs" />
-                      <span className="truncate text-sm font-extrabold">{m.name}</span>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-
-            {!isMobile && (
-              <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
-                <svg
-                  viewBox={`0 0 ${qrMatrix.length + 4} ${qrMatrix.length + 4}`}
-                  className="h-20 w-20 shrink-0"
-                  shapeRendering="crispEdges"
-                  aria-label={`${merchant.name} QR`}
-                >
-                  <rect width="100%" height="100%" fill="#ffffff" />
-                  {qrMatrix.map((row, r) =>
-                    row.map((cell, c) =>
-                      cell ? <rect key={`${r}-${c}`} x={c + 2} y={r + 2} width={1} height={1} fill="#0f172a" /> : null,
-                    ),
-                  )}
-                </svg>
-                <div className="min-w-0 text-xs text-slate-600">
-                  <div className="inline-flex items-center gap-1.5 font-extrabold text-slate-900"><Smartphone size={18} aria-hidden="true" />{t.scanQrTitle}</div>
-                  <div>{merchantText.utilityPath}</div>
-                </div>
-              </div>
-            )}
-
-            <button type="button" onClick={() => setStep(hasDebtStep ? "check" : "receipt")} className="btn-primary w-full">
-              {t.paidBtn}
-            </button>
-          </div>
-        )}
-
-        {step === "check" && billId && (
-          <div className="space-y-3">
-            <DebtCheck billId={billId} dict={dict} tone="step" onDone={() => setStep("receipt")} />
-            <button type="button" onClick={() => setStep("receipt")} className="btn-ghost w-full">
-              {t.skipStep}
-            </button>
-          </div>
-        )}
-
-        {step === "receipt" && (
-          <div className="space-y-4">
-            <p className="flex items-start gap-2 text-sm font-medium leading-relaxed text-slate-600">
-              <Trophy size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
-              <span>{fmt(t.leaderboardAs, { nickname })}</span>
-            </p>
-
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
-
+    <div className="mx-auto max-w-lg space-y-5 pb-4">
+      {/* Header sits on the page, not in a box: progress, back, title. */}
+      <div className="space-y-3">
+        <div className="flex min-h-10 items-center gap-3">
+          {step !== "pay" && (
             <button
               type="button"
-              disabled={scanningQr}
-              onClick={() => fileInputRef.current?.click()}
-              className="btn-secondary w-full border-dashed"
+              onClick={goBack}
+              disabled={busy !== null}
+              className="btn-ghost -ml-2 w-auto shrink-0 whitespace-nowrap px-2"
             >
-              <Camera size={18} aria-hidden="true" />
+              <ChevronLeft size={20} aria-hidden="true" />
+              {dict.common.back}
+            </button>
+          )}
+          <div className="ml-auto flex shrink-0 items-center gap-2.5">
+            <div className="flex gap-1.5" aria-hidden="true">
+              {[1, 2, 3].map((n) => (
+                <span
+                  key={n}
+                  className={`h-1.5 rounded-full transition-all ${n === stepNo ? "w-8 bg-amber-500" : n < stepNo ? "w-4 bg-amber-500/50" : "w-4 bg-stone-300"}`}
+                />
+              ))}
+            </div>
+            <span className="text-sm font-extrabold whitespace-nowrap text-stone-500">{fmt(t.stepOf, { n: stepNo })}</span>
+          </div>
+        </div>
+        <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{stepTitle}</h1>
+      </div>
+
+      {step === "pay" && (
+        <>
+          {/* Banking-app style details: tap a row to copy it. */}
+          <div className="space-y-2">
+            <ul className="list">
+              <li>
+                <button type="button" onClick={() => copyValue(accountNumber, "account")} className="list-row-tap py-4">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-stone-500">
+                      {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
+                    </span>
+                    <span
+                      ref={accountRef}
+                      className="mt-0.5 block font-mono text-[1.65rem] leading-tight font-extrabold tracking-wide break-all text-stone-900 select-all"
+                    >
+                      {accountNumber}
+                    </span>
+                  </span>
+                  <CopyMark done={copiedField === "account"} />
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => copyValue(String(amount), "amount")} className="list-row-tap">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-stone-500">{t.amount}</span>
+                    <span ref={amountRef} className="block text-lg font-extrabold whitespace-nowrap text-stone-900 select-all">
+                      {formatMoney(amount, dict)}
+                    </span>
+                  </span>
+                  <CopyMark done={copiedField === "amount"} />
+                </button>
+              </li>
+              <li className="list-row">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-stone-500">{dict.bill.supplier}</span>
+                  <span className="block font-bold text-stone-800">{supplier}</span>
+                </span>
+              </li>
+            </ul>
+            {copyFailed ? (
+              <p role="alert" className="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900">
+                {dict.common.copyFailed}
+              </p>
+            ) : (
+              <p className="px-1 text-sm text-stone-500">{t.tapToCopy}</p>
+            )}
+          </div>
+
+          <p className="flex items-start gap-2.5 rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-relaxed font-medium text-amber-950">
+            <Lightbulb size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
+            <span>{t.payHint}</span>
+          </p>
+
+          {/* Four equal launch buttons — opening an app, not choosing one. */}
+          <div className="space-y-2.5">
+            <h2 className="px-1 text-base font-extrabold text-stone-900">{t.openApp}</h2>
+            <div className="grid grid-cols-2 gap-2.5">
+              {PAYMENT_PROVIDERS.map((mId) => {
+                const m = MERCHANT_APPS[mId];
+                return (
+                  <a
+                    key={mId}
+                    href={isMobile ? m.mobileAppUrl : m.webCheckoutUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => void copyValue(accountNumber, "account")}
+                    className="surface flex min-h-16 min-w-0 items-center gap-2.5 px-3 py-3 transition-all hover:shadow-[var(--lift-hover)] active:scale-[0.97]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={m.icon} alt="" className="h-9 w-9 shrink-0 rounded-xl object-cover" />
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-extrabold text-stone-900">{m.name}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+
+          {!isMobile && qrMatrix.length > 0 && (
+            <div className="surface flex items-center gap-4 p-4">
+              <svg
+                viewBox={`0 0 ${qrMatrix.length + 4} ${qrMatrix.length + 4}`}
+                className="h-24 w-24 shrink-0 rounded-xl"
+                shapeRendering="crispEdges"
+                aria-hidden="true"
+              >
+                <rect width="100%" height="100%" fill="#ffffff" />
+                {qrMatrix.map((row, r) =>
+                  row.map((cell, c) =>
+                    cell ? <rect key={`${r}-${c}`} x={c + 2} y={r + 2} width={1} height={1} fill="#1c1917" /> : null,
+                  ),
+                )}
+              </svg>
+              <div className="min-w-0 space-y-1">
+                <div className="flex items-center gap-1.5 font-extrabold text-stone-900">
+                  <Smartphone size={18} aria-hidden="true" />
+                  {t.scanQrTitle}
+                </div>
+                <p className="text-sm text-stone-500">{t.continueOnPhone}</p>
+              </div>
+            </div>
+          )}
+
+          {/* The one main action stays reachable while scrolling. */}
+          <div className="sticky bottom-0 z-30 -mx-4 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+            <button type="button" onClick={() => setStep(hasDebtStep ? "check" : "receipt")} className="btn-primary w-full text-lg">
+              {t.paidBtn}
+              <ArrowRight size={20} aria-hidden="true" />
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === "check" && billId && (
+        <div className="space-y-3">
+          <div className="surface p-5">
+            <DebtCheck billId={billId} dict={dict} tone="step" onDone={() => setStep("receipt")} />
+          </div>
+          <button type="button" onClick={() => setStep("receipt")} className="btn-ghost w-full">
+            {t.skipStep}
+          </button>
+        </div>
+      )}
+
+      {step === "receipt" && (
+        <div className="space-y-4">
+          <p className="flex items-start gap-2.5 rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-relaxed font-medium text-amber-950">
+            <Trophy size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-amber-600" />
+            <span>{fmt(t.leaderboardAs, { nickname })}</span>
+          </p>
+
+          <div className="surface space-y-3 p-5">
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+            <button type="button" disabled={scanningQr} onClick={() => fileInputRef.current?.click()} className="btn-tonal w-full">
+              <Camera size={20} aria-hidden="true" />
               <span>{scanningQr ? t.scanningReceipt : t.scanReceiptBtn}</span>
             </button>
 
             {qrStatus === "extracted" && (
-              <div className="rounded-xl bg-emerald-500/15 px-3 py-2 text-sm font-extrabold text-emerald-800">{t.qrExtractedOk}</div>
+              <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-800">
+                <Check size={18} aria-hidden="true" />
+                {t.qrExtractedOk}
+              </div>
             )}
             {qrStatus === "not_found" && (
-              <div className="rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-bold text-amber-900">{t.qrNotFoundHint}</div>
+              <div className="rounded-xl bg-amber-100 px-3 py-2.5 text-sm font-semibold text-amber-900">{t.qrNotFoundHint}</div>
             )}
 
             <input
@@ -330,36 +342,60 @@ export function DirectPaymentClient({
               value={receiptRaw}
               onChange={(e) => setReceiptRaw(e.target.value)}
               placeholder={t.manualPlaceholder}
-              className="input py-2.5 font-mono text-xs font-bold"
+              className="field font-mono text-sm"
             />
 
             {testMode && (
-              <button type="button" onClick={fillSampleReceipt} className="btn-secondary w-full border-dashed">
-                <FlaskConical size={18} aria-hidden="true" />{t.testReceiptBtn}
+              <button type="button" onClick={fillSampleReceipt} className="btn-ghost w-full text-sm">
+                <FlaskConical size={18} aria-hidden="true" />
+                {t.testReceiptBtn}
               </button>
             )}
+          </div>
 
+          <div className="space-y-2.5">
             <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("verified")} className="btn-primary w-full">
               {busy === "verified" ? t.processing : <><Trophy size={18} aria-hidden="true" />{t.verifyWithReceiptBtn}</>}
             </button>
-            <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("skip")} className="btn-secondary w-full">
+            <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("skip")} className="btn-tonal w-full">
               {busy === "skip" ? t.processing : t.skipReceiptBtn}
             </button>
           </div>
-        )}
-
-        {error && (
-          <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-sm font-bold text-rose-700">
-            {error}
-          </div>
-        )}
-
-        <div className="border-t border-slate-100 pt-2 text-center">
-          <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("failure")} className="btn-ghost w-auto text-sm text-slate-500">
-            {busy === "failure" ? t.processing : t.cancelBtn}
-          </button>
         </div>
+      )}
+
+      {error && (
+        <div role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-700">
+          {error}
+        </div>
+      )}
+
+      <div className="text-center">
+        <button type="button" disabled={busy !== null} onClick={() => submitConfirmation("failure")} className="btn-ghost w-auto text-sm text-stone-500">
+          {busy === "failure" ? t.processing : t.cancelBtn}
+        </button>
       </div>
+
+      {copiedField && (
+        <div role="status" className="toast flex items-center gap-2 rounded-full bg-stone-900 px-5 py-3 text-sm font-bold text-white shadow-lg">
+          <Check size={18} aria-hidden="true" className="text-emerald-400" />
+          {t.copiedBtn}
+        </div>
+      )}
     </div>
+  );
+}
+
+/** Copy affordance at the end of a tappable row; turns into a check once copied. */
+function CopyMark({ done }: { done: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+        done ? "bg-emerald-100 text-emerald-700" : "bg-[var(--tone)] text-stone-600"
+      }`}
+    >
+      {done ? <Check size={18} /> : <Copy size={18} />}
+    </span>
   );
 }

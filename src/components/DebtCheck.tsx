@@ -92,15 +92,15 @@ export function DebtCheck({
 
   const wrapper =
     tone === "step"
-      ? "space-y-3 panel"
-      : "space-y-3 rounded-2xl border border-slate-200/90 bg-white p-4";
+      ? "space-y-4" // the payment page already puts this in a surface
+      : "surface space-y-4 p-5";
 
   if (stage === "sent" && result) {
     const matched = result.kind === "match";
     return (
       <div
-        className={`rounded-2xl p-4 text-xs font-bold ${
-          matched ? "bg-emerald-500/12 text-emerald-800" : "bg-amber-500/15 text-amber-900"
+        className={`rounded-2xl p-4 text-sm font-bold ${
+          matched ? "bg-emerald-50 text-emerald-800" : "bg-amber-100 text-amber-900"
         }`}
       >
         {matched ? t.thanksMatch : result.hidden ? t.thanksReportHidden : t.thanksReport}
@@ -112,7 +112,7 @@ export function DebtCheck({
     <div className={wrapper}>
       <div>
         {tone !== "step" && <div className="text-xs font-extrabold text-slate-900">{t.title}</div>}
-        <p className={`text-sm font-medium leading-relaxed text-slate-600 ${tone === "step" ? "" : "mt-1"}`}>{t.hint}</p>
+        <p className={`text-[15px] leading-relaxed text-stone-600 ${tone === "step" ? "" : "mt-1"}`}>{t.hint}</p>
       </div>
 
       {stage === "ask" ? (
@@ -121,16 +121,17 @@ export function DebtCheck({
             type="button"
             disabled={busy}
             onClick={() => send("match")}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 min-h-12 text-base font-bold text-white transition active:scale-[0.98] hover:bg-emerald-700 disabled:opacity-60"
+            className="btn-emerald w-full"
           >
             <Check size={18} aria-hidden="true" />{t.match}
           </button>
-          <div className="grid grid-cols-2 gap-2">
+          {/* Stacked full-width rows: short labels never break mid-word. */}
+          <div className="grid gap-2">
             <button
               type="button"
               disabled={busy}
               onClick={() => setStage("amount")}
-              className="flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-slate-800 ring-1 ring-slate-300 transition hover:bg-slate-50 disabled:opacity-60"
+              className="btn-tonal w-full justify-start px-4"
             >
               <TriangleAlert size={18} aria-hidden="true" />{t.differs}
             </button>
@@ -138,7 +139,7 @@ export function DebtCheck({
               type="button"
               disabled={busy}
               onClick={() => send("no_debt")}
-              className="flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-rose-700 ring-1 ring-rose-300 transition hover:bg-rose-50 disabled:opacity-60"
+              className="btn-tonal w-full justify-start px-4 text-rose-700"
             >
               <Ban size={18} aria-hidden="true" />{t.noDebt}
             </button>
@@ -146,7 +147,7 @@ export function DebtCheck({
         </div>
       ) : (
         <div className="space-y-2">
-          <label className="block text-[11px] font-extrabold text-slate-700" htmlFor="seenAmount">
+          <label className="label" htmlFor="seenAmount">
             {t.seenLabel}
           </label>
           <input
@@ -157,14 +158,14 @@ export function DebtCheck({
             value={seenAmount}
             onChange={(e) => setSeenAmount(e.target.value)}
             placeholder={t.seenPlaceholder}
-            className="input bg-white py-2.5 text-sm font-bold"
+            className="field text-lg font-bold"
           />
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               disabled={busy || seenAmount.trim() === ""}
               onClick={() => send("amount_differs")}
-              className="cursor-pointer rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-extrabold text-white transition hover:bg-slate-800 disabled:opacity-50"
+              className="btn-primary w-full"
             >
               {busy ? t.sending : t.send}
             </button>
@@ -172,7 +173,7 @@ export function DebtCheck({
               type="button"
               disabled={busy}
               onClick={() => setStage("ask")}
-              className="cursor-pointer rounded-xl bg-white px-3 py-2.5 text-xs font-bold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50"
+              className="btn-ghost w-full"
             >
               {t.cancel}
             </button>
