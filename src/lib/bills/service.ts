@@ -79,6 +79,28 @@ async function nextBillCode(): Promise<string> {
   return `MN-${BILL_CODE_START + (counter?.seq ?? 1)}`;
 }
 
+/**
+ * Checked while the family is still typing, so a second request for the same
+ * account is caught at the account step, not after filling in the whole form.
+ * It only says what the final submit would also say; an open bill's page is
+ * public anyway (and is only linked once it is published).
+ */
+export async function accountStatus(
+  utilityType: UtilityType,
+  accountNumber: string,
+): Promise<{ hasOpen: boolean; openBillId: string | null; blocked: boolean }> {
+  const { bills, accounts } = await collections();
+  const [open, account] = await Promise.all([
+    bills.findOne({ utilityType, accountNumber, isOpen: true }, { projection: { _id: 1, reviewStatus: 1 } }),
+    accounts.findOne({ _id: accountKeyOf(utilityType, accountNumber) }, { projection: { blocked: 1 } }),
+  ]);
+  return {
+    hasOpen: !!open,
+    openBillId: open && open.reviewStatus === "approved" ? open._id.toHexString() : null,
+    blocked: !!account?.blocked,
+  };
+}
+
 /** One open request per phone at a time, and a few per season. */
 const MAX_BILLS_PER_PHONE_30D = 3;
 

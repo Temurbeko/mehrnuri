@@ -173,7 +173,7 @@ function PaidScreen({
         <h2 className="mx-0.5 mb-2.5 text-[15px] font-extrabold text-[var(--ink)]">{d.shareTitle}</h2>
         <figure
           aria-label={d.shareAria}
-          className="m-0 flex items-center gap-3.5 rounded-[20px] bg-[radial-gradient(120%_120%_at_100%_0%,rgba(246,166,35,0.35),transparent_55%),var(--night)] p-4 text-[#f6efe3]"
+          className="m-0 flex items-center gap-3.5 rounded-[20px] hero-mesh p-4 text-[#f6efe3]"
         >
           <svg viewBox="0 0 40 48" aria-hidden="true" className="h-[52px] w-11 shrink-0 drop-shadow-[0_0_10px_rgba(246,166,35,0.55)]">
             <rect x="1" y="1" width="38" height="46" rx="7" fill="#151826" />

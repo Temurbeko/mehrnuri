@@ -38,6 +38,8 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [taken, setTaken] = useState<{ text: string; billId: string | null } | null>(null);
   const [created, setCreated] = useState<{ id: string; code: string; held: boolean } | null>(null);
 
   const districts = DISTRICTS_BY_REGION[region];
@@ -54,10 +56,21 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
     amountNum >= 1000 &&
     amountNum <= 5000000;
 
-  function goNext() {
+  async function goNext() {
     setError(null);
+    setTaken(null);
     if (step === 1) setStep(2);
-    else if (step === 2 && step2Valid) setStep(3);
+    else if (step === 2 && step2Valid) {
+      // Catch an account that already has an open request before the family fills in the rest.
+      setChecking(true);
+      const res = await api<{ hasOpen?: boolean; openBillId?: string | null; blocked?: boolean }>(
+        `/api/bills/check?utilityType=${utilityType}&accountNumber=${accountDigits}`,
+      );
+      setChecking(false);
+      if (res.ok && res.data.blocked) return setTaken({ text: errorText("account_blocked", dict), billId: null });
+      if (res.ok && res.data.hasOpen) return setTaken({ text: dict.ask.alreadyOpen, billId: res.data.openBillId ?? null });
+      setStep(3);
+    }
   }
 
   function goBack() {
@@ -397,7 +410,17 @@ export function AskForm({ locale, dict }: { locale: Locale; dict: Dictionary }) 
           )}
         </div>
 
-            <button type="button" onClick={goNext} disabled={!step2Valid} className="btn-primary">
+            {taken && (
+              <div role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-700">
+                {taken.text}
+                {taken.billId && (
+                  <Link href={`/${locale}/bill/${taken.billId}`} className="mt-1 block underline underline-offset-2">
+                    {dict.ask.viewOpen}
+                  </Link>
+                )}
+              </div>
+            )}
+            <button type="button" onClick={goNext} disabled={!step2Valid || checking} className="btn-primary">
               <span>{dict.common.next}</span>
               <ArrowRight size={18} aria-hidden="true" />
             </button>

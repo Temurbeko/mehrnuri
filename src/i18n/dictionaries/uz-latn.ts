@@ -341,6 +341,8 @@ const uzLatn = {
     meterHint: "Kvitansiyadagi oxirgi ko'rsatkich",
     accountNumber: "Hisob raqam (лицевой счёт)",
     accountHint: "5–20 ta raqam",
+    alreadyOpen: "Bu hisob raqam bo'yicha ochiq ariza allaqachon bor. Ikkinchisini yuborib bo'lmaydi.",
+    viewOpen: "Mavjud arizani ko'rish",
     step1Title: "Qaysi xizmat va qayerda?",
     step2Title: "Hisob raqam va summa",
     step3Title: "Aloqa va rozilik",
