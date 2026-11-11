@@ -10,6 +10,7 @@ import { copyText } from "@/lib/clipboard";
 import { AddReceipt } from "./AddReceipt";
 import { AppBar } from "./AppBar";
 import { BottomSheet } from "./BottomSheet";
+import { ShareOptions } from "./ShareOptions";
 
 export function PaymentResultClient({
   paymentId,
@@ -147,20 +148,6 @@ function PaidScreen({
   const base = origin || (typeof window !== "undefined" ? window.location.origin : "");
   const shareUrl = shareCode ? `${base}/${locale}/h/${shareCode}${withAmount ? "-a" : ""}` : base;
 
-  async function share() {
-    const text = `${shareText} ${d.cardJoin}`;
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ text, url: shareUrl });
-      } catch {
-        /* the user closed the share sheet */
-      }
-      return;
-    }
-    const ok = await copyText(`${text} ${shareUrl}`);
-    showToast(ok ? d.copiedToast : d.copyFailToast);
-  }
-
   return (
     <div className="mx-auto max-w-md">
       <AppBar title={dict.app.thanks} locale={locale} backLabel={dict.common.back} />
@@ -278,10 +265,7 @@ function PaidScreen({
           <span aria-hidden="true" className="switch" />
         </label>
         <p className="mx-0.5 mt-1.5 mb-4 text-[13px] text-[var(--ink-soft)]">{d.shareNote}</p>
-        <button type="button" onClick={share} className="btn-primary w-full">
-          <Share2 size={20} aria-hidden="true" />
-          {d.shareBtn}
-        </button>
+        <ShareOptions url={shareUrl} text={`${shareText} ${d.cardJoin}`} dict={dict} />
       </BottomSheet>
 
       {toast && (

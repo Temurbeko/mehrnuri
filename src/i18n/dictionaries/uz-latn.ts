@@ -285,6 +285,14 @@ const uzLatn = {
     tagline: "Kommunal to'lovlarda o'zaro yordam",
     notFound: "Bu havola topilmadi yoki eskirgan.",
   },
+  shareTo: {
+    title: "Ulashish",
+    copy: "Nusxalash",
+    more: "Boshqa",
+    copied: "Havola nusxalandi — istalgan joyga yuboring",
+    copyFailed: "Nusxalab bo'lmadi. Havolani qo'lda belgilang.",
+    billText: "Bu oilaga kommunal to'lovda yordam kerak. Pul to'g'ridan-to'g'ri ularning hisobiga tushadi:",
+  },
   done: {
     title: "Bir deraza yorishdi.",
     body: "Pulingiz to'g'ri {account} hisobiga tushdi: {outcome}. Oila nomidan katta rahmat.",

@@ -13,6 +13,7 @@ import { HelpersLine, StatusBadge, UtilityTile } from "./BillCard";
 import { TrustBadge } from "./DebtCheck";
 import { CopyRow } from "./CopyRow";
 import { AppBar } from "./AppBar";
+import { ShareOptions } from "./ShareOptions";
 import { BottomSheet } from "./BottomSheet";
 import { api, errorText } from "./api";
 
@@ -66,21 +67,13 @@ export function DonatePanel({
   const [storyOpen, setStoryOpen] = useState(false);
   const closeSheet = useCallback(() => setSheetOpen(false), []);
 
-  /** Native share sheet on phones; otherwise copy the link. */
-  async function shareRequest() {
-    const url = window.location.href;
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: dict.bill.ownTitle, url });
-      } catch {
-        /* the user closed the share sheet */
-      }
-      return;
-    }
-    if (await copyText(url)) {
-      setShared(true);
-      setTimeout(() => setShared(false), 2500);
-    }
+  /** Opens the share options (Telegram, WhatsApp, copy, the phone's own menu). */
+  const [shareOpen, setShareOpen] = useState(false);
+  const closeShare = useCallback(() => setShareOpen(false), []);
+  const [pageUrl, setPageUrl] = useState("");
+  useEffect(() => setPageUrl(window.location.href), []);
+  function shareRequest() {
+    setShareOpen(true);
   }
   const [error, setError] = useState<string | null>(null);
 
@@ -206,6 +199,14 @@ export function DonatePanel({
           </button>
         }
       />
+
+      <BottomSheet open={shareOpen} onClose={closeShare} labelledBy="share-bill-title">
+        <h2 id="share-bill-title" className="mb-1 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">
+          {dict.shareTo.title}
+        </h2>
+        <p className="mb-4 text-[14px] text-[var(--ink-soft)]">{dict.shareTo.billText}</p>
+        <ShareOptions url={pageUrl} text={dict.shareTo.billText} dict={dict} />
+      </BottomSheet>
 
       {/* One compact summary card: what, where, what is left, who helps. */}
       <section className="surface min-w-0 space-y-3 p-4">
