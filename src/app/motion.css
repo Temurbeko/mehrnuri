@@ -43,8 +43,10 @@
   animation: page-enter 180ms ease-out both;
 }
 @keyframes page-enter {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
+  /* opacity only: a transform here would turn every position:fixed bar inside the page
+     (pinned buttons) into page-relative while the animation runs */
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -220,8 +222,12 @@
   .ta-heart { opacity: 1; }
 }
 
-/* Smaller lit window for the success screen, so the thanks + amount + share fit one screen. */
-.lightup.lightup-sm { width: 84px; height: 100px; margin: 2px auto 0; border-radius: 18px; box-shadow: inset 0 0 0 4px var(--night), 0 0 40px 4px rgba(246, 166, 35, 0.45); }
-.lightup.lightup-sm::before { width: 4px; }
-.lightup.lightup-sm::after { height: 4px; }
-.lightup.lightup-sm i { inset: 4px; border-radius: 14px; }
+
+/* Speech bubble for the family's story: a white bubble with a small tail. */
+.bubble { position: relative; border-radius: 20px; background: #fff; box-shadow: var(--lift); }
+.bubble::after { content: ""; position: absolute; left: 22px; bottom: -7px; width: 14px; height: 14px; background: #fff; border-radius: 3px; transform: rotate(45deg); }
+
+/* Segmented control (iOS style). */
+.segmented { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; border-radius: 12px; background: var(--tone); }
+.segmented button { min-height: 36px; min-width: 0; padding: 0 10px; border-radius: 10px; font-size: 14px; font-weight: 800; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.segmented button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: var(--lift); }

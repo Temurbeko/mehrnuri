@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, ChevronRight, Clock, Receipt, Shield } from "lucide-react";
+import { Check, ChevronRight, Clock, Receipt } from "lucide-react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { OWNER_COOKIE, ownedBillIds } from "@/lib/bills/owner";
@@ -9,6 +9,7 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
 import { currentDonor, currentRecoveryCode } from "@/lib/donors/session";
 import { ProfileClient } from "@/components/ProfileClient";
+import { ProfileTabs } from "@/components/ProfileTabs";
 import { donorHistory, donorOpenPayments, type DonorOpenPayment, type HistoryItem } from "@/lib/payments/core";
 import { UTILITY_ICONS } from "@/lib/domain";
 import { formatMoney } from "@/i18n";
@@ -46,15 +47,17 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
     /* DB offline */
   }
 
-  return (
-    <div className="mx-auto max-w-xl space-y-5">
-      <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{dict.me.title}</h1>
-      <MyRequests items={myRequests} locale={locale} dict={dict} />
+
+  const hasHelps = openPayments.length > 0 || history.length > 0;
+  const hasRequests = myRequests.length > 0;
+
+  const helpsNode = hasHelps ? (
+    <div className="space-y-5">
       {openPayments.length > 0 && (
-        <section className="space-y-2.5">
-          <div>
-            <h2 className="text-lg font-extrabold text-[var(--ink)]">{dict.me.unconfirmed}</h2>
-            <p className="text-sm text-[var(--ink-soft)]">{dict.me.unconfirmedHint}</p>
+        <section className="space-y-2">
+          <div className="mx-1">
+            <h2 className="text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.me.unconfirmed}</h2>
+            <p className="mt-0.5 text-[13px] text-[var(--ink-soft)]">{dict.me.unconfirmedHint}</p>
           </div>
           <ul className="list">
             {openPayments.map((p) => (
@@ -79,66 +82,70 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
           </ul>
         </section>
       )}
-      {donor && (
-        <section className="space-y-2.5">
-          <div className="flex items-end justify-between gap-3">
-            <h2 className="text-lg font-extrabold text-[var(--ink)]">{dict.history.title}</h2>
-          </div>
-          {history.length === 0 ? (
-            <p className="surface p-4 text-sm text-[var(--ink-soft)]">{dict.history.empty}</p>
-          ) : (
-            <ul className="list">
-              {history.map((h) => (
-                <li key={h.id}>
-                  <Link href={`/${locale}/payment/${h.id}`} className="list-row-tap flex min-w-0 items-center gap-3">
-                    <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--tone)] text-[19px]">
-                      {UTILITY_ICONS[h.utilityType]}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <b className="block truncate text-[15px] text-[var(--ink)]">{dict.utilityBill[h.utilityType]}</b>
-                      <small className="block truncate text-[13px] text-[var(--ink-soft)]">
-                        {h.district ? `${dict.districts[h.district as keyof typeof dict.districts] ?? ""} · ` : ""}
-                        {timeAgo(h.at, dict.time)}
+      {history.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="mx-1 text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.history.title}</h2>
+          <ul className="list">
+            {history.map((h) => (
+              <li key={h.id}>
+                <Link href={`/${locale}/payment/${h.id}`} className="list-row-tap flex min-w-0 items-center gap-3">
+                  <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--tone)] text-[19px]">
+                    {UTILITY_ICONS[h.utilityType]}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <b className="block truncate text-[15px] text-[var(--ink)]">{dict.utilityBill[h.utilityType]}</b>
+                    <small className="block truncate text-[13px] text-[var(--ink-soft)]">
+                      {h.district ? `${dict.districts[h.district as keyof typeof dict.districts] ?? ""} · ` : ""}
+                      {timeAgo(h.at, dict.time)}
+                    </small>
+                  </span>
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <b className="text-[15px] whitespace-nowrap text-[var(--ink)] tabular-nums">{formatMoney(h.amount, dict)}</b>
+                    {h.receipt === "verified" ? (
+                      <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--hope)]">
+                        <Check size={13} aria-hidden="true" />
+                        {dict.history.receiptOk}
                       </small>
-                    </span>
-                    <span className="flex shrink-0 flex-col items-end gap-1">
-                      <b className="text-[15px] whitespace-nowrap text-[var(--ink)] tabular-nums">{formatMoney(h.amount, dict)}</b>
-                      {h.receipt === "verified" ? (
-                        <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--hope)]">
-                          <Check size={13} aria-hidden="true" />
-                          {dict.history.receiptOk}
-                        </small>
-                      ) : h.receipt === "pending" ? (
-                        <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--lamp-deep)]">
-                          <Clock size={13} aria-hidden="true" />
-                          {dict.history.receiptPending}
-                        </small>
-                      ) : (
-                        <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--lamp-deep)]">
-                          <Receipt size={13} aria-hidden="true" />
-                          {dict.history.receiptNone}
-                        </small>
-                      )}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                    ) : h.receipt === "pending" ? (
+                      <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--lamp-deep)]">
+                        <Clock size={13} aria-hidden="true" />
+                        {dict.history.receiptPending}
+                      </small>
+                    ) : (
+                      <small className="inline-flex items-center gap-1 text-[12px] font-bold whitespace-nowrap text-[var(--lamp-deep)]">
+                        <Receipt size={13} aria-hidden="true" />
+                        {dict.history.receiptNone}
+                      </small>
+                    )}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
+    </div>
+  ) : null;
+
+  const requestsNode = hasRequests ? <MyRequests items={myRequests} locale={locale} dict={dict} /> : null;
+
+  return (
+    <div className="mx-auto max-w-xl space-y-5">
+      <h1 className="text-[24px] leading-tight font-extrabold tracking-tight text-[var(--ink)]">{dict.me.title}</h1>
       <ProfileClient
         initialDonor={
           donor ? { nickname: donor.nickname, totalDonated: donor.totalDonated, donationsCount: donor.donationsCount } : null
         }
         recoveryCode={code}
+        adminHref={`/${locale}/admin`}
         dict={dict}
-      />
-      <div className="pt-4 text-center">
-        <Link href={`/${locale}/admin`} className="text-xs font-medium text-stone-400 hover:text-stone-600">
-          <span className="inline-flex items-center gap-1.5"><Shield size={16} aria-hidden="true" />{dict.nav.admin}</span>
-        </Link>
-      </div>
+      >
+        {hasHelps || hasRequests ? (
+          <ProfileTabs helps={helpsNode} requests={requestsNode} helpsLabel={dict.ux.tabHelps} requestsLabel={dict.ux.tabRequests} />
+        ) : donor ? (
+          <p className="surface p-4 text-[15px] text-[var(--ink-soft)]">{dict.history.empty}</p>
+        ) : null}
+      </ProfileClient>
     </div>
   );
 }

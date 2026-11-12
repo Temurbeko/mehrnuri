@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, FileText } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { UTILITY_ICONS, type PublicBill, type ReviewStatus } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
 import { formatMoney, type Dictionary } from "@/i18n";
@@ -20,31 +20,25 @@ export function MyRequests({ items, locale, dict }: { items: MyRequest[]; locale
   const t = dict.me;
 
   return (
-    <section id="my-requests" className="space-y-3">
-      <h2 className="flex items-center gap-2 text-lg font-extrabold text-stone-900">
-        <FileText size={20} aria-hidden="true" className="text-amber-600" />
-        {t.myRequests}
-      </h2>
+    <section id="my-requests">
       <ul className="list">
         {items.map(({ bill, reviewStatus, isOpen }) => {
           const remaining = Math.max(0, bill.amountOwed - bill.paidAmount);
           const status = statusText({ bill, reviewStatus, isOpen }, dict);
           return (
             <li key={bill.id}>
-              <Link href={`/${locale}/bill/${bill.id}`} className="list-row-tap min-w-0">
-                <span className="text-2xl" aria-hidden="true">
+              <Link href={`/${locale}/bill/${bill.id}`} className="list-row-tap flex min-w-0 items-center gap-3">
+                <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--tone)] text-[19px]">
                   {UTILITY_ICONS[bill.utilityType]}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="tabular-nums text-sm font-extrabold whitespace-nowrap text-stone-900">{bill.code}</span>
-                    <span className={`truncate text-xs font-bold ${status.tone}`}>{status.label}</span>
-                  </span>
-                  <span className="block truncate text-sm text-stone-600">
-                    {dict.utility[bill.utilityType]} · {t.remainingShort} {formatMoney(remaining, dict)}
-                  </span>
+                  <b className="block truncate text-[15px] text-[var(--ink)]">{dict.utility[bill.utilityType]}</b>
+                  <small className="block truncate text-[13px] text-[var(--ink-soft)]">
+                    <span className="tabular-nums">{bill.code}</span> · {t.remainingShort} {formatMoney(remaining, dict)}
+                  </small>
                 </span>
-                <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-stone-400" />
+                <span className={`max-w-[40%] shrink-0 truncate text-[12px] font-bold ${status.tone}`}>{status.label}</span>
+                <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-[var(--ink-soft)]" />
               </Link>
             </li>
           );
@@ -56,11 +50,11 @@ export function MyRequests({ items, locale, dict }: { items: MyRequest[]; locale
 
 function statusText(item: MyRequest, dict: Dictionary): { label: string; tone: string } {
   const { bill, reviewStatus, isOpen } = item;
-  if (reviewStatus === "pending_review") return { label: dict.status.pending_review, tone: "text-amber-700" };
+  if (reviewStatus === "pending_review") return { label: dict.status.pending_review, tone: "text-[var(--lamp-deep)]" };
   if (reviewStatus === "flagged") return { label: dict.status.flagged, tone: "text-rose-700" };
   if (reviewStatus === "rejected") return { label: dict.status.rejected, tone: "text-rose-700" };
-  if (bill.payoutStatus === "paid_out") return { label: dict.status.paid_out, tone: "text-emerald-700" };
-  if (bill.fundingStatus === "fully_paid") return { label: dict.status.fully_paid, tone: "text-emerald-700" };
-  if (!isOpen) return { label: dict.me.closed, tone: "text-stone-500" };
-  return { label: dict.status[bill.fundingStatus], tone: "text-stone-600" };
+  if (bill.payoutStatus === "paid_out") return { label: dict.status.paid_out, tone: "text-[var(--hope)]" };
+  if (bill.fundingStatus === "fully_paid") return { label: dict.status.fully_paid, tone: "text-[var(--hope)]" };
+  if (!isOpen) return { label: dict.me.closed, tone: "text-[var(--ink-soft)]" };
+  return { label: dict.status[bill.fundingStatus], tone: "text-[var(--ink-soft)]" };
 }

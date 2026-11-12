@@ -10,6 +10,7 @@ import { copyText } from "@/lib/clipboard";
 import { AddReceipt } from "./AddReceipt";
 import { AppBar } from "./AppBar";
 import { BottomSheet } from "./BottomSheet";
+import { ThanksArt } from "./HeroArt";
 import { ShareOptions } from "./ShareOptions";
 
 export function PaymentResultClient({
@@ -154,8 +155,8 @@ function PaidScreen({
 
       {/* Compact hero: the lit window, the thanks and the amount fit in the top of the screen. */}
       <div className="text-center">
-        <div aria-hidden="true" className="lightup lightup-sm">
-          <i />
+        <div className="hs-active mx-auto w-fit">
+          <ThanksArt className="h-[132px] w-[106px]" />
         </div>
         <h1 className="mt-3 text-[24px] leading-tight font-extrabold tracking-tight text-balance text-[var(--ink)]">{d.title}</h1>
         <p className="mt-0.5 text-[30px] leading-tight font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)] tabular-nums">{money}</p>

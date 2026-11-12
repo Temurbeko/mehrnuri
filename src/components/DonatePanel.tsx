@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Heart, Lightbulb, Minus, Plus, Share2, ShieldCheck } from "lucide-react";
+import { Check, Copy, Heart, Home, Lightbulb, Minus, Plus, Share2, ShieldCheck, Smartphone } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { copyText } from "@/lib/clipboard";
 import { digitsOnly, groupDigits, timeAgo } from "@/lib/format";
@@ -208,36 +208,39 @@ export function DonatePanel({
         <ShareOptions url={pageUrl} text={dict.shareTo.billText} dict={dict} />
       </BottomSheet>
 
-      {/* One compact summary card: what, where, what is left, who helps. */}
-      <section className="surface min-w-0 space-y-3 p-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <UtilityTile type={bill.utilityType} />
-          <div className="min-w-0 flex-1">
-            <p className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-[var(--ink-soft)]">
-              <span suppressHydrationWarning className="min-w-0 truncate">
-                {dict.districts[districtInfo.id]} · {timeAgo(bill.createdAt, dict.time)}
-              </span>
-              {bill.verified && (
-                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
-                  <Check size={11} aria-hidden="true" />
-                </span>
-              )}
-            </p>
-            {showReviewRow && (
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {reviewBadge}
-                {bill.trustLevel !== "new" && <TrustBadge bill={bill} dict={dict} />}
-              </div>
-            )}
+      {isOwner && (
+        // The family itself: no donate form (paying your own bill would put you on the
+        // leaderboard); sharing the request is what actually helps.
+        <section className="flex min-w-0 flex-col gap-3 rounded-[20px] bg-[rgba(246,166,35,0.16)] p-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-white text-[var(--lamp-deep)] shadow-[var(--lift)]">
+              <Share2 size={20} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[17px] leading-snug font-extrabold text-[var(--ink)]">{dict.ux.ownerTitle}</p>
+              <p className="mt-0.5 text-[15px] leading-snug text-[var(--ink-soft)]">{dict.ux.ownerText}</p>
+            </div>
           </div>
-        </div>
+          <button type="button" onClick={shareRequest} className="btn-primary w-full">
+            <Share2 size={18} aria-hidden="true" />
+            {shared ? dict.bill.linkCopied : dict.bill.share}
+          </button>
+        </section>
+      )}
+
+      {/* One compact summary card: what is asked, what is left, who helps. */}
+      <section className="surface min-w-0 space-y-3 p-4">
+        <p className="flex items-center gap-2 text-[13px] font-extrabold tracking-wide text-[var(--lamp-deep)] uppercase">
+          <span aria-hidden="true" className="lamp-dot" />
+          <span className="min-w-0 truncate">{dict.ux.asking}</span>
+        </p>
 
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-bold text-[var(--ink-soft)]">{dict.bill.remaining}</div>
             <div className="text-[30px] leading-[1.1] font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)]">
-              {groupDigits(String(remaining))} <small className="text-sm font-bold text-[var(--ink-soft)]">{dict.common.som}</small>
+              {groupDigits(String(remaining))} <small className="text-[15px] font-bold text-[var(--ink-soft)]">{dict.common.som}</small>
             </div>
+            <div className="mt-0.5 text-[13px] font-bold text-[var(--ink-soft)]">{dict.ux.needed}</div>
           </div>
           <div className="min-w-0 pb-1 text-right text-[13px] font-bold whitespace-nowrap text-[var(--ink-soft)]">
             {fmt(dict.app.ofTotal, { total: groupDigits(String(bill.amountOwed)) })}
@@ -255,26 +258,71 @@ export function DonatePanel({
             style={{ width: `${Math.max(pct, bill.paidAmount > 0 ? 3 : 0)}%` }}
           />
         </div>
+
+        <div className="flex min-w-0 items-center gap-3">
+          <UtilityTile type={bill.utilityType} />
+          <div className="min-w-0 flex-1">
+            <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold text-[var(--ink)]">
+              <span suppressHydrationWarning className="min-w-0 truncate">
+                {dict.utilityBill[bill.utilityType]} · {dict.districts[districtInfo.id]} · {timeAgo(bill.createdAt, dict.time)}
+              </span>
+              {bill.verified && (
+                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+                  <Check size={11} aria-hidden="true" />
+                </span>
+              )}
+            </p>
+            {showReviewRow && (
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                {reviewBadge}
+                {bill.trustLevel !== "new" && <TrustBadge bill={bill} dict={dict} />}
+              </div>
+            )}
+          </div>
+        </div>
         <HelpersLine bill={bill} dict={dict} />
       </section>
 
       {bill.story && (
-        <blockquote className="min-w-0 border-l-[3px] border-[var(--lamp)] pr-1 pl-3.5 text-[15px] leading-snug text-[var(--ink)]">
-          <p className={`m-0 break-words ${storyOpen ? "" : "story-clamp"}`}>{bill.story}</p>
-          <footer className="mt-1.5 flex min-w-0 items-center justify-between gap-3 text-[12.5px] font-bold text-[var(--ink-soft)]">
-            <span className="min-w-0 truncate">{bill.familyName ?? dict.pick.family}</span>
-            {longStory && (
-              <button
-                type="button"
-                onClick={() => setStoryOpen((v) => !v)}
-                aria-expanded={storyOpen}
-                className="shrink-0 cursor-pointer font-extrabold whitespace-nowrap text-[var(--lamp-deep)]"
-              >
-                {storyOpen ? dict.app.less : dict.app.more}
-              </button>
-            )}
-          </footer>
-        </blockquote>
+        <div className="min-w-0 pb-2">
+          <blockquote className="bubble m-0 min-w-0 p-4 text-[15px] leading-snug text-[var(--ink)]">
+            <p className="mb-1.5 text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.ux.familyWrote}</p>
+            <p className={`m-0 break-words ${storyOpen ? "" : "story-clamp"}`}>{bill.story}</p>
+            <footer className="mt-2 flex min-w-0 items-center justify-between gap-3 text-[13px] font-bold text-[var(--ink-soft)]">
+              <span className="min-w-0 truncate">{bill.familyName ?? dict.pick.family}</span>
+              {longStory && (
+                <button
+                  type="button"
+                  onClick={() => setStoryOpen((v) => !v)}
+                  aria-expanded={storyOpen}
+                  className="shrink-0 cursor-pointer font-extrabold whitespace-nowrap text-[var(--lamp-deep)]"
+                >
+                  {storyOpen ? dict.app.less : dict.app.more}
+                </button>
+              )}
+            </footer>
+          </blockquote>
+        </div>
+      )}
+
+      {!isOwner && (
+        <section aria-label={dict.ux.howTitle}>
+          <h3 className="mx-1 mb-2 text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.ux.howTitle}</h3>
+          <ol className="m-0 grid list-none grid-cols-3 gap-2 p-0">
+            {[
+              { Icon: Copy, text: dict.ux.howCopy },
+              { Icon: Smartphone, text: dict.ux.howPay },
+              { Icon: Home, text: dict.ux.howDirect },
+            ].map(({ Icon, text }, i) => (
+              <li key={i} className="surface flex min-w-0 flex-col items-center gap-1.5 px-2 py-3 text-center">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--tone)] text-[var(--lamp-deep)]">
+                  <Icon size={18} aria-hidden="true" />
+                </span>
+                <span className="min-w-0 text-[13px] leading-tight font-bold break-words text-[var(--ink)]">{text}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
 
       {bill.thanksReactions && bill.thanksReactions.length > 0 && (
@@ -372,21 +420,7 @@ export function DonatePanel({
           <div className="text-4xl">🎉</div>
           <p className="text-base font-extrabold text-emerald-800">{dict.bill.thanks}</p>
         </div>
-      ) : isOwner ? (
-        // The family itself: no donate form (paying your own bill would put you on the
-        // leaderboard); sharing the request is what actually helps.
-        <div className="space-y-3 rounded-3xl bg-amber-50 px-5 py-5 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-amber-600 shadow-[var(--lift)]">
-            <Share2 size={22} aria-hidden="true" />
-          </div>
-          <p className="text-lg font-extrabold text-stone-900">{dict.bill.ownTitle}</p>
-          <p className="text-sm text-stone-600">{dict.bill.ownText}</p>
-          <button type="button" onClick={shareRequest} className="btn-primary w-full">
-            <Share2 size={18} aria-hidden="true" />
-            {shared ? dict.bill.linkCopied : dict.bill.share}
-          </button>
-        </div>
-      ) : bill.available <= 0 ? (
+      ) : !isOwner && bill.available <= 0 ? (
         // Not paid yet: other donors have the rest reserved and are paying now.
         <div className="space-y-1 rounded-2xl bg-[var(--tone)] px-4 py-6 text-center">
           <div className="text-4xl">⏳</div>
@@ -396,18 +430,21 @@ export function DonatePanel({
 
       {canDonate && (
         <>
-          <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+68px)] z-30 md:bottom-0 -mx-4 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-3 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
-            <button
-              type="button"
-              disabled={providers.length === 0}
-              onClick={() => setSheetOpen(true)}
-              className="btn-primary min-h-[56px] w-full rounded-[18px] text-[17px]"
-            >
-              <Heart size={20} aria-hidden="true" />
-              {dict.app.helpBtn}
-            </button>
+          {/* Spacer so the pinned button never covers the last row. */}
+          <div aria-hidden="true" className="h-20" />
+          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+68px)] z-30 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent pt-6 pb-3 md:bottom-0 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
+            <div className="pointer-events-auto mx-auto max-w-lg px-4">
+              <button
+                type="button"
+                disabled={providers.length === 0}
+                onClick={() => setSheetOpen(true)}
+                className="btn-primary min-h-[56px] w-full rounded-[18px] text-[17px]"
+              >
+                <Heart size={20} aria-hidden="true" />
+                {dict.app.helpBtn}
+              </button>
+            </div>
           </div>
-
           <BottomSheet open={sheetOpen} onClose={closeSheet} labelledBy="pick-title">
             <h2 id="pick-title" className="mb-3 text-xl font-extrabold tracking-tight text-[var(--ink)]">
               {dict.pick.title}

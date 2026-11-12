@@ -1,12 +1,17 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowDownUp, Check, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { UTILITY_ICONS, UTILITY_TYPES, type PublicBill, type Region, type UtilityType } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
 import { fmt, type Dictionary } from "@/i18n";
 import { BillCard } from "./BillCard";
 import { RegionPicker } from "./RegionPicker";
+import { BottomSheet } from "./BottomSheet";
+
+const SORTS = ["newest", "oldest", "least", "largest"] as const;
+type Sort = (typeof SORTS)[number];
+const SORT_KEY = "mehrnuri-feed-sort";
 
 export function LiveFeed({
   initialBills,
@@ -23,6 +28,28 @@ export function LiveFeed({
   const [bills, setBills] = useState<PublicBill[]>(initialBills);
   const [utilityFilter, setUtilityFilter] = useState<UtilityType | "all">("all");
   const [regionFilter, setRegionFilter] = useState<Region | "all">("all");
+  const [sort, setSort] = useState<Sort>("newest");
+  const [sortOpen, setSortOpen] = useState(false);
+  const closeSort = useCallback(() => setSortOpen(false), []);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SORT_KEY);
+      if (saved && (SORTS as readonly string[]).includes(saved)) setSort(saved as Sort);
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+
+  function chooseSort(next: Sort) {
+    setSort(next);
+    setSortOpen(false);
+    try {
+      localStorage.setItem(SORT_KEY, next);
+    } catch {
+      /* storage unavailable */
+    }
+  }
 
   useEffect(() => {
     setBills(initialBills);
@@ -54,15 +81,40 @@ export function LiveFeed({
     return true;
   });
 
+  const left = (b: PublicBill) => Math.max(0, b.amountOwed - b.paidAmount);
+  const created = (b: PublicBill) => new Date(b.createdAt).getTime();
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "oldest") return created(a) - created(b);
+    if (sort === "least") return left(a) - left(b) || created(b) - created(a);
+    if (sort === "largest") return left(b) - left(a) || created(b) - created(a);
+    return created(b) - created(a);
+  });
+  const sortLabels: Record<Sort, string> = {
+    newest: dict.ux.sortNewest,
+    oldest: dict.ux.sortOldest,
+    least: dict.ux.sortLeast,
+    largest: dict.ux.sortLargest,
+  };
+
   const totalOpen = Object.values(regionCounts).reduce((sum, n) => sum + (n ?? 0), 0);
 
   return (
     <section id="feed" className="min-w-0 scroll-mt-20">
-      <div className="mb-4 flex items-baseline justify-between gap-3">
-        <h2 className="min-w-0 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">{dict.home.feedTitle}</h2>
-        <span className="shrink-0 text-sm font-bold whitespace-nowrap text-[var(--ink-soft)]">
+      <h2 className="min-w-0 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">{dict.home.feedTitle}</h2>
+      <div className="mt-1 mb-4 flex items-center justify-between gap-3">
+        <span className="min-w-0 truncate text-[13px] font-bold text-[var(--ink-soft)]">
           {fmt(dict.feed.familiesCount, { count: filtered.length })}
         </span>
+        <button
+          type="button"
+          onClick={() => setSortOpen(true)}
+          aria-label={dict.ux.sortLabel}
+          aria-haspopup="dialog"
+          className="chip max-w-[60%] shrink-0 cursor-pointer"
+        >
+          <ArrowDownUp size={15} aria-hidden="true" className="shrink-0" />
+          <span className="min-w-0 truncate">{sortLabels[sort]}</span>
+        </button>
       </div>
 
       <RegionPicker value={regionFilter} onChange={setRegionFilter} counts={regionCounts} total={totalOpen} dict={dict} />
@@ -107,11 +159,33 @@ export function LiveFeed({
         </div>
       ) : (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {filtered.map((bill) => (
+          {sorted.map((bill) => (
             <BillCard key={bill.id} bill={bill} locale={locale} dict={dict} />
           ))}
         </div>
       )}
+
+      <BottomSheet open={sortOpen} onClose={closeSort} labelledBy="sort-title">
+        <h2 id="sort-title" className="mb-2 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">
+          {dict.ux.sortLabel}
+        </h2>
+        <ul className="list m-0">
+          {SORTS.map((o) => (
+            <li key={o}>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={sort === o}
+                onClick={() => chooseSort(o)}
+                className="list-row-tap flex w-full min-w-0 cursor-pointer items-center justify-between gap-3 text-left"
+              >
+                <span className="min-w-0 truncate text-[15px] font-bold text-[var(--ink)]">{sortLabels[o]}</span>
+                {sort === o && <Check size={18} aria-hidden="true" className="shrink-0 text-[var(--hope)]" />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </BottomSheet>
     </section>
   );
 }
