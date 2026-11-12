@@ -20,7 +20,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   }
 
   // Inner pages render their own compact AppBar instead of the brand bar.
-  const inner = new RegExp(`^/${locale}/(bill|payment|ask)(/|$)`).test(pathname);
+  const inner = new RegExp(`^/${locale}/(bill|pay|payment|ask)(/|$)`).test(pathname);
 
   const navItems = [
     {
@@ -127,7 +127,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
 
       {/* Focus mode: no tab bar while paying, so the donor's only way forward
           is the payment step itself (its main button is pinned to the bottom). */}
-      {!/\/pay\//.test(pathname) && (
+      {!/\/(pay|payment)\//.test(pathname) && (
       <nav
         aria-label="Mobile Navigation"
         className="fixed inset-x-0 bottom-0 z-40 bg-white/90 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-16px_rgba(28,25,23,0.25)] backdrop-blur-xl md:hidden"

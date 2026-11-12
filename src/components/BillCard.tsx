@@ -137,15 +137,17 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
       {bill.story && <CardStory story={bill.story} more={dict.app.more} less={dict.app.less} />}
 
       <div>
-        <div className="flex items-end justify-between gap-2.5">
-          <div className="min-w-0">
-            <div className="text-[13px] font-bold text-[var(--ink-soft)]">{dict.bill.remaining}</div>
-            <div className="text-[26px] leading-[1.1] font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)]">
-              {groupDigits(String(remaining))} <small className="text-[15px] font-bold text-[var(--ink-soft)]">{dict.common.som}</small>
-            </div>
+        <div className="min-w-0">
+          <div className="text-[13px] font-bold text-[var(--ink-soft)]">{dict.bill.remaining}</div>
+          <div className="text-[26px] leading-[1.1] font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)]">
+            {groupDigits(String(remaining))} <small className="text-[15px] font-bold text-[var(--ink-soft)]">{dict.common.som}</small>
           </div>
-          {checked && <TrustBadge bill={bill} dict={dict} />}
         </div>
+        {checked && (
+          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
+            <TrustBadge bill={bill} dict={dict} />
+          </div>
+        )}
         <div
           className="mt-2.5 h-2 overflow-hidden rounded-full bg-[var(--tone)]"
           role="progressbar"

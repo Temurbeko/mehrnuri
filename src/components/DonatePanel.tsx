@@ -361,6 +361,12 @@ export function DonatePanel({
       <ul className="list">
         <CopyRow compact label={bill.holderMasked ? `${dict.bill.account} · ${bill.holderMasked}` : dict.bill.account} value={bill.accountNumber} mono dict={dict} />
         <li className="list-row min-h-12 justify-between gap-4 py-2.5">
+          <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.ux2.area}</span>
+          <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">
+            {dict.region[bill.region]} · {dict.districts[districtInfo.id]}
+          </span>
+        </li>
+        <li className="list-row min-h-12 justify-between gap-4 py-2.5">
           <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.bill.supplier}</span>
           <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">{bill.supplier}</span>
         </li>

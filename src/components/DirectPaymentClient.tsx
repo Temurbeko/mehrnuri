@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowRight, Ban, Camera, Check, ChevronLeft, ChevronRight, Copy, FlaskConical, ShieldCheck, Smartphone, TriangleAlert, Trophy, type LucideIcon } from "lucide-react";
-import Link from "next/link";
+import { ArrowRight, Ban, RotateCcw, Camera, Check, ChevronLeft, ChevronRight, Copy, FlaskConical, ShieldCheck, Smartphone, TriangleAlert, Trophy, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PAYMENT_PROVIDERS, UTILITY_ICONS, type PaymentProviderId, type UtilityType, type VerdictKind } from "@/lib/domain";
@@ -13,6 +12,7 @@ import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { digitsOnly, groupDigits } from "@/lib/format";
 import { api, errorText } from "./api";
+import { ResultScreen, StatusIcon } from "./ResultScreen";
 
 export function DirectPaymentClient({
   paymentId,
@@ -21,6 +21,7 @@ export function DirectPaymentClient({
   utilityType,
   supplier,
   accountNumber,
+  area = null,
   nickname,
   signature,
   testMode = false,
@@ -34,6 +35,8 @@ export function DirectPaymentClient({
   utilityType: UtilityType;
   supplier: string;
   accountNumber: string;
+  /** "Region · District" display text: payment apps ask for it next to the account. */
+  area?: string | null;
   /** Leaderboard name of this donor. */
   nickname: string;
   signature: string;
@@ -232,17 +235,18 @@ export function DirectPaymentClient({
 
   if (noDebtDone) {
     return (
-      <div className="flow-step mx-auto flex max-w-lg flex-col items-center px-2 pt-10 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(46,154,103,0.12)] text-[var(--hope)]">
-          <ShieldCheck size={40} aria-hidden="true" />
-        </span>
-        <h1 className="mt-6 text-[24px] leading-tight font-extrabold text-balance text-[var(--ink)]">{f.endTitle}</h1>
-        <p className="mt-3 text-[16px] leading-relaxed text-[var(--ink-soft)]">{f.endBody}</p>
-        <div className="mt-8 w-full space-y-2.5">
-          <Link href={`/${locale}`} className="btn-primary w-full text-lg">{f.endPrimary}</Link>
-          <Link href={billHref} className="btn-ghost w-full">{f.endBack}</Link>
-        </div>
-      </div>
+      <ResultScreen
+        art={
+          <StatusIcon tone="ok">
+            <ShieldCheck size={40} aria-hidden="true" />
+          </StatusIcon>
+        }
+        title={f.endTitle}
+        body={f.endBody}
+        actions={[{ key: "back", label: dict.ux2.backToRequest, icon: <RotateCcw size={22} />, href: billHref }]}
+        mainLabel={dict.ux2.done}
+        mainHref={`/${locale}`}
+      />
     );
   }
 
@@ -290,6 +294,12 @@ export function DirectPaymentClient({
                 <CopyMark done={copiedField === "account"} />
               </button>
             </li>
+            {area && (
+              <li className="list-row justify-between gap-4 py-3">
+                <span className="shrink-0 text-[13px] font-medium text-[var(--ink-soft)]">{dict.ux2.area}</span>
+                <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">{area}</span>
+              </li>
+            )}
             <li className="list-row">
               <span className="min-w-0 flex-1 text-[13px] font-medium text-[var(--ink-soft)]">{t.amount}</span>
               <span ref={amountRef} className="text-lg font-extrabold whitespace-nowrap text-[var(--ink)] select-all">{formatMoney(amount, dict)}</span>
@@ -388,6 +398,7 @@ export function DirectPaymentClient({
               <span ref={accountRef}>{accountNumber}</span>
               {copiedField === "account" ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
             </button>
+            {area && <p className="mt-2 text-[13px] font-semibold break-words text-[var(--ink-soft)]">{area}</p>}
           </div>
           {appTiles(true)}
           <p className=" flex items-start gap-2.5 rounded-2xl bg-[rgba(46,154,103,0.1)] px-3.5 py-3 text-left text-[13.5px] leading-snug font-semibold text-[#1f6b47]">

@@ -18,6 +18,7 @@ import type { CreateBillInput } from "@/lib/validation";
 import { findDistrict, officialSupplierName } from "@/lib/uzbekistan";
 import { notify } from "@/lib/notify";
 import { withHelpers } from "@/lib/community";
+import { checkRequestText } from "@/lib/moderation";
 
 export function maskAccount(acc: string): string {
   return acc.length <= 4 ? acc : `${"•".repeat(Math.min(acc.length - 4, 6))}${acc.slice(-4)}`;
@@ -105,6 +106,16 @@ export async function accountStatus(
 const MAX_BILLS_PER_PHONE_30D = 3;
 
 export async function createBill(input: CreateBillInput, ip: string): Promise<BillDoc> {
+  // Free text must not carry links or contacts (the family gets a clear error);
+  // profanity only holds the request for the admin queue, the family is told nothing different.
+  let textHold = false;
+  for (const text of [input.story, input.familyName]) {
+    if (!text) continue;
+    const check = checkRequestText(text);
+    if (check.blocked) throw new HttpError(422, check.blocked === "link" ? "text_has_link" : "text_has_contact");
+    if (check.hold) textHold = true;
+  }
+
   const { bills, accounts } = await collections();
 
   const existing = await bills.findOne(
@@ -136,7 +147,7 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
   // nobody here can see the real debt, but every donor sees it in their payment
   // app before paying, so the donors do the verifying.
   const plausible = isPlausibleAmount(input.utilityType, input.amountOwed);
-  const reviewStatus = plausible ? ("approved" as const) : ("pending_review" as const);
+  const reviewStatus = plausible && !textHold ? ("approved" as const) : ("pending_review" as const);
   // An account that already received a Soliq-verified payment is proven real.
   const trustLevel: TrustLevel = (account?.provenPayments ?? 0) > 0 ? "proven" : "new";
 
@@ -196,9 +207,14 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
         { upsert: true },
       );
       void notify(
-        plausible
+        plausible && !textHold
           ? { type: "bill_submitted", code: doc.code, amount: doc.amountOwed }
-          : { type: "bill_held", code: doc.code, amount: doc.amountOwed, reason: "amount above plausible range" },
+          : {
+              type: "bill_held",
+              code: doc.code,
+              amount: doc.amountOwed,
+              reason: !plausible ? "amount above plausible range" : "text flagged (profanity)",
+            },
       );
       return doc;
     } catch (err) {

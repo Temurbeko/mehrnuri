@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Clock, Heart, Lock, Share2, X } from "lucide-react";
+import { Check, Clock, FileText, Heart, HeartHandshake, ListChecks, Lock, RotateCcw, Share2, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PaymentStatus, UtilityType } from "@/lib/domain";
@@ -8,9 +8,9 @@ import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { copyText } from "@/lib/clipboard";
 import { AddReceipt } from "./AddReceipt";
-import { AppBar } from "./AppBar";
 import { BottomSheet } from "./BottomSheet";
 import { ThanksArt } from "./HeroArt";
+import { ResultScreen, StatusIcon } from "./ResultScreen";
 import { ShareOptions } from "./ShareOptions";
 
 export function PaymentResultClient({
@@ -63,36 +63,19 @@ export function PaymentResultClient({
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-5 text-center">
-      <AppBar title={dict.app.thanks} locale={locale} backLabel={dict.common.back} />
-      <div
-        className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full ${
-          pending ? "bg-amber-100 text-amber-600" : "bg-rose-100 text-rose-600"
-        }`}
-      >
-        {pending ? <Clock size={44} aria-hidden="true" /> : <X size={44} aria-hidden="true" />}
-      </div>
-
-      <div className="space-y-2">
-        <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">
-          {pending ? dict.result.pendingTitle : dict.result.failedTitle}
-        </h1>
-        <p className="text-4xl font-extrabold tracking-tight whitespace-nowrap text-stone-900">{formatMoney(amount, dict)}</p>
-        <p className="text-sm leading-relaxed font-medium text-stone-600">
-          {pending ? dict.result.pendingBody : dict.result.failedBody}
-        </p>
-      </div>
-
-      <div className="space-y-2.5 pt-1">
-        <Link href={`/${locale}/bill/${billId}`} className="btn-primary">
-          <span>{dict.result.backToBill}</span>
-          <ArrowRight size={18} aria-hidden="true" />
-        </Link>
-        <Link href={`/${locale}`} className="btn-tonal">
-          {dict.result.backToFeed}
-        </Link>
-      </div>
-    </div>
+    <ResultScreen
+      art={
+        <StatusIcon tone={pending ? "wait" : "fail"}>
+          {pending ? <Clock size={40} aria-hidden="true" /> : <X size={40} aria-hidden="true" />}
+        </StatusIcon>
+      }
+      title={pending ? dict.result.pendingTitle : dict.result.failedTitle}
+      amount={formatMoney(amount, dict)}
+      body={pending ? dict.result.pendingBody : dict.result.failedBody}
+      actions={[{ key: "back", label: dict.ux2.backToRequest, icon: <RotateCcw size={22} />, href: `/${locale}/bill/${billId}` }]}
+      mainLabel={dict.ux2.done}
+      mainHref={`/${locale}`}
+    />
   );
 }
 
@@ -121,6 +104,8 @@ function PaidScreen({
   const d = dict.done;
   const [withAmount, setWithAmount] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const closeDetails = useCallback(() => setDetailsOpen(false), []);
   const closeShare = useCallback(() => setShareOpen(false), []);
   const [origin, setOrigin] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -149,90 +134,89 @@ function PaidScreen({
   const base = origin || (typeof window !== "undefined" ? window.location.origin : "");
   const shareUrl = shareCode ? `${base}/${locale}/h/${shareCode}${withAmount ? "-a" : ""}` : base;
 
+  const t = dict.details;
+  const dateLine = details?.find((r) => r.label === t.date)?.value ?? null;
+  const rows = (details ?? [])
+    .filter((r) => r.label === t.service || r.label === t.request)
+    .map((r) => ({ label: r.label, value: r.value }));
+
+  function openReceipt() {
+    if (receiptSlot) document.getElementById("receipt-box")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    else setDetailsOpen(true);
+  }
+
   return (
-    <div className="mx-auto max-w-md">
-      <AppBar title={dict.app.thanks} locale={locale} backLabel={dict.common.back} />
+    <>
+      <ResultScreen
+        art={
+          <div className="hs-active mx-auto w-fit">
+            <ThanksArt className="h-[132px] w-[106px]" />
+          </div>
+        }
+        title={d.title}
+        date={dateLine}
+        amount={money}
+        body={utilityType ? fmt(d.body, { account: d.account[utilityType], outcome: dict.outcome[utilityType] }) : null}
+        rows={rows}
+        actions={[
+          { key: "receipt", label: dict.ux2.check, icon: <FileText size={22} />, onClick: openReceipt },
+          { key: "details", label: dict.ux2.details, icon: <ListChecks size={22} />, onClick: () => setDetailsOpen(true) },
+          { key: "share", label: dict.ux2.share, icon: <Share2 size={22} />, onClick: () => setShareOpen(true) },
+          { key: "again", label: dict.ux2.again, icon: <HeartHandshake size={22} />, href: `/${locale}` },
+        ]}
+        mainLabel={dict.ux2.done}
+        mainHref={`/${locale}`}
+      >
+        {receiptSlot && <div id="receipt-box" className="scroll-mt-24">{receiptSlot}</div>}
 
-      {/* Compact hero: the lit window, the thanks and the amount fit in the top of the screen. */}
-      <div className="text-center">
-        <div className="hs-active mx-auto w-fit">
-          <ThanksArt className="h-[132px] w-[106px]" />
-        </div>
-        <h1 className="mt-3 text-[24px] leading-tight font-extrabold tracking-tight text-balance text-[var(--ink)]">{d.title}</h1>
-        <p className="mt-0.5 text-[30px] leading-tight font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)] tabular-nums">{money}</p>
-        {utilityType && (
-          <p className="mx-auto mt-2 max-w-[36ch] text-[14.5px] leading-snug text-balance break-words text-[var(--ink-soft)]">
-            {fmt(d.body, { account: d.account[utilityType], outcome: dict.outcome[utilityType] })}
-          </p>
+        {/* Private: only this donor sees it. */}
+        {familiesThisMonth >= 1 && (
+          <div className={`${receiptSlot ? "mt-4 " : ""}flex items-center gap-3 rounded-[20px] bg-white p-3.5 text-left shadow-[var(--lift)]`}>
+            <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[rgba(46,154,103,0.12)] text-[var(--hope)]">
+              <Heart size={20} aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <b className="block text-[15px] leading-snug text-[var(--ink)]">{fmt(d.mineTitle, { count: familiesThisMonth })}</b>
+              <small className="mt-0.5 flex items-center gap-1 text-[12.5px] font-bold text-[var(--ink-soft)]">
+                <Lock size={14} aria-hidden="true" className="shrink-0" />
+                {d.mineLock}
+              </small>
+            </span>
+            <Link
+              href={`/${locale}/me`}
+              className="inline-flex h-[34px] shrink-0 items-center rounded-full bg-[var(--tone)] px-3 text-[13px] font-extrabold text-[var(--ink)]"
+            >
+              {d.mineLink}
+            </Link>
+          </div>
         )}
-      </div>
+      </ResultScreen>
 
-      {receiptSlot && <div className="mt-5">{receiptSlot}</div>}
-
-      {/* Private: only this donor sees it. */}
-      {familiesThisMonth >= 1 && (
-        <div className="mt-4 flex items-center gap-3 rounded-[20px] bg-white p-3.5 text-left shadow-[var(--lift)]">
-          <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[rgba(46,154,103,0.12)] text-[var(--hope)]">
-            <Heart size={20} aria-hidden="true" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <b className="block text-[15px] leading-snug text-[var(--ink)]">{fmt(d.mineTitle, { count: familiesThisMonth })}</b>
-            <small className="mt-0.5 flex items-center gap-1 text-[12.5px] font-bold text-[var(--ink-soft)]">
-              <Lock size={14} aria-hidden="true" className="shrink-0" />
-              {d.mineLock}
-            </small>
-          </span>
-          <Link
-            href={`/${locale}/me`}
-            className="inline-flex h-[34px] shrink-0 items-center rounded-full bg-[var(--tone)] px-3 text-[13px] font-extrabold text-[var(--ink)]"
-          >
-            {d.mineLink}
-          </Link>
-        </div>
-      )}
-
-      {details && details.length > 0 && (
-        <section className="mt-5">
-          <h2 className="mx-1 mb-2 text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.details.title}</h2>
-          <dl className="list m-0">
-            {details.map((row) => (
-              <div key={row.label} className="list-row flex min-w-0 items-center justify-between gap-3">
-                <dt className="shrink-0 text-[14px] text-[var(--ink-soft)]">{row.label}</dt>
-                <dd
-                  className={`m-0 min-w-0 truncate text-right text-[14.5px] font-bold ${
-                    row.tone === "ok" ? "text-[var(--hope)]" : row.tone === "wait" ? "text-[var(--lamp-deep)]" : "text-[var(--ink)]"
-                  }`}
-                >
-                  {row.href ? (
-                    <Link href={row.href} className="underline decoration-[var(--tone-hover)] underline-offset-4">
-                      {row.value}
-                    </Link>
-                  ) : (
-                    row.value
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
-
-      <div className="mt-4 grid gap-1">
-        <Link href={`/${locale}`} className="btn-tonal">
-          {d.another}
-        </Link>
-        <Link href={`/${locale}/bill/${billId}`} className="btn-ghost">
-          {d.viewBill}
-        </Link>
-      </div>
-
-      {/* Always in reach: the one thing to do next. */}
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+68px)] z-30 -mx-4 mt-2 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-3 md:bottom-0 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
-        <button type="button" onClick={() => setShareOpen(true)} className="btn-primary w-full">
-          <Share2 size={20} aria-hidden="true" />
-          {d.shareBtn}
-        </button>
-      </div>
+      <BottomSheet open={detailsOpen} onClose={closeDetails} labelledBy="details-title">
+        <h2 id="details-title" className="mb-2 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">
+          {t.title}
+        </h2>
+        <dl className="list m-0">
+          {(details ?? []).map((row) => (
+            <div key={row.label} className="list-row flex min-w-0 items-center justify-between gap-3">
+              <dt className="shrink-0 text-[14px] text-[var(--ink-soft)]">{row.label}</dt>
+              <dd
+                className={`m-0 min-w-0 text-right text-[14.5px] font-bold break-words ${
+                  row.tone === "ok" ? "text-[var(--hope)]" : row.tone === "wait" ? "text-[var(--lamp-deep)]" : "text-[var(--ink)]"
+                }`}
+              >
+                {row.href ? (
+                  <Link href={row.href} className="underline decoration-[var(--tone-hover)] underline-offset-4">
+                    {row.value}
+                  </Link>
+                ) : (
+                  row.value
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </BottomSheet>
 
       {/* What will be shared: nothing about the family; the amount only if switched on. */}
       <BottomSheet open={shareOpen} onClose={closeShare} labelledBy="share-title">
@@ -275,6 +259,6 @@ function PaidScreen({
           <span>{toast}</span>
         </div>
       )}
-    </div>
+    </>
   );
 }

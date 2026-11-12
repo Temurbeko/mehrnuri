@@ -9,9 +9,10 @@ import { BillCard } from "./BillCard";
 import { RegionPicker } from "./RegionPicker";
 import { BottomSheet } from "./BottomSheet";
 
-const SORTS = ["newest", "oldest", "least", "largest"] as const;
+const SORTS = ["oldest", "newest", "least", "largest"] as const;
 type Sort = (typeof SORTS)[number];
-const SORT_KEY = "mehrnuri-feed-sort";
+const PAGE = 12;
+const SORT_KEY ="mehrnuri-feed-sort";
 
 export function LiveFeed({
   initialBills,
@@ -28,8 +29,14 @@ export function LiveFeed({
   const [bills, setBills] = useState<PublicBill[]>(initialBills);
   const [utilityFilter, setUtilityFilter] = useState<UtilityType | "all">("all");
   const [regionFilter, setRegionFilter] = useState<Region | "all">("all");
-  const [sort, setSort] = useState<Sort>("newest");
+  const [sort, setSort] = useState<Sort>("oldest");
+  const [visible, setVisible] = useState(PAGE);
   const [sortOpen, setSortOpen] = useState(false);
+
+  // Back to the first page whenever the list is filtered or re-sorted.
+  useEffect(() => {
+    setVisible(PAGE);
+  }, [utilityFilter, regionFilter, sort]);
   const closeSort = useCallback(() => setSortOpen(false), []);
 
   useEffect(() => {
@@ -159,10 +166,15 @@ export function LiveFeed({
         </div>
       ) : (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {sorted.map((bill) => (
+          {sorted.slice(0, visible).map((bill) => (
             <BillCard key={bill.id} bill={bill} locale={locale} dict={dict} />
           ))}
         </div>
+      )}
+      {sorted.length > visible && (
+        <button type="button" onClick={() => setVisible((n) => n + PAGE)} className="btn-tonal mt-4 w-full">
+          {fmt(dict.ux2.showMore, { count: sorted.length - visible })}
+        </button>
       )}
 
       <BottomSheet open={sortOpen} onClose={closeSort} labelledBy="sort-title">

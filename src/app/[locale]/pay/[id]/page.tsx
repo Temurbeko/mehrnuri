@@ -4,6 +4,7 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
 import { getBill, toPublicBill } from "@/lib/bills/service";
 import { env } from "@/config/env";
+import { findDistrict } from "@/lib/uzbekistan";
 import { getPayment } from "@/lib/payments/core";
 import { paymentSignature } from "@/lib/payments/providers";
 import { DirectPaymentClient } from "@/components/DirectPaymentClient";
@@ -45,6 +46,7 @@ export default async function DirectPayPage({
       utilityType={pubBill?.utilityType ?? "electricity"}
       supplier={pubBill?.supplier ?? "—"}
       accountNumber={pubBill?.accountNumber ?? "—"}
+      area={pubBill ? `${dict.region[pubBill.region]} · ${dict.districts[findDistrict(pubBill.region, pubBill.district).id]}` : null}
       nickname={payment.donorNickname}
       signature={sig}
       testMode={env().SOLIQ_MODE === "mock"}

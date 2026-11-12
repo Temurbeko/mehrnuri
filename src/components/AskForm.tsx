@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowRight, Building2, Check, ChevronUp, MapPin, Phone, Plus, Wallet } from "lucide-react";
+import { ArrowRight, Building2, Check, ChevronUp, MapPin, Phone, Plus, Share2, UserRound, Wallet, FileText } from "lucide-react";
 import { digitsOnly, groupDigits } from "@/lib/format";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   PAYMENT_PURPOSES,
@@ -18,6 +18,10 @@ import type { Locale } from "@/i18n/config";
 import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { Combobox } from "./Combobox";
 import { AppBar } from "./AppBar";
+import { BottomSheet } from "./BottomSheet";
+import { ResultScreen, StatusIcon } from "./ResultScreen";
+import { ShareOptions } from "./ShareOptions";
+import { checkRequestText } from "@/lib/moderation";
 import { api, errorText } from "./api";
 
 export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Dictionary; intro?: React.ReactNode }) {
@@ -41,6 +45,11 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [taken, setTaken] = useState<{ text: string; billId: string | null } | null>(null);
+  const [textError, setTextError] = useState<{ field: "story" | "familyName"; message: string } | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const closeShare = useCallback(() => setShareOpen(false), []);
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
   const [created, setCreated] = useState<{ id: string; code: string; held: boolean } | null>(null);
 
   const districts = DISTRICTS_BY_REGION[region];
@@ -57,11 +66,26 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
     amountNum >= 1000 &&
     amountNum <= 5000000;
 
+  /** Same rule as the server: no links or contacts in the free text. Shown under the field. */
+  function textProblem(): { field: "story" | "familyName"; message: string } | null {
+    for (const [field, value] of [["story", story], ["familyName", familyName]] as const) {
+      const { blocked } = checkRequestText(value);
+      if (blocked) return { field, message: errorText(blocked === "link" ? "text_has_link" : "text_has_contact", dict) };
+    }
+    return null;
+  }
+
   async function goNext() {
     setError(null);
     setTaken(null);
     if (step === 1) setStep(2);
     else if (step === 2 && step2Valid) {
+      const problem = textProblem();
+      setTextError(problem);
+      if (problem) {
+        setShowExtra(true);
+        return;
+      }
       // Catch an account that already has an open request before the family fills in the rest.
       setChecking(true);
       const res = await api<{ hasOpen?: boolean; openBillId?: string | null; blocked?: boolean }>(
@@ -89,6 +113,13 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
       return;
     }
     setError(null);
+    const problem = textProblem();
+    setTextError(problem);
+    if (problem) {
+      setShowExtra(true);
+      setStep(2);
+      return;
+    }
     const digits = accountNumber.replace(/[\s-]/g, "");
     if (!/^\d{5,20}$/.test(digits)) {
       setError(dict.ask.accountHint);
@@ -135,31 +166,35 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
   }
 
   if (created) {
+    const billPath = `/${locale}/bill/${created.id}`;
     return (
-      <div className="mx-auto max-w-lg space-y-5 text-center">
-        <AppBar title={dict.ask.title} locale={locale} backLabel={dict.common.back} />
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-          <Check size={44} strokeWidth={3} aria-hidden="true" />
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{dict.ask.successTitle}</h1>
-          <p className="text-sm leading-relaxed text-stone-600">{created.held ? dict.ask.heldText : dict.ask.successText}</p>
-        </div>
-        <div className="surface px-4 py-6">
-          <div className="text-sm font-medium text-stone-500">{dict.ask.yourCode}</div>
-          <div className="mt-1 tabular-nums text-4xl leading-tight font-extrabold tracking-wider text-stone-900 select-all">
-            {created.code}
-          </div>
-        </div>
-        <div className="space-y-2.5">
-          <Link href={`/${locale}/bill/${created.id}`} className="btn-primary">
-            <span>{dict.ask.viewBill}</span>
-            <ArrowRight size={18} aria-hidden="true" />
-          </Link>
-          <Link href={`/${locale}/me#my-requests`} className="btn-tonal w-full">
-            {dict.ask.viewMyRequests}
-          </Link>
-        </div>
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-[var(--paper)]">
+        <ResultScreen
+          art={
+            <StatusIcon tone="ok">
+              <Check size={40} strokeWidth={3} aria-hidden="true" />
+            </StatusIcon>
+          }
+          title={dict.ask.successTitle}
+          date={dict.ask.yourCode}
+          amount={created.code}
+          body={created.held ? dict.ask.heldText : dict.ask.successText}
+          actions={[
+            // A request that waits for review has no public page to share yet.
+            ...(created.held ? [] : [{ key: "share", label: dict.ux2.share, icon: <Share2 size={22} />, onClick: () => setShareOpen(true) }]),
+            { key: "bill", label: dict.ux2.myRequest, icon: <FileText size={22} />, href: billPath },
+            { key: "me", label: dict.ux2.profile, icon: <UserRound size={22} />, href: `/${locale}/me` },
+          ]}
+          mainLabel={dict.ux2.done}
+          mainHref={`/${locale}`}
+        />
+        <BottomSheet open={shareOpen} onClose={closeShare} labelledBy="ask-share-title">
+          <h2 id="ask-share-title" className="mb-3 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">
+            {dict.shareTo.title}
+          </h2>
+          <p className="mb-4 text-[14px] text-[var(--ink-soft)]">{dict.shareTo.billText}</p>
+          <ShareOptions url={`${origin}${billPath}`} text={dict.shareTo.billText} dict={dict} />
+        </BottomSheet>
       </div>
     );
   }
@@ -343,9 +378,16 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
                   maxLength={300}
                   placeholder={dict.ask.storyHint}
                   value={story}
-                  onChange={(e) => setStory(e.target.value)}
+                  onChange={(e) => {
+                    setStory(e.target.value);
+                    setTextError(null);
+                  }}
+                  aria-invalid={textError?.field === "story"}
                   className="field text-sm"
                 />
+                {textError?.field === "story" && (
+                  <p role="alert" className="mt-1.5 text-[13px] font-bold break-words text-rose-700">{textError.message}</p>
+                )}
               </div>
 
               <div className="grid gap-2.5 sm:grid-cols-2">
@@ -359,9 +401,16 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
                     maxLength={40}
                     placeholder={dict.ask.familyNameHint}
                     value={familyName}
-                    onChange={(e) => setFamilyName(e.target.value)}
+                    onChange={(e) => {
+                      setFamilyName(e.target.value);
+                      setTextError(null);
+                    }}
+                    aria-invalid={textError?.field === "familyName"}
                     className="field text-sm"
                   />
+                  {textError?.field === "familyName" && (
+                    <p role="alert" className="mt-1.5 text-[13px] font-bold break-words text-rose-700">{textError.message}</p>
+                  )}
                 </div>
 
                 {meterUnit && (
