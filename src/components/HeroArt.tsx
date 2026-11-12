@@ -191,3 +191,111 @@ export function StreetArt({ lit, className }: { lit: number; className?: string 
     </svg>
   );
 }
+
+/** Gas paid: the stove lights up, the pot steams, the family smiles. */
+export function GasArt({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 120 150" className={className} aria-hidden="true">
+      <defs>
+        <filter id="ga-glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+        <filter id="ga-blue" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="2.4" />
+        </filter>
+      </defs>
+      <rect x="8" y="40" width="104" height="90" rx="10" fill="#ffad2a" opacity=".3" filter="url(#ga-glow)" />
+      <rect x="14" y="44" width="92" height="82" rx="7" fill="#262b47" />
+      <rect x="20" y="50" width="80" height="70" rx="4" fill="#ffe2a0" />
+      {/* tiles */}
+      <g stroke="#f3c56b" strokeWidth=".8" opacity=".6">
+        <path d="M20 66 h80 M20 82 h80" />
+        <path d="M40 50 v32 M60 50 v32 M80 50 v32" />
+      </g>
+      {/* the family on the left */}
+      <g opacity=".75">
+        <Person x={30} y={104} s={1.55} />
+        <Person x={40} y={104} s={1.05} />
+      </g>
+      {/* stove */}
+      <rect x="50" y="98" width="46" height="22" rx="3" fill="#3a4170" />
+      <circle cx="58" cy="110" r="2" fill="#ffc94f" />
+      <circle cx="66" cy="110" r="2" fill="#ffc94f" />
+      <rect x="48" y="95" width="50" height="4" rx="2" fill="#4a5288" />
+      {/* blue flames */}
+      <ellipse cx="73" cy="93" rx="13" ry="2.6" fill="#4fa3ff" opacity=".55" filter="url(#ga-blue)" />
+      <g className="ga-flame" fill="#4fa3ff">
+        <path d="M63 95 q2 -6 4 0 z" />
+        <path d="M68 95 q2.2 -7.5 4.4 0 z" fill="#7cc0ff" />
+        <path d="M73.6 95 q2 -6.5 4 0 z" />
+        <path d="M78.6 95 q2 -6 4 0 z" fill="#7cc0ff" />
+      </g>
+      {/* pot with a smile */}
+      <rect x="61" y="76" width="24" height="15" rx="3" fill="#e2683c" />
+      <rect x="59" y="74" width="28" height="4" rx="2" fill="#f08a5d" />
+      <rect x="57" y="80" width="4" height="2.4" rx="1.2" fill="#c4522a" />
+      <rect x="85" y="80" width="4" height="2.4" rx="1.2" fill="#c4522a" />
+      <circle cx="69" cy="82" r="1" fill="#5a1e0c" />
+      <circle cx="77" cy="82" r="1" fill="#5a1e0c" />
+      <path d="M69.5 85 q3.5 3 7 0" stroke="#5a1e0c" strokeWidth="1.1" fill="none" strokeLinecap="round" />
+      {/* steam */}
+      <g stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" opacity=".9">
+        <path className="ga-steam" d="M67 71 c-3 -4 3 -6 0 -11" />
+        <path className="ga-steam ga-s2" d="M73 70 c-3 -4 3 -6 0 -12" />
+        <path className="ga-steam ga-s3" d="M79 71 c-3 -4 3 -6 0 -11" />
+      </g>
+      <rect x="15" y="120" width="90" height="4" rx="2" fill="#3a4170" />
+      <path className="ta-heart" d={HEART} fill="#ff8a5c" transform="translate(32 40) scale(1.3)" />
+      <path className="ta-heart ta-h2" d={HEART} fill="#ffc94f" transform="translate(86 38) scale(1.1)" />
+      <path className="ta-heart ta-h3" d={HEART} fill="#ff8a5c" transform="translate(58 44) scale(.9)" />
+    </svg>
+  );
+}
+
+/** Water paid: the tap turns on, water flows into a glass, the family smiles. */
+export function WaterArt({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 120 150" className={className} aria-hidden="true">
+      <defs>
+        <filter id="wa-glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+        <clipPath id="wa-glass">
+          <path d="M60 86 h22 l-2.4 30 h-17.2 z" />
+        </clipPath>
+      </defs>
+      <rect x="8" y="40" width="104" height="90" rx="10" fill="#4fb4ff" opacity=".3" filter="url(#wa-glow)" />
+      <rect x="14" y="44" width="92" height="82" rx="7" fill="#262b47" />
+      <rect x="20" y="50" width="80" height="70" rx="4" fill="#d6efff" />
+      {/* the family on the left */}
+      <g fill="#2d6f9e" opacity=".7">
+        <circle cx="32" cy="91" r="2.7" />
+        <path d="M28 105 v-5.6 a4 4 0 0 1 8 0 v5.6 z" />
+        <circle cx="42" cy="96.5" r="1.8" />
+        <path d="M39.3 105 v-3.7 a2.7 2.7 0 0 1 5.4 0 v3.7 z" />
+      </g>
+      {/* tap */}
+      <rect x="66" y="56" width="14" height="5" rx="2.5" fill="#8a97b8" />
+      <rect x="71" y="52" width="4" height="6" rx="1" fill="#6b7898" />
+      <path d="M70 61 h6 v8 h-2 q0 3 -2 3 h-2 z" fill="#9aa7c8" />
+      <rect className="wa-handle" x="64" y="51" width="18" height="3.4" rx="1.7" fill="#4fa3ff" />
+      {/* the stream */}
+      <rect className="wa-stream" x="71" y="72" width="3.2" height="40" rx="1.6" fill="#4fa3ff" opacity=".85" />
+      {/* glass filling up, with a smile */}
+      <g clipPath="url(#wa-glass)">
+        <rect className="wa-level" x="58" y="92" width="28" height="26" fill="#7cc4ff" />
+      </g>
+      <path d="M60 86 h22 l-2.4 30 h-17.2 z" fill="none" stroke="#2d6f9e" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="67" cy="103" r="1" fill="#1d4f75" />
+      <circle cx="75" cy="103" r="1" fill="#1d4f75" />
+      <path d="M67.5 106.5 q3.5 3 7 0" stroke="#1d4f75" strokeWidth="1.1" fill="none" strokeLinecap="round" />
+      {/* splashes */}
+      <circle className="wa-drop" cx="64" cy="88" r="1.3" fill="#4fa3ff" />
+      <circle className="wa-drop wa-d2" cx="81" cy="87" r="1.1" fill="#4fa3ff" />
+      <rect x="15" y="116" width="90" height="4" rx="2" fill="#3a4170" />
+      <path className="ta-heart" d={HEART} fill="#ff8a5c" transform="translate(30 42) scale(1.3)" />
+      <path className="ta-heart ta-h2" d={HEART} fill="#4fa3ff" transform="translate(88 40) scale(1.1)" />
+      <path className="ta-heart ta-h3" d={HEART} fill="#ff8a5c" transform="translate(48 46) scale(.9)" />
+    </svg>
+  );
+}

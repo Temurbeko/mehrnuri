@@ -92,3 +92,15 @@ export async function clearDonorCookie(): Promise<void> {
   const jar = await cookies();
   jar.delete(DONOR_COOKIE);
 }
+
+/** Change the public nickname; also on past payments, so "recent helps" show the new name. */
+export async function renameDonor(donorId: ObjectId, nickname: string): Promise<void> {
+  const { donors, payments } = await collections();
+  try {
+    await donors.updateOne({ _id: donorId }, { $set: { nickname, nicknameKey: nicknameKey(nickname) } });
+  } catch (err) {
+    if (err instanceof MongoServerError && err.code === 11000) throw new HttpError(409, "nickname_taken");
+    throw err;
+  }
+  await payments.updateMany({ donorId }, { $set: { donorNickname: nickname } });
+}

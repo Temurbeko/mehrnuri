@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronRight, KeyRound, LogOut, Shield } from "lucide-react";
+import { Check, ChevronRight, KeyRound, LogOut, Pencil, Shield } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -46,6 +46,24 @@ export function ProfileClient({
     }
     setDonor(res.data.donor);
     setCode(res.data.recoveryCode ?? null);
+    router.refresh();
+  }
+
+  const [renaming, setRenaming] = useState(false);
+  const [renameInput, setRenameInput] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
+  async function handleRename(e: React.FormEvent) {
+    e.preventDefault();
+    setRenameError(null);
+    setBusy(true);
+    const res = await api<{ donor?: PublicDonor }>("/api/donors", { method: "PATCH", body: { nickname: renameInput.trim() } });
+    setBusy(false);
+    if (!res.ok || !res.data.donor) {
+      setRenameError(errorText(res.data.error, dict, res.data.details));
+      return;
+    }
+    setDonor((d) => (d ? { ...d, nickname: res.data.donor!.nickname } : d));
+    setRenaming(false);
     router.refresh();
   }
 
@@ -138,14 +156,60 @@ export function ProfileClient({
             <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--glow)] text-[22px] font-extrabold text-[#3b2508]">
               {donor.nickname.slice(0, 1).toUpperCase()}
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h2 className="truncate text-[17px] font-extrabold text-[var(--ink)]">{donor.nickname}</h2>
               <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[var(--hope)]">
                 <Check size={15} aria-hidden="true" />
                 {dict.me.donorBadge}
               </span>
             </div>
+            {!renaming && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRenameInput(donor.nickname);
+                  setRenameError(null);
+                  setRenaming(true);
+                }}
+                aria-label={dict.me.rename}
+                className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[var(--tone)] px-3.5 text-[13px] font-extrabold text-[var(--ink)] transition active:scale-95"
+              >
+                <Pencil size={15} aria-hidden="true" />
+                <span className="hidden min-[380px]:inline">{dict.me.rename}</span>
+              </button>
+            )}
           </div>
+          {renaming && (
+            <form onSubmit={handleRename} className="mt-4 space-y-2.5">
+              <label htmlFor="rename" className="block text-[13px] font-extrabold text-[var(--ink-soft)]">
+                {dict.me.rename}
+              </label>
+              <input
+                id="rename"
+                type="text"
+                required
+                minLength={3}
+                maxLength={24}
+                autoFocus
+                value={renameInput}
+                onChange={(e) => setRenameInput(e.target.value)}
+                className="field"
+              />
+              {renameError && (
+                <div role="alert" className="rounded-2xl bg-rose-50 px-4 py-2.5 text-center text-sm font-bold text-rose-700">
+                  {renameError}
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => setRenaming(false)} className="btn-ghost">
+                  {dict.me.renameCancel}
+                </button>
+                <button type="submit" disabled={busy || renameInput.trim().length < 3} className="btn-primary">
+                  {dict.me.renameSave}
+                </button>
+              </div>
+            </form>
+          )}
           <div className="mt-4 grid grid-cols-2 gap-2.5">
             <div className="min-w-0 rounded-[14px] bg-[var(--tone)] px-3 py-2.5">
               <div className="truncate text-[13px] font-bold text-[var(--ink-soft)]">{dict.me.total}</div>

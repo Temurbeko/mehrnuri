@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { clearDonorCookie, createDonor, currentDonor } from "@/lib/donors/session";
-import { assertSameOrigin, handler } from "@/lib/security/http";
+import { clearDonorCookie, createDonor, currentDonor, renameDonor } from "@/lib/donors/session";
+import { assertSameOrigin, handler, HttpError } from "@/lib/security/http";
 import { readJson } from "@/lib/security/http";
 import { enforceRateLimit } from "@/lib/security/rateLimit";
 import { createDonorSchema } from "@/lib/validation";
@@ -24,6 +24,17 @@ export const POST = handler(async (req: NextRequest) => {
   const { nickname } = await readJson(req, createDonorSchema);
   const { donor, recoveryCode } = await createDonor(nickname);
   return NextResponse.json({ ok: true, donor: { nickname: donor.nickname, totalDonated: 0, donationsCount: 0 }, recoveryCode }, { status: 201 });
+});
+
+/** Change the nickname of the donor on this device. */
+export const PATCH = handler(async (req: NextRequest) => {
+  assertSameOrigin(req);
+  await enforceRateLimit(req, "donorCreate");
+  const d = await currentDonor();
+  if (!d) throw new HttpError(401, "forbidden");
+  const { nickname } = await readJson(req, createDonorSchema);
+  await renameDonor(d._id, nickname);
+  return NextResponse.json({ ok: true, donor: { nickname, totalDonated: d.totalDonated, donationsCount: d.donationsCount } });
 });
 
 /** "Log out" on this device (recovery code can restore). */

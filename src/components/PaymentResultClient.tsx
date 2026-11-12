@@ -9,7 +9,7 @@ import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { copyText } from "@/lib/clipboard";
 import { AddReceipt } from "./AddReceipt";
 import { BottomSheet } from "./BottomSheet";
-import { ThanksArt } from "./HeroArt";
+import { GasArt, ThanksArt, WaterArt } from "./HeroArt";
 import { ResultScreen, StatusIcon } from "./ResultScreen";
 import { ShareOptions } from "./ShareOptions";
 
@@ -150,7 +150,14 @@ function PaidScreen({
       <ResultScreen
         art={
           <div className="hs-active mx-auto w-fit">
-            <ThanksArt className="h-[132px] w-[106px]" />
+            {/* What the money turned on: a warm stove, running water, or a lit window. */}
+            {utilityType === "gas" || utilityType === "heating" ? (
+              <GasArt className="h-[132px] w-[106px]" />
+            ) : utilityType === "water" || utilityType === "hot_water" ? (
+              <WaterArt className="h-[132px] w-[106px]" />
+            ) : (
+              <ThanksArt className="h-[132px] w-[106px]" />
+            )}
           </div>
         }
         title={d.title}

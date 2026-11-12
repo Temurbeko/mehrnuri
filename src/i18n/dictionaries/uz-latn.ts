@@ -493,7 +493,7 @@ const uzLatn = {
     storyHint: "Nega qiynalayotganingizni qisqa yozing.",
     moreToggle: "Qo'shimcha: izoh, ko'rsatkich",
     optionalBadge: "Ixtiyoriy",
-    consent: "Hisob raqamim va qarz summasi saytda ko'rsatilishiga roziman. Telefonim yashirin qoladi.",
+    consent: "Hisob raqamim va qarz summasi saytda ko'rsatilishiga roziman.",
     submit: "Arizani yuborish",
     submitting: "Yuborilmoqda...",
     successTitle: "Arizangiz qabul qilindi!",
@@ -510,6 +510,9 @@ const uzLatn = {
     empty: "Birinchi saxiy bo'ling!",
   },
   me: {
+    rename: "Ismni o'zgartirish",
+    renameSave: "Saqlash",
+    renameCancel: "Bekor qilish",
     unconfirmed: "Chek kutilayotgan to'lovlar",
     unconfirmedHint: "Chek qo'shsangiz, Saxiylar ro'yxatiga kirasiz.",
     waiting: "Soliqda kutilmoqda",
