@@ -87,7 +87,7 @@ async function releaseReservation(billId: ObjectId, amount: number): Promise<voi
   ]);
 }
 
-type TxPatch = Partial<Pick<PaymentDoc, "receiptKey" | "receiptLabel" | "leaderboardCredited" | "receiptPending">>;
+type TxPatch = Partial<Pick<PaymentDoc, "receiptKey" | "receiptLabel" | "leaderboardCredited" | "receiptPending" | "amount" | "claimedAmount">>;
 
 export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<PaymentDoc> {
   const { payments, bills, donors } = await collections();
@@ -114,7 +114,8 @@ export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<
   const p: PaymentDoc = { ...before, ...set, status: "paid", paidAt: now, updatedAt: now };
   // An expired payment's reservation was already released; releasing it again
   // would eat into another donor's live reservation.
-  const release = OPEN_STATES.includes(before.status) ? p.amount : 0;
+  // (the reservation was for the amount tapped, even when the receipt corrects it down)
+  const release = OPEN_STATES.includes(before.status) ? before.amount : 0;
 
   const bill = await bills.findOneAndUpdate(
     { _id: p.billId },
@@ -230,12 +231,21 @@ export async function attachReceipt(paymentId: ObjectId, raw: string): Promise<"
     return "pending";
   }
 
+  // The receipt shows less than the donor tapped: count what was really paid.
+  const lower = verified.receiptAmount !== null && verified.receiptAmount < p.amount ? verified.receiptAmount : null;
   let updated: PaymentDoc | null;
   try {
     updated = await payments.findOneAndUpdate(
       { _id: p._id, status: "paid", receiptKey: { $in: [null, undefined] } as never },
       {
-        $set: { receiptKey: verified.receiptKey, receiptLabel: verified.receiptLabel, leaderboardCredited: true, receiptPending: null, updatedAt: new Date() },
+        $set: {
+          receiptKey: verified.receiptKey,
+          receiptLabel: verified.receiptLabel,
+          leaderboardCredited: true,
+          receiptPending: null,
+          updatedAt: new Date(),
+          ...(lower !== null ? { amount: lower, claimedAmount: p.amount } : {}),
+        },
       },
       { returnDocument: "before" },
     );
@@ -245,8 +255,21 @@ export async function attachReceipt(paymentId: ObjectId, raw: string): Promise<"
   }
   if (!updated) return "verified"; // another request attached it first
 
+  const real = lower ?? p.amount;
+  if (lower !== null) {
+    // the bill counted the tapped amount; give the difference back to the family's request
+    await bills.updateOne({ _id: p.billId }, [
+      {
+        $set: {
+          paidAmount: { $max: [0, { $subtract: ['$paidAmount', p.amount - lower] }] },
+          updatedAt: '$NOW',
+        },
+      },
+      { $set: { isOpen: { $cond: [{ $and: [{ $lt: ['$paidAmount', '$amountOwed'] }, { $gt: ['$expiresAt', '$NOW'] }] }, true, '$isOpen'] } } },
+    ]);
+  }
   if (updated.leaderboardCredited !== true) {
-    await donors.updateOne({ _id: p.donorId }, { $inc: { totalDonated: p.amount, donationsCount: 1 } });
+    await donors.updateOne({ _id: p.donorId }, { $inc: { totalDonated: real, donationsCount: 1 } });
   }
   const bill = await bills.findOne({ _id: p.billId }, { projection: { utilityType: 1, accountNumber: 1, ipHash: 1 } });
   if (bill && !(p.ipHash && p.ipHash === bill.ipHash)) {

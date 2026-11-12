@@ -22,10 +22,18 @@ const BADGES: Record<TrustLevel, { Icon: LucideIcon; className: string; key: "ba
   proven: { Icon: BadgeCheck, className: "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25", key: "badgeProven" },
 };
 
-export function TrustBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary }) {
+export function TrustBadge({ bill, dict, compact = false }: { bill: PublicBill; dict: Dictionary; compact?: boolean }) {
   const badge = BADGES[bill.trustLevel] ?? BADGES.new;
   const label = dict.check[badge.key];
   const title = bill.checkedCount > 0 ? fmt(dict.check.checkedCount, { count: bill.checkedCount }) : label;
+  if (compact) {
+    return (
+      <span title={title} className={`inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full ring-1 ${badge.className}`}>
+        <badge.Icon size={12} aria-hidden="true" />
+        <span className="sr-only">{title}</span>
+      </span>
+    );
+  }
   return (
     <span
       title={title}

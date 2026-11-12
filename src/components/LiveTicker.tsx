@@ -44,7 +44,7 @@ export function LiveTicker({ helps, dict }: { helps: TickerHelp[]; dict: Diction
   return (
     <div
       aria-live="polite"
-      className="mt-3 flex min-h-12 items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 text-sm shadow-[var(--lift)]"
+      className="mt-3 flex min-h-[64px] items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 text-sm shadow-[var(--lift)]"
     >
       <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[rgba(46,154,103,0.12)] text-[var(--hope)]">
         <Heart size={16} aria-hidden="true" />

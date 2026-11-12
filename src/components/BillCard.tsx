@@ -119,7 +119,7 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
   const href = `/${locale}/bill/${bill.id}`;
 
   return (
-    <article className="group relative flex h-full min-w-0 flex-col gap-4 rounded-3xl bg-white p-[18px] shadow-[var(--lift)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--lift-hover)] active:scale-[0.99]">
+    <article className="group relative flex h-full min-w-0 flex-col gap-4 rounded-3xl bg-white p-3.5 md:p-[18px] shadow-[var(--lift)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--lift-hover)] active:scale-[0.99]">
       <div className="flex items-center gap-3">
         <UtilityTile type={bill.utilityType} />
         <div className="min-w-0 flex-1">
@@ -138,16 +138,14 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
 
       <div>
         <div className="min-w-0">
-          <div className="text-[13px] font-bold text-[var(--ink-soft)]">{dict.bill.remaining}</div>
+          <div className="flex items-center gap-1.5 text-[13px] font-bold text-[var(--ink-soft)]">
+            {dict.bill.remaining}
+            {checked && <TrustBadge compact bill={bill} dict={dict} />}
+          </div>
           <div className="text-[26px] leading-[1.1] font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)]">
             {groupDigits(String(remaining))} <small className="text-[15px] font-bold text-[var(--ink-soft)]">{dict.common.som}</small>
           </div>
         </div>
-        {checked && (
-          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
-            <TrustBadge bill={bill} dict={dict} />
-          </div>
-        )}
         <div
           className="mt-2.5 h-2 overflow-hidden rounded-full bg-[var(--tone)]"
           role="progressbar"

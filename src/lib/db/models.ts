@@ -86,6 +86,8 @@ export interface PaymentDoc {
   /** Network the donor paid from; a payment from the request's own network never builds trust. */
   ipHash?: string;
   receiptLabel?: string | null;
+  /** What the donor tapped, when the Soliq receipt showed less (amount is then the receipt total). */
+  claimedAmount?: number | null;
   leaderboardCredited?: boolean;
   /**
    * A receipt Soliq did not know yet (payment services can register it hours

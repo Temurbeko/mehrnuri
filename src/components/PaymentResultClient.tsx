@@ -160,7 +160,13 @@ function PaidScreen({
             )}
           </div>
         }
-        title={d.title}
+        title={
+          utilityType === "gas" || utilityType === "heating"
+            ? d.titleGas
+            : utilityType === "water" || utilityType === "hot_water"
+              ? d.titleWater
+              : d.title
+        }
         date={dateLine}
         amount={money}
         body={utilityType ? fmt(d.body, { account: d.account[utilityType], outcome: dict.outcome[utilityType] }) : null}

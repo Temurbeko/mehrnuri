@@ -12,6 +12,8 @@ export interface VerifiedReceipt {
   method: "fiscal_qr" | "unverified_claim";
   receiptKey: string | null;
   receiptLabel: string | null;
+  /** Total on the Soliq receipt (so'm); null when unknown (no receipt, or test mode). */
+  receiptAmount: number | null;
 }
 
 interface SoliqReceiptData {
@@ -111,7 +113,10 @@ function buildSoliqRequestSpec(params: SoliqQueryParams): SoliqRequestSpec {
   };
 }
 
-export function evaluateSoliqData(data: SoliqReceiptData, expectedAmountUzs: number): { kkmName: string; recipients: ReceiptRecipient[] } {
+export function evaluateSoliqData(
+  data: SoliqReceiptData,
+  expectedAmountUzs: number,
+): { kkmName: string; recipients: ReceiptRecipient[]; total: number | null } {
   if (data.isRefund === 1) {
     throw new HttpError(422, "soliq_receipt_refunded");
   }
@@ -120,12 +125,13 @@ export function evaluateSoliqData(data: SoliqReceiptData, expectedAmountUzs: num
   const totalAmountUzs =
     rawTotal >= Math.max(expectedAmountUzs, 1000) * 50 ? Math.round(rawTotal / 100) : Math.round(rawTotal);
 
-  // The receipt must cover the whole donation it is being claimed for.
-  if (totalAmountUzs < expectedAmountUzs) {
+  // A receipt for less than tapped is accepted: the payment is corrected down to it
+  // (donor tapped 50 000, actually paid 5 000). An empty receipt proves nothing.
+  if (totalAmountUzs <= 0) {
     throw new HttpError(422, "receipt_amount_mismatch", undefined, { receipt: totalAmountUzs, expected: expectedAmountUzs });
   }
 
-  return { kkmName: data.kkmName ?? "OFD", recipients: recipientsOf(data.paymentDetails) };
+  return { kkmName: data.kkmName ?? "OFD", recipients: recipientsOf(data.paymentDetails), total: totalAmountUzs };
 }
 
 /**
@@ -134,9 +140,9 @@ export function evaluateSoliqData(data: SoliqReceiptData, expectedAmountUzs: num
  * `SOLIQ_MODE=mock` (test hosting outside Uzbekistan only) skips the call and treats every
  * well-formed receipt link as a valid receipt for the exact donation amount.
  */
-async function verifyWithSoliqServer(params: SoliqQueryParams, expectedAmountUzs: number): Promise<{ kkmName: string; recipients: ReceiptRecipient[] }> {
+async function verifyWithSoliqServer(params: SoliqQueryParams, expectedAmountUzs: number): Promise<{ kkmName: string; recipients: ReceiptRecipient[]; total: number | null }> {
   if (env().SOLIQ_MODE === "mock") {
-    return { kkmName: "TEST MODE", recipients: [] };
+    return { kkmName: "TEST MODE", recipients: [], total: null };
   }
 
   const spec = buildSoliqRequestSpec(params);
@@ -230,6 +236,7 @@ export async function verifyAndLockReceipt(
       method: "unverified_claim",
       receiptKey: null,
       receiptLabel: null,
+      receiptAmount: null,
     };
   }
 
@@ -265,5 +272,6 @@ export async function verifyAndLockReceipt(
     method: "fiscal_qr",
     receiptKey,
     receiptLabel: label,
+    receiptAmount: soliqData.total,
   };
 }

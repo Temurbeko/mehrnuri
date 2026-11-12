@@ -116,7 +116,7 @@ body {
 }
 
 @utility card {
-  @apply surface p-5;
+  @apply surface p-4 md:p-5;
 }
 
 @utility card-interactive {

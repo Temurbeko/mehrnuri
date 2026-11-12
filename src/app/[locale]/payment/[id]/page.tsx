@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
 import { ensureShareCode, getPayment } from "@/lib/payments/core";
@@ -42,9 +42,15 @@ export default async function PaymentResultPage({
   const paid = payment.status === "paid";
   // The bill gives the utility type (what the money paid for); the monthly count is private to the donor.
   const bill = await getBill(payment.billId.toHexString()).catch(() => null);
-  const donor = paid ? await currentDonor().catch(() => null) : null;
-  const familiesThisMonth = donor ? await donorFamiliesThisMonth(donor._id).catch(() => 0) : 0;
+  const viewer = paid ? await currentDonor().catch(() => null) : null;
   const shareCode = paid ? await ensureShareCode(payment).catch(() => null) : null;
+  // Someone else opened this link (another device, a forwarded link): this page is the
+  // donor's private receipt, so show the public share page with the donor's name instead.
+  if (paid && !(viewer && viewer._id.equals(payment.donorId))) {
+    redirect(shareCode ? `/${locale}/h/${shareCode}` : `/${locale}`);
+  }
+  const donor = viewer;
+  const familiesThisMonth = donor ? await donorFamiliesThisMonth(donor._id).catch(() => 0) : 0;
 
   // Details, formatted here (Tashkent time) so the client only prints them.
   const t = dict.details;

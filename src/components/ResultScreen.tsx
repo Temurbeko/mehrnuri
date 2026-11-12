@@ -61,7 +61,7 @@ export function ResultScreen({
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pt-6">
-      <div className="surface px-5 pt-6 pb-5 text-center">
+      <div className="surface px-4 pt-6 pb-5 md:px-5 text-center">
         <div>{art}</div>
         <h1 className="mt-3 text-[24px] leading-tight font-extrabold tracking-tight text-balance break-words text-[var(--ink)]">{title}</h1>
         {date && <p className="mt-1 text-[13.5px] font-semibold text-[var(--ink-soft)]">{date}</p>}

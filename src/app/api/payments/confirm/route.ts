@@ -49,7 +49,10 @@ export const POST = handler(async (req: NextRequest) => {
   }
   const creditLeaderboard = !skipLeaderboard && verified.verifiedForLeaderboard;
 
+  // Receipt shows less than tapped: count (and credit) what was really paid.
+  const lower = verified.receiptAmount !== null && verified.receiptAmount < payment.amount ? verified.receiptAmount : null;
   const result = await markPaid(payment._id, {
+    ...(lower !== null ? { amount: lower, claimedAmount: payment.amount } : {}),
     receiptKey: verified.receiptKey,
     receiptLabel: verified.receiptLabel,
     leaderboardCredited: creditLeaderboard,

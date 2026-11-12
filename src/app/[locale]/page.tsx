@@ -8,7 +8,6 @@ import { homesLitThisWeek, openBillsByRegion, recentHelps, recentlyClosedWithTha
 import { LiveFeed } from "@/components/LiveFeed";
 import { LiveTicker } from "@/components/LiveTicker";
 import { ClosedStrip } from "@/components/ClosedStrip";
-import { HowItWorks } from "@/components/HowItWorks";
 import { HeroSlider } from "@/components/HeroSlider";
 
 export const dynamic = "force-dynamic";
@@ -41,9 +40,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <div className="min-w-0">
-      <div className="mb-3 flex justify-end">
-        <HowItWorks dict={dict} />
-      </div>
       <HeroSlider locale={locale} dict={dict} waiting={waiting} weekCount={weekCount} closed={closed} />
 
       {helps.length > 0 && <LiveTicker helps={helps} dict={dict} />}

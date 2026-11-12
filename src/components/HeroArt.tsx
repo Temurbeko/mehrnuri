@@ -27,32 +27,63 @@ export function JourneyArt({ className }: { className?: string }) {
         <filter id="ja-glow" x="-100%" y="-100%" width="300%" height="300%">
           <feGaussianBlur stdDeviation="2.4" />
         </filter>
+        <linearGradient id="ja-screen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1b2040" />
+          <stop offset="1" stopColor="#12152a" />
+        </linearGradient>
       </defs>
       {/* the route the money takes */}
-      <path d="M40 60 C 58 22, 84 26, 92 86" fill="none" stroke="rgba(246,239,227,.28)" strokeWidth="1.2" strokeDasharray="2 3.2" strokeLinecap="round" />
+      <path d="M40 60 C 58 22, 84 26, 92 86" fill="none" stroke="rgba(246,239,227,.3)" strokeWidth="1.2" strokeDasharray="2 3.2" strokeLinecap="round" />
 
-      {/* phone */}
-      <rect x="6" y="52" width="40" height="74" rx="8" fill="#262b47" stroke="#3a4170" strokeWidth="1.2" />
-      <rect x="10.5" y="60" width="31" height="54" rx="3.5" fill="#12152a" />
-      <rect x="22" y="55" width="8" height="1.6" rx=".8" fill="#3a4170" />
-      <rect x="15" y="66" width="14" height="2.4" rx="1.2" fill="#3a4170" />
-      <rect x="15" y="72" width="22" height="4.5" rx="1.5" fill="#f6efe3" opacity=".85" />
-      <rect x="15" y="80" width="18" height="2.4" rx="1.2" fill="#3a4170" />
-      <rect className="ja-pay" x="15" y="99" width="22" height="8.5" rx="4.2" fill="#f6a623" />
-      <rect x="19" y="102.3" width="14" height="1.9" rx=".9" fill="#3b2508" opacity=".55" />
-
-      {/* home */}
-      <path d="M70 80 L93 60 L116 80 Z" fill="#323860" />
-      <rect x="74" y="80" width="38" height="44" rx="1.5" fill="#262b47" />
-      <rect x="79" y="88" width="15" height="13" rx="1.5" fill="#12152a" />
-      <g className="ja-win">
-        <rect x="76.5" y="85.5" width="20" height="18" rx="3" fill="#ffad2a" filter="url(#ja-glow)" opacity=".6" />
-        <rect x="79" y="88" width="15" height="13" rx="1.5" fill="#ffd77e" />
-        <Person x={84.5} y={101} s={0.62} />
-        <Person x={89.5} y={101} s={0.42} />
+      {/* phone: a payment app with the utility, the account and the amount */}
+      <rect x="5" y="50" width="42" height="78" rx="8.5" fill="#2c3254" stroke="#454d80" strokeWidth="1.2" />
+      <rect x="8.5" y="56" width="35" height="66" rx="5" fill="url(#ja-screen)" />
+      <rect x="21" y="52.6" width="10" height="1.8" rx=".9" fill="#151826" />
+      {/* app bar */}
+      <rect x="8.5" y="56" width="35" height="9" rx="5" fill="#2b6fd6" />
+      <rect x="8.5" y="61" width="35" height="4" fill="#2b6fd6" />
+      <rect x="12" y="59.4" width="11" height="2" rx="1" fill="#cfe0ff" />
+      {/* utility row */}
+      <rect x="12" y="69" width="8" height="8" rx="2.4" fill="#ffd77e" />
+      <path d="M16.6 70.4 l-2.4 3.6 h2 l-.8 2.6 2.6 -3.7 h-2 z" fill="#c26a00" />
+      <rect x="22.5" y="70" width="16" height="2.2" rx="1.1" fill="#e9e3d6" />
+      <rect x="22.5" y="74.2" width="11" height="1.8" rx=".9" fill="#5b6390" />
+      {/* account field */}
+      <rect x="12" y="80.5" width="28" height="7" rx="2" fill="#262b47" />
+      <g fill="#8d96c2">
+        <circle cx="15.5" cy="84" r=".9" /><circle cx="18.5" cy="84" r=".9" /><circle cx="21.5" cy="84" r=".9" />
+        <circle cx="24.5" cy="84" r=".9" /><circle cx="27.5" cy="84" r=".9" /><circle cx="30.5" cy="84" r=".9" />
       </g>
-      <rect x="99" y="102" width="8" height="22" rx="1" fill="#12152a" />
-      <rect x="66" y="124" width="54" height="2" fill="#363d68" />
+      {/* amount */}
+      <text x="26" y="98.5" textAnchor="middle" fontSize="8.4" fontWeight="800" fill="#f6efe3" fontFamily="system-ui, sans-serif">50 000</text>
+      <rect x="20" y="101" width="12" height="1.6" rx=".8" fill="#5b6390" />
+      {/* pay button with a check */}
+      <rect className="ja-pay" x="12" y="108" width="28" height="9" rx="4.5" fill="#f6a623" />
+      <path d="M22.6 112.6 l2.2 2.1 4.2 -4.2" fill="none" stroke="#3b2508" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+
+      {/* home: two floors, chimney, door, a tree */}
+      <rect x="104" y="58" width="5" height="10" fill="#2a2f52" />
+      <path d="M67 78 L91 58 L115 78 Z" fill="#3a4170" />
+      <path d="M67 78 L91 58 L93 59.6 L70.4 78 Z" fill="#4a5288" />
+      <rect x="71" y="78" width="40" height="46" rx="1.5" fill="#2c3254" />
+      {/* upstairs window stays dark; the downstairs one lights up */}
+      <rect x="79" y="83" width="9" height="9" rx="1.2" fill="#151826" />
+      <rect x="95" y="83" width="9" height="9" rx="1.2" fill="#151826" />
+      <rect x="76" y="99" width="16" height="13" rx="1.5" fill="#151826" />
+      <g className="ja-win">
+        <rect x="73.5" y="96.5" width="21" height="18" rx="3" fill="#ffad2a" filter="url(#ja-glow)" opacity=".65" />
+        <rect x="76" y="99" width="16" height="13" rx="1.5" fill="#ffd77e" />
+        <rect x="83.4" y="99" width="1.2" height="13" fill="#e2a44a" />
+        <Person x={80.5} y={112} s={0.62} />
+        <Person x={88} y={112} s={0.44} />
+        <rect x="95" y="83" width="9" height="9" rx="1.2" fill="#ffd77e" opacity=".85" />
+      </g>
+      <rect x="97" y="104" width="9" height="20" rx="1" fill="#151826" />
+      <circle cx="104" cy="114.5" r=".8" fill="#f6a623" />
+      {/* tree + ground */}
+      <rect x="117.4" y="112" width="1.6" height="12" fill="#2a2f52" />
+      <circle cx="118.2" cy="108" r="5" fill="#2e5a4a" />
+      <rect x="62" y="124" width="60" height="2" fill="#3a4170" />
 
       {/* the request (a small paper) appearing at the home */}
       <g className="ja-doc">
