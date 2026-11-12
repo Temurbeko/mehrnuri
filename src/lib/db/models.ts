@@ -26,7 +26,8 @@ export interface BillDoc {
   accountNumber: string;
   familyName: string | null;
   story: string | null;
-  phone: string;
+  /** No longer collected; old requests keep theirs. */
+  phone?: string | null;
   amountOwed: number;
   paidAmount: number;
   reservedAmount: number;
@@ -105,6 +106,8 @@ export interface DonorDoc {
   donationsCount: number;
   telegramId: string | null;
   phone: string | null;
+  /** Random public code for the monthly impact card link (never the donor id). */
+  impactCode?: string;
   createdAt: Date;
   lastSeenAt: Date;
 }

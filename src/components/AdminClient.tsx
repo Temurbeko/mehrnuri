@@ -116,10 +116,12 @@ export function AdminClient({
             <span className="text-stone-400 font-medium">{dict.bill.account}: </span>
             <span className="tabular-nums font-extrabold text-stone-900">{b.accountNumber}</span>
           </div>
-          <div>
-            <span className="text-stone-400 font-medium">{dict.admin.phone}: </span>
-            <span className="tabular-nums font-bold text-stone-800">{b.phone}</span>
-          </div>
+          {b.phone && (
+            <div>
+              <span className="text-stone-400 font-medium">{dict.admin.phone}: </span>
+              <span className="tabular-nums font-bold text-stone-800">{b.phone}</span>
+            </div>
+          )}
           <div>
             <span className="text-stone-400 font-medium">{dict.admin.entered}: </span>
             <span className="font-extrabold text-stone-900">{formatMoney(b.amountOwed, dict)}</span>
@@ -292,10 +294,12 @@ export function AdminClient({
                   <span className="text-stone-400 font-medium">{dict.bill.account}: </span>
                   <span className="tabular-nums font-bold text-stone-900">{b.accountNumber}</span>
                 </div>
-                <div>
-                  <span className="text-stone-400 font-medium">{dict.admin.phone}: </span>
-                  <span className="tabular-nums font-bold text-stone-800">{b.phone}</span>
-                </div>
+                {b.phone && (
+                  <div>
+                    <span className="text-stone-400 font-medium">{dict.admin.phone}: </span>
+                    <span className="tabular-nums font-bold text-stone-800">{b.phone}</span>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <input

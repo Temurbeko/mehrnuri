@@ -212,7 +212,7 @@ export function DonatePanel({
   const longStory = (bill.story?.length ?? 0) > 150;
 
   return (
-    <div className="space-y-4 pb-2">
+    <div className="pb-2">
       <AppBar
         title={dict.utilityBill[bill.utilityType]}
         locale={locale}
@@ -232,6 +232,9 @@ export function DonatePanel({
         <ShareOptions url={pageUrl} text={dict.shareTo.billText} dict={dict} />
       </BottomSheet>
 
+      {/* Phone: one column. Desktop: the request on the left, how to pay on the right. */}
+      <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(0,1fr)_340px] md:items-start md:gap-6">
+      <div className="min-w-0 space-y-4 md:col-start-1 md:row-start-1">
       {isOwner && (
         // The family itself: no donate form (paying your own bill would put you on the
         // leaderboard); sharing the request is what actually helps.
@@ -301,32 +304,53 @@ export function DonatePanel({
         </BottomSheet>
       )}
 
-      {/* One compact summary card: what is asked, what is left, who helps. */}
-      <section className="surface min-w-0 space-y-3 p-4">
-        <p className="flex items-center gap-2 text-[13px] font-extrabold tracking-wide text-[var(--lamp-deep)] uppercase">
-          <span aria-hidden="true" className="lamp-dot" />
-          <span className="min-w-0 truncate">{dict.ux.asking}</span>
-        </p>
+      {/* The request at a glance: where, how much is left, how far along, who helps. */}
+      <section className="surface min-w-0 p-4 sm:p-5">
+        <div className="flex min-w-0 items-start gap-3">
+          <UtilityTile type={bill.utilityType} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[16px] leading-snug font-extrabold break-words text-[var(--ink)]">
+              {dict.districts[districtInfo.id]}
+              <span className="font-bold text-[var(--ink-soft)]"> · {dict.region[bill.region]}</span>
+            </p>
+            <p suppressHydrationWarning className="mt-0.5 text-[13px] font-bold text-[var(--ink-soft)]">
+              {timeAgo(bill.createdAt, dict.time)} · {bill.code}
+            </p>
+          </div>
+        </div>
 
-        {bill.familyPaid > 0 && (
-          <p className="text-[13px] text-[var(--ink-soft)]">
-            {fmt(dict.familyUpdate.publicNote, { amount: formatMoney(bill.familyPaid, dict) })}
-          </p>
-        )}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {approved && bill.fundingStatus !== "fully_paid" && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(246,166,35,0.14)] px-2.5 py-1 text-[12px] font-extrabold tracking-wide text-[var(--lamp-deep)] uppercase">
+              <span aria-hidden="true" className="lamp-dot" />
+              {dict.ux.asking}
+            </span>
+          )}
+          {reviewBadge}
+          {bill.trustLevel !== "new" && <TrustBadge bill={bill} dict={dict} />}
+          {bill.verified && (
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white">
+              <Check size={12} aria-hidden="true" />
+            </span>
+          )}
+        </div>
 
-        <div className="flex items-end justify-between gap-3">
+        <div className="mt-4 flex items-end justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[30px] leading-[1.1] font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)]">
+            <div className="text-[34px] leading-none font-extrabold tracking-tight whitespace-nowrap text-[var(--ink)] tabular-nums">
               {groupDigits(String(remaining))} <small className="text-[15px] font-bold text-[var(--ink-soft)]">{dict.common.som}</small>
             </div>
-            <div className="mt-0.5 text-[13px] font-bold text-[var(--ink-soft)]">{dict.ux.needed}</div>
+            <div className="mt-1 text-[13px] font-bold text-[var(--ink-soft)]">{dict.ux.needed}</div>
           </div>
-          <div className="min-w-0 pb-1 text-right text-[13px] font-bold whitespace-nowrap text-[var(--ink-soft)]">
-            {fmt(dict.app.ofTotal, { total: groupDigits(String(bill.amountOwed)) })}
+          <div className="shrink-0 pb-0.5 text-right">
+            <div className="text-[15px] font-extrabold text-[var(--lamp-deep)] tabular-nums">{fmt(dict.details.progressValue, { pct })}</div>
+            <div className="text-[12.5px] font-bold whitespace-nowrap text-[var(--ink-soft)]">
+              {fmt(dict.app.ofTotal, { total: groupDigits(String(bill.amountOwed)) })}
+            </div>
           </div>
         </div>
         <div
-          className="h-2 w-full overflow-hidden rounded-full bg-[var(--tone)]"
+          className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[var(--tone)]"
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
@@ -338,28 +362,14 @@ export function DonatePanel({
           />
         </div>
 
-        <div className="flex min-w-0 items-center gap-3">
-          <UtilityTile type={bill.utilityType} />
-          <div className="min-w-0 flex-1">
-            <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold text-[var(--ink)]">
-              <span suppressHydrationWarning className="min-w-0 truncate">
-                {dict.utilityBill[bill.utilityType]} · {dict.districts[districtInfo.id]} · {timeAgo(bill.createdAt, dict.time)}
-              </span>
-              {bill.verified && (
-                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
-                  <Check size={11} aria-hidden="true" />
-                </span>
-              )}
-            </p>
-            {showReviewRow && (
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {reviewBadge}
-                {bill.trustLevel !== "new" && <TrustBadge bill={bill} dict={dict} />}
-              </div>
-            )}
-          </div>
+        <div className="mt-3 flex min-w-0 items-center">
+          <HelpersLine bill={bill} dict={dict} />
         </div>
-        <HelpersLine bill={bill} dict={dict} />
+        {bill.familyPaid > 0 && (
+          <p className="mt-2 text-[13px] text-[var(--ink-soft)]">
+            {fmt(dict.familyUpdate.publicNote, { amount: formatMoney(bill.familyPaid, dict) })}
+          </p>
+        )}
       </section>
 
       {bill.story && (
@@ -384,26 +394,6 @@ export function DonatePanel({
         </div>
       )}
 
-      {!isOwner && (
-        <section aria-label={dict.ux.howTitle}>
-          <h3 className="mx-1 mb-2 text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.ux.howTitle}</h3>
-          <ol className="m-0 grid list-none grid-cols-3 gap-2 p-0">
-            {[
-              { Icon: Copy, text: dict.ux.howCopy },
-              { Icon: Smartphone, text: dict.ux.howPay },
-              { Icon: Home, text: dict.ux.howDirect },
-            ].map(({ Icon, text }, i) => (
-              <li key={i} className="surface flex min-w-0 flex-col items-center gap-1.5 px-2 py-3 text-center">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--tone)] text-[var(--lamp-deep)]">
-                  <Icon size={18} aria-hidden="true" />
-                </span>
-                <span className="min-w-0 text-[13px] leading-tight font-bold break-words text-[var(--ink)]">{text}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-
       {bill.thanksReactions && bill.thanksReactions.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {bill.thanksReactions.map((r) => (
@@ -413,111 +403,153 @@ export function DonatePanel({
           ))}
         </div>
       )}
+      </div>
 
-      {/* Latest helps: one quiet line when empty, otherwise up to three people. */}
-      {helpers3.length > 0 ? (
-        <div>
-          <h3 className="mx-0.5 mb-2 text-[13px] font-extrabold text-[var(--ink-soft)]">{dict.pick.recentTitle}</h3>
-          <ul className="m-0 flex list-none gap-2 p-0">
-            {helpers3.map((h, i) => (
-              <li key={`${h.at}-${i}`} className="surface flex min-w-0 flex-1 items-center gap-2 p-2">
-                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--glow)] text-xs font-extrabold text-[#3b2508]">
-                  {(h.nickname.trim()[0] ?? "?").toUpperCase()}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <b className="block truncate text-[13px] leading-tight text-[var(--ink)]">{h.nickname}</b>
-                  <small className="block truncate text-[12px] leading-tight font-bold text-[var(--ink-soft)]">{formatMoney(h.amount, dict)}</small>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <p className="mx-0.5 text-[13px] font-semibold text-[var(--ink-soft)]">{dict.app.noHelpsYet}</p>
-      )}
-
-      {/* Account number + details: tap the first row to copy. */}
-      <ul className="list">
-        <CopyRow compact label={bill.holderMasked ? `${dict.bill.account} · ${bill.holderMasked}` : dict.bill.account} value={bill.accountNumber} mono dict={dict} />
-        <li className="list-row min-h-12 justify-between gap-4 py-2.5">
-          <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.ux2.area}</span>
-          <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">
-            {dict.region[bill.region]} · {dict.districts[districtInfo.id]}
-          </span>
-        </li>
-        <li className="list-row min-h-12 justify-between gap-4 py-2.5">
-          <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.bill.supplier}</span>
-          <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">{bill.supplier}</span>
-        </li>
-        <li className="list-row min-h-12 justify-between gap-4 py-2.5">
-          <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.bill.code}</span>
-          <span className="min-w-0 text-right text-[15px] font-bold tabular-nums text-[var(--ink)]">{bill.code}</span>
-        </li>
-        {bill.addressMasked && (
+      {/* Everything needed to pay: the account (tap to copy), the steps, the button. */}
+      <aside className="min-w-0 space-y-4 md:sticky md:top-24 md:col-start-2 md:row-span-2 md:row-start-1">
+        <ul className="list">
+          <CopyRow compact label={bill.holderMasked ? `${dict.bill.account} · ${bill.holderMasked}` : dict.bill.account} value={bill.accountNumber} mono dict={dict} />
           <li className="list-row min-h-12 justify-between gap-4 py-2.5">
-            <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.bill.address}</span>
-            <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">{bill.addressMasked}</span>
+            <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.bill.supplier}</span>
+            <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">{bill.supplier}</span>
           </li>
-        )}
-        {bill.meterReading !== null && meterUnit && (
-          <li className="list-row min-h-12 justify-between gap-4 py-2.5">
-            <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.bill.meterReading}</span>
-            <span className="min-w-0 text-right text-[15px] font-bold tabular-nums text-[var(--ink)]">
-              {bill.meterReading} {meterUnit}
-            </span>
-          </li>
-        )}
-      </ul>
+          {bill.addressMasked && (
+            <li className="list-row min-h-12 justify-between gap-4 py-2.5">
+              <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.bill.address}</span>
+              <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">{bill.addressMasked}</span>
+            </li>
+          )}
+          {bill.meterReading !== null && meterUnit && (
+            <li className="list-row min-h-12 justify-between gap-4 py-2.5">
+              <span className="shrink-0 text-sm font-medium text-[var(--ink-soft)]">{dict.bill.meterReading}</span>
+              <span className="min-w-0 text-right text-[15px] font-bold tabular-nums text-[var(--ink)]">
+                {bill.meterReading} {meterUnit}
+              </span>
+            </li>
+          )}
+        </ul>
 
-      {canReact && (
-        <div className="panel space-y-2.5">
-          <div className="text-sm font-extrabold text-amber-900">{dict.reactions.panelTitle}</div>
-          <div className="flex flex-wrap gap-2">
-            {REACTION_TYPES.map((r) => {
-              const active = bill.thanksReactions?.includes(r);
-              return (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => sendReaction(r)}
-                  className={`inline-flex min-h-10 cursor-pointer items-center rounded-full px-4 text-sm font-bold transition-all active:scale-95 ${
-                    active ? "bg-emerald-600 text-white" : "bg-white text-stone-800 shadow-[var(--lift)] hover:bg-stone-50"
-                  }`}
-                >
-                  {dict.reactions.items[r]}
-                </button>
-              );
-            })}
+        {canDonate && (
+          <section aria-label={dict.ux.howTitle} className="surface min-w-0 p-4">
+            <h3 className="text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.ux.howTitle}</h3>
+            <ol className="m-0 mt-3 grid list-none gap-3 p-0">
+              {[
+                { Icon: Copy, text: dict.ux.howCopy },
+                { Icon: Smartphone, text: dict.ux.howPay },
+                { Icon: Home, text: dict.ux.howDirect },
+              ].map(({ Icon, text }, i) => (
+                <li key={i} className="flex min-w-0 items-center gap-3">
+                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--tone)] text-[var(--lamp-deep)]">
+                    <Icon size={17} aria-hidden="true" />
+                    <span
+                      aria-hidden="true"
+                      className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--ink)] text-[10px] font-extrabold text-[var(--paper)]"
+                    >
+                      {i + 1}
+                    </span>
+                  </span>
+                  <span className="min-w-0 text-[14.5px] leading-snug font-bold text-[var(--ink)]">{text}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {!approved ? (
+          <div className="rounded-2xl bg-amber-50 px-4 py-4 text-center text-sm font-bold text-amber-950">
+            {initialReviewStatus === "pending_review"
+              ? dict.ask.heldText
+              : initialReviewStatus === "flagged"
+                ? dict.check.flaggedNotice
+                : dict.status.rejected}
           </div>
-        </div>
-      )}
+        ) : bill.fundingStatus === "fully_paid" ? (
+          <div className="space-y-1 rounded-2xl bg-emerald-50 px-4 py-6 text-center">
+            <div className="text-4xl">🎉</div>
+            <p className="text-base font-extrabold text-emerald-800">{dict.bill.thanks}</p>
+          </div>
+        ) : !isOwner && bill.available <= 0 ? (
+          // Not paid yet: other donors have the rest reserved and are paying now.
+          <div className="space-y-1 rounded-2xl bg-[var(--tone)] px-4 py-6 text-center">
+            <div className="text-4xl">⏳</div>
+            <p className="text-sm font-extrabold text-stone-700">{dict.donate.reserved}</p>
+          </div>
+        ) : null}
 
-      {!approved ? (
-        <div className="rounded-2xl bg-amber-50 px-4 py-4 text-center text-sm font-bold text-amber-950">
-          {initialReviewStatus === "pending_review"
-            ? dict.ask.heldText
-            : initialReviewStatus === "flagged"
-              ? dict.check.flaggedNotice
-              : dict.status.rejected}
-        </div>
-      ) : bill.fundingStatus === "fully_paid" ? (
-        <div className="space-y-1 rounded-2xl bg-emerald-50 px-4 py-6 text-center">
-          <div className="text-4xl">🎉</div>
-          <p className="text-base font-extrabold text-emerald-800">{dict.bill.thanks}</p>
-        </div>
-      ) : !isOwner && bill.available <= 0 ? (
-        // Not paid yet: other donors have the rest reserved and are paying now.
-        <div className="space-y-1 rounded-2xl bg-[var(--tone)] px-4 py-6 text-center">
-          <div className="text-4xl">⏳</div>
-          <p className="text-sm font-extrabold text-stone-700">{dict.donate.reserved}</p>
-        </div>
-      ) : null}
+        {canDonate && (
+          <button
+            type="button"
+            disabled={providers.length === 0}
+            onClick={() => setSheetOpen(true)}
+            className="btn-primary hidden min-h-[56px] w-full rounded-[18px] text-[17px] md:flex"
+          >
+            <Heart size={20} aria-hidden="true" />
+            {dict.app.helpBtn}
+          </button>
+        )}
+      </aside>
+
+      {/* Latest helps: who, how much, when. Full names, no truncated chips. */}
+      <div className="min-w-0 space-y-4 md:col-start-1 md:row-start-2">
+        {helpers3.length > 0 ? (
+          <section className="surface min-w-0 p-4">
+            <h3 className="text-[13px] font-extrabold tracking-wide text-[var(--ink-soft)] uppercase">{dict.pick.recentTitle}</h3>
+            <ul className="m-0 mt-2 list-none divide-y divide-[var(--tone)] p-0">
+              {helpers3.map((h, i) => (
+                <li key={`${h.at}-${i}`} className="flex min-w-0 items-center gap-3 py-2.5">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--glow)] text-sm font-extrabold text-[#3b2508]"
+                  >
+                    {(h.nickname.trim()[0] ?? "?").toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <b className="block truncate text-[14.5px] leading-tight text-[var(--ink)]">{h.nickname}</b>
+                    <small suppressHydrationWarning className="block text-[12.5px] font-bold text-[var(--ink-soft)]">
+                      {timeAgo(h.at, dict.time)}
+                    </small>
+                  </span>
+                  <span className="shrink-0 text-[14.5px] font-extrabold whitespace-nowrap text-[var(--hope)] tabular-nums">
+                    +{formatMoney(h.amount, dict)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : (
+          <p className="mx-0.5 text-[13px] font-semibold text-[var(--ink-soft)]">{dict.app.noHelpsYet}</p>
+        )}
+
+        {canReact && (
+          <div className="panel space-y-2.5">
+            <div className="text-sm font-extrabold text-amber-900">{dict.reactions.panelTitle}</div>
+            <div className="flex flex-wrap gap-2">
+              {REACTION_TYPES.map((r) => {
+                const active = bill.thanksReactions?.includes(r);
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => sendReaction(r)}
+                    className={`inline-flex min-h-10 cursor-pointer items-center rounded-full px-4 text-sm font-bold transition-all active:scale-95 ${
+                      active ? "bg-emerald-600 text-white" : "bg-white text-stone-800 shadow-[var(--lift)] hover:bg-stone-50"
+                    }`}
+                  >
+                    {dict.reactions.items[r]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+      </div>
 
       {canDonate && (
         <>
           {/* Spacer so the pinned button never covers the last row. */}
-          <div aria-hidden="true" className="h-20" />
-          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+68px)] z-30 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent pt-6 pb-3 md:bottom-0 md:pb-[calc(env(safe-area-inset-bottom)+12px)]">
+          <div aria-hidden="true" className="h-20 md:hidden" />
+          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+68px)] z-30 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent pt-6 pb-3 md:hidden">
             <div className="pointer-events-auto mx-auto max-w-lg px-4">
               <button
                 type="button"

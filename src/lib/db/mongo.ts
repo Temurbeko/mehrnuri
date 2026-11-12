@@ -34,9 +34,10 @@ async function ensureIndexes(db: Db): Promise<void> {
       { key: { utilityType: 1, accountNumber: 1 }, unique: true, partialFilterExpression: { isOpen: true }, name: "one_open_per_account" },
       { key: { reviewStatus: 1, isOpen: 1, createdAt: 1 } },
       { key: { updatedAt: 1 } },
-      // Stale-request sweep, and the per-phone posting cap.
+      // Stale-request sweep, and the per-network posting caps.
       { key: { isOpen: 1, expiresAt: 1 } },
       { key: { phone: 1, createdAt: -1 } },
+      { key: { ipHash: 1, createdAt: -1 } },
     ]),
     db.collection<VerdictDoc>("verdicts").createIndexes([
       // One verdict per visitor per bill.
@@ -55,6 +56,7 @@ async function ensureIndexes(db: Db): Promise<void> {
     db.collection<DonorDoc>("donors").createIndexes([
       { key: { nicknameKey: 1 }, unique: true },
       { key: { totalDonated: -1 } },
+      { key: { impactCode: 1 }, unique: true, partialFilterExpression: { impactCode: { $type: "string" } } },
     ]),
     db.collection<RateLimitDoc>("rate_limits").createIndexes([{ key: { expiresAt: 1 }, expireAfterSeconds: 0 }]),
   ]);

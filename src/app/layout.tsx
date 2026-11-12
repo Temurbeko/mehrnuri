@@ -21,8 +21,9 @@ export const metadata: Metadata = {
   icons: {
     icon: BRAND.logoUrl,
     shortcut: BRAND.logoUrl,
-    apple: BRAND.logoUrl,
+    apple: "/pwa/180.png",
   },
+  appleWebApp: { capable: true, title: BRAND.name, statusBarStyle: "default" },
   openGraph: {
     title: BRAND.name,
     description: "Kommunal to'lovlarda o'zaro yordam platformasi",
@@ -33,7 +34,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#0f172a",
+  themeColor: "#151826",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

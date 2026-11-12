@@ -14,6 +14,9 @@ import { donorHistory, donorOpenPayments, type DonorOpenPayment, type HistoryIte
 import { UTILITY_ICONS } from "@/lib/domain";
 import { formatMoney } from "@/i18n";
 import { timeAgo } from "@/lib/format";
+import { ImpactCard } from "@/components/ImpactCard";
+import { LOCALE_HTML_LANG } from "@/i18n/config";
+import { donorMonthImpact, ensureImpactCode, monthKeyOf, monthLabel, previousMonthKey, type MonthImpact } from "@/lib/impact";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +30,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
   let myRequests: MyRequest[] = [];
   let openPayments: DonorOpenPayment[] = [];
   let history: HistoryItem[] = [];
+  let impact: (MonthImpact & { code: string }) | null = null;
   try {
     const jar = await cookies();
     const [d, c, owned] = await Promise.all([
@@ -40,6 +44,12 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
       // paid ones without a receipt show in the history with an "add receipt" badge
       openPayments = open.filter((p) => p.kind === "unconfirmed");
       history = past;
+      if (past.length > 0) {
+        const thisMonth = monthKeyOf(new Date());
+        let m = await donorMonthImpact(d._id, thisMonth);
+        if (m.families < 1) m = await donorMonthImpact(d._id, previousMonthKey(thisMonth));
+        if (m.families >= 1) impact = { ...m, code: await ensureImpactCode(d._id) };
+      }
     }
     code = c;
     myRequests = owned.map((b) => ({ bill: toPublicBill(b), reviewStatus: b.reviewStatus, isOpen: b.isOpen }));
@@ -53,6 +63,18 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
 
   const helpsNode = hasHelps ? (
     <div className="space-y-5">
+      {impact && (
+        <ImpactCard
+          code={impact.code}
+          month={impact.month}
+          monthText={monthLabel(impact.month, LOCALE_HTML_LANG[locale])}
+          families={impact.families}
+          total={impact.total}
+          utilities={impact.utilities}
+          locale={locale}
+          dict={dict}
+        />
+      )}
       {openPayments.length > 0 && (
         <section className="space-y-2">
           <div className="mx-1">

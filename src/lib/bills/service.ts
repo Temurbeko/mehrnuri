@@ -7,6 +7,8 @@ import {
   BILL_TTL_DAYS,
   fundingStatusOf,
   isPlausibleAmount,
+  MAX_BILLS_PER_NETWORK_30D,
+  MAX_OPEN_BILLS_PER_NETWORK,
   type PublicBill,
   type Region,
   type TrustLevel,
@@ -103,10 +105,7 @@ export async function accountStatus(
   };
 }
 
-/** One open request per phone at a time, and a few per season. */
-const MAX_BILLS_PER_PHONE_30D = 3;
-
-export async function createBill(input: CreateBillInput, ip: string): Promise<BillDoc> {
+export async function createBill(input: CreateBillInput, ip: string, ownedIds: string[] = []): Promise<BillDoc> {
   // Free text must not carry links or contacts (the family gets a clear error);
   // profanity only holds the request for the admin queue, the family is told nothing different.
   let textHold = false;
@@ -132,13 +131,24 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
   // An account donors kept reporting stays out, whatever name or phone is used next.
   if (account?.blocked) throw new HttpError(403, "account_blocked");
 
+  // This browser already has an open request (signed owner cookie).
+  if (ownedIds.length > 0) {
+    const ownOpen = await bills.findOne(
+      { _id: { $in: ownedIds.map((id) => new ObjectId(id)) }, isOpen: true },
+      { projection: { _id: 1 } },
+    );
+    if (ownOpen) throw new HttpError(409, "owner_has_open_bill");
+  }
+
+  // Generous per-network caps (carriers share IPs).
+  const ipHash = hashIp(ip);
   const sinceWindow = new Date(Date.now() - 30 * 24 * 60 * 60_000);
-  const [openForPhone, recentForPhone] = await Promise.all([
-    bills.countDocuments({ phone: input.phone, isOpen: true }),
-    bills.countDocuments({ phone: input.phone, createdAt: { $gte: sinceWindow } }),
+  const [openForNetwork, recentForNetwork] = await Promise.all([
+    bills.countDocuments({ ipHash, isOpen: true }),
+    bills.countDocuments({ ipHash, createdAt: { $gte: sinceWindow } }),
   ]);
-  if (openForPhone > 0) throw new HttpError(409, "phone_has_open_bill");
-  if (recentForPhone >= MAX_BILLS_PER_PHONE_30D) throw new HttpError(429, "phone_limit_reached");
+  if (openForNetwork >= MAX_OPEN_BILLS_PER_NETWORK) throw new HttpError(409, "network_has_open_bills");
+  if (recentForNetwork >= MAX_BILLS_PER_NETWORK_30D) throw new HttpError(429, "network_limit_reached");
 
   const d = findDistrict(input.region, input.district);
   const supplier = officialSupplierName(input.utilityType, input.region);
@@ -163,7 +173,6 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
     accountNumber: input.accountNumber,
     familyName: input.familyName,
     story: input.story,
-    phone: input.phone,
     amountOwed: input.amountOwed,
     paidAmount: 0,
     reservedAmount: 0,
@@ -181,7 +190,7 @@ export async function createBill(input: CreateBillInput, ip: string): Promise<Bi
       checkedAt: now,
     },
     payout: { status: "not_paid_out" as const, reference: null, at: null },
-    ipHash: hashIp(ip),
+    ipHash,
     createdAt: now,
     updatedAt: now,
   };

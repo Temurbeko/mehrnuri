@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { PublicDonor } from "@/lib/domain";
 import { formatMoney, type Dictionary } from "@/i18n";
 import { api, errorText } from "./api";
+import { InstallApp } from "./InstallApp";
 
 export function ProfileClient({
   initialDonor,
@@ -115,6 +116,7 @@ export function ProfileClient({
             </button>
           </li>
         )}
+        <InstallApp dict={dict} />
         <li>
           <Link href={adminHref} className="list-row-tap flex min-w-0 items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--tone)] text-[var(--ink-soft)]">

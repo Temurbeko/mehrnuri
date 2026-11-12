@@ -9,17 +9,6 @@ export const accountNumberSchema = z.preprocess(
   z.string().regex(/^\d{5,20}$/, "Account number must be 5–20 digits"),
 );
 
-export const phoneSchema = z.preprocess(
-  (v) => {
-    if (typeof v !== "string") return v;
-    let p = v.replace(/[\s()-]/g, "");
-    if (/^\d{9}$/.test(p)) p = `+998${p}`;
-    if (/^998\d{9}$/.test(p)) p = `+${p}`;
-    return p;
-  },
-  z.string().regex(/^\+998\d{9}$/, "Phone must look like +998 90 123 45 67"),
-);
-
 const safeText = (max: number) =>
   z
     .string()
@@ -39,7 +28,6 @@ export const createBillSchema = z.object({
     z.number().nonnegative().max(9_999_999).nullable().optional().transform((v) => v ?? null),
   ),
   amountOwed: z.coerce.number().int().min(1000).max(5_000_000),
-  phone: phoneSchema,
   familyName: safeText(40).optional().transform((v) => (v ? v : null)),
   story: safeText(300).optional().transform((v) => (v ? v : null)),
   consent: z.literal(true),

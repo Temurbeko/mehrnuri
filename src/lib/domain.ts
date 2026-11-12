@@ -70,6 +70,13 @@ export const MISMATCH_LIMIT_ACCOUNT = 3;
 export const BILL_TTL_DAYS = 30;
 
 /**
+ * Posting limits per network (hashed IP). Mobile carriers share IPs (CGNAT),
+ * so these are generous: they stop floods, not neighbours.
+ */
+export const MAX_OPEN_BILLS_PER_NETWORK = 3;
+export const MAX_BILLS_PER_NETWORK_30D = 8;
+
+/**
  * Largest believable household debt per utility, in so'm. Above this a request
  * is held for a human instead of being published — the only automatic brake
  * that still needs an admin.

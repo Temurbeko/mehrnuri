@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { env } from "@/config/env";
 import { REGIONS, UTILITY_TYPES } from "@/lib/domain";
-import { OWNER_COOKIE, ownerCookieWith } from "@/lib/bills/owner";
+import { OWNER_COOKIE, ownedBillIds, ownerCookieWith } from "@/lib/bills/owner";
 import { createBill, listOpenBills, sweepStaleBills } from "@/lib/bills/service";
 import { sweepExpired } from "@/lib/payments/core";
 import { assertSameOrigin, clientIp, handler, HttpError, parseOr400, readJson } from "@/lib/security/http";
@@ -33,7 +33,7 @@ export const POST = handler(async (req: NextRequest) => {
   await enforceRateLimit(req, "billCreate");
   const input = await readJson(req, createBillSchema);
   if (input.website) throw new HttpError(400, "validation_error"); // honeypot
-  const bill = await createBill(input, clientIp(req));
+  const bill = await createBill(input, clientIp(req), ownedBillIds(req.cookies.get(OWNER_COOKIE)?.value));
   const billId = bill._id.toHexString();
   const res = NextResponse.json({ ok: true, id: billId, code: bill.code, reviewStatus: bill.reviewStatus }, { status: 201 });
   // Remember every request this browser posted (not just the last), so the family can find them under Profile.

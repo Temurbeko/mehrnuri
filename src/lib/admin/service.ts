@@ -7,7 +7,7 @@ import { HttpError } from "@/lib/security/http";
 import { accountKeyOf, type PublicBill, type ReviewStatus, type VerdictKind } from "@/lib/domain";
 
 export interface AdminBill extends PublicBill {
-  phone: string;
+  phone?: string | null;
   accountNumber: string;
   reviewStatus: ReviewStatus;
   verifiedDebt: number | null;
@@ -22,7 +22,7 @@ function toAdminBill(b: BillDoc, blockedAccounts: Set<string> = new Set()): Admi
   const last = b.trust?.lastMismatch ?? null;
   return {
     ...toPublicBill(b),
-    phone: b.phone,
+    phone: b.phone ?? null,
     accountNumber: b.accountNumber,
     reviewStatus: b.reviewStatus,
     verifiedDebt: b.verification.verifiedDebt,

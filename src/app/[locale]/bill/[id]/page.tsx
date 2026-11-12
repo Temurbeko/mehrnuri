@@ -46,7 +46,7 @@ export default async function BillPage({
   const canReact = canReactToBill(cookieStore, billDoc._id.toHexString());
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="mx-auto max-w-lg md:max-w-4xl">
       <DonatePanel
         initialBill={publicBill!}
         initialReviewStatus={billDoc.reviewStatus}

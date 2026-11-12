@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, Check, ChevronUp, MapPin, Phone, Plus, Share2, UserRound, Wallet, FileText } from "lucide-react";
+import { ArrowRight, Building2, Check, ChevronUp, MapPin, Plus, Share2, UserRound, Wallet, FileText } from "lucide-react";
 import { digitsOnly, groupDigits } from "@/lib/format";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -32,7 +32,6 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
   const [accountNumber, setAccountNumber] = useState<string>("");
 
   const [amountOwed, setAmountOwed] = useState("");
-  const [phone, setPhone] = useState("+998");
   const [showExtra, setShowExtra] = useState(false);
   const [paymentPurpose, setPaymentPurpose] = useState<PaymentPurpose>("main");
   const [meterReading, setMeterReading] = useState<string>("");
@@ -140,7 +139,6 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
         meterReading: meterUnit && meterReading.trim() !== "" ? Number(meterReading) : null,
         accountNumber: digits,
         amountOwed: amt,
-        phone,
         familyName: familyName || undefined,
         story: story || undefined,
         consent,
@@ -472,31 +470,6 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
 
         {step === 3 && (
           <div className="space-y-4">
-            <div>
-              <label className="label" htmlFor="phone">
-                {dict.ask.phone}
-              </label>
-              <div className="relative">
-                <Phone size={18} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                <span className="pointer-events-none absolute left-11 top-1/2 -translate-y-1/2 tabular-nums text-base font-bold text-stone-500">
-                  +998
-                </span>
-                <input
-                  id="phone"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel-national"
-                  required
-                  minLength={9}
-                  maxLength={9}
-                  placeholder="90 123 45 67"
-                  value={phone.slice(4)}
-                  onChange={(e) => setPhone("+998" + e.target.value.replace(/\D/g, "").slice(0, 9))}
-                  className="field pl-[5.5rem] tabular-nums text-lg font-bold tracking-wide"
-                />
-              </div>
-            </div>
-
             <label
               className={`panel flex cursor-pointer items-start gap-3 text-sm font-medium transition-all active:scale-[0.99] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-amber-500/70 ${
                 consent ? "bg-amber-50 text-stone-800" : "text-stone-600"
