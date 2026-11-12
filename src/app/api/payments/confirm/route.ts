@@ -39,7 +39,7 @@ export const POST = handler(async (req: NextRequest) => {
   const raw = skipLeaderboard ? null : (receiptRaw ?? null);
   let verified;
   try {
-    verified = await verifyAndLockReceipt(raw, payment.amount, payment.createdAt);
+    verified = await verifyAndLockReceipt(raw, payment.amount, payment.createdAt, payment.billId);
   } catch (err) {
     // Soliq does not have the receipt yet (or is unreachable): the payment is
     // recorded now and the receipt is re-checked in the background.

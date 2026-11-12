@@ -4,6 +4,8 @@ import { env } from "@/config/env";
 import { collections } from "@/lib/db/mongo";
 import { sha256 } from "@/lib/security/crypto";
 import { HttpError } from "@/lib/security/http";
+import type { ObjectId } from "mongodb";
+import { checkRecipient, recipientsOf, rememberRecipient, type ReceiptRecipient } from "./recipient";
 
 export interface VerifiedReceipt {
   verifiedForLeaderboard: boolean;
@@ -17,6 +19,7 @@ interface SoliqReceiptData {
   kkmName?: string;
   cashTotal?: number;
   cardTotal?: number;
+  paymentDetails?: Array<{ comitentTin?: number | string | null; name?: string | null }>;
 }
 
 interface SoliqRequestSpec {
@@ -108,7 +111,7 @@ function buildSoliqRequestSpec(params: SoliqQueryParams): SoliqRequestSpec {
   };
 }
 
-function evaluateSoliqData(data: SoliqReceiptData, expectedAmountUzs: number): { kkmName: string } {
+export function evaluateSoliqData(data: SoliqReceiptData, expectedAmountUzs: number): { kkmName: string; recipients: ReceiptRecipient[] } {
   if (data.isRefund === 1) {
     throw new HttpError(422, "soliq_receipt_refunded");
   }
@@ -122,7 +125,7 @@ function evaluateSoliqData(data: SoliqReceiptData, expectedAmountUzs: number): {
     throw new HttpError(422, "receipt_amount_mismatch", undefined, { receipt: totalAmountUzs, expected: expectedAmountUzs });
   }
 
-  return { kkmName: data.kkmName ?? "OFD" };
+  return { kkmName: data.kkmName ?? "OFD", recipients: recipientsOf(data.paymentDetails) };
 }
 
 /**
@@ -131,9 +134,9 @@ function evaluateSoliqData(data: SoliqReceiptData, expectedAmountUzs: number): {
  * `SOLIQ_MODE=mock` (test hosting outside Uzbekistan only) skips the call and treats every
  * well-formed receipt link as a valid receipt for the exact donation amount.
  */
-async function verifyWithSoliqServer(params: SoliqQueryParams, expectedAmountUzs: number): Promise<{ kkmName: string }> {
+async function verifyWithSoliqServer(params: SoliqQueryParams, expectedAmountUzs: number): Promise<{ kkmName: string; recipients: ReceiptRecipient[] }> {
   if (env().SOLIQ_MODE === "mock") {
-    return { kkmName: "TEST MODE" };
+    return { kkmName: "TEST MODE", recipients: [] };
   }
 
   const spec = buildSoliqRequestSpec(params);
@@ -218,6 +221,7 @@ export async function verifyAndLockReceipt(
   rawInput: string | null | undefined,
   expectedAmountUzs: number,
   paymentCreatedAt?: Date,
+  billId?: ObjectId,
 ): Promise<VerifiedReceipt> {
   const trimmed = (rawInput ?? "").trim();
   if (!trimmed) {
@@ -249,6 +253,11 @@ export async function verifyAndLockReceipt(
 
   // 2. Live verification with Uzbekistan Tax Committee (new-ofd.soliq.uz)
   const soliqData = await verifyWithSoliqServer(parsed, expectedAmountUzs);
+  // 3. Paid to the right utility (tax id on the receipt), not just any receipt with a big enough total.
+  if (billId) {
+    await checkRecipient(billId, soliqData.recipients);
+    void rememberRecipient(billId, soliqData.recipients).catch((err: unknown) => console.warn("[receipt] rememberRecipient failed", err));
+  }
   const label = `OFD #${parsed.paymentNo} (${soliqData.kkmName})`.slice(0, 48);
 
   return {

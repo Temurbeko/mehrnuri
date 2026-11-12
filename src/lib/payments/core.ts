@@ -219,7 +219,7 @@ export async function attachReceipt(paymentId: ObjectId, raw: string): Promise<"
 
   let verified;
   try {
-    verified = await verifyAndLockReceipt(raw, p.amount, p.createdAt);
+    verified = await verifyAndLockReceipt(raw, p.amount, p.createdAt, p.billId);
   } catch (err) {
     if (!isRetryableReceiptError(err)) throw err;
     const tries = p.receiptPending?.raw === raw ? p.receiptPending.tries + 1 : 0;

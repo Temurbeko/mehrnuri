@@ -1,7 +1,8 @@
 import "server-only";
 import { MongoClient, type Collection, type Db } from "mongodb";
 import { env } from "@/config/env";
-import type { AccountDoc, BillDoc, CounterDoc, DonorDoc, PaymentDoc, RateLimitDoc, VerdictDoc } from "./models";
+import type { AccountDoc, BillDoc, CounterDoc,
+  SupplierTinDoc, DonorDoc, PaymentDoc, RateLimitDoc, VerdictDoc } from "./models";
 
 /**
  * Re-use one MongoClient per process (survives Next.js dev hot reloads).
@@ -83,6 +84,7 @@ export async function collections(): Promise<{
   verdicts: Collection<VerdictDoc>;
   accounts: Collection<AccountDoc>;
   counters: Collection<CounterDoc>;
+  supplierTins: Collection<SupplierTinDoc>;
 }> {
   const db = await getDb();
   return {
@@ -93,5 +95,6 @@ export async function collections(): Promise<{
     verdicts: db.collection<VerdictDoc>("verdicts"),
     accounts: db.collection<AccountDoc>("accounts"),
     counters: db.collection<CounterDoc>("counters"),
+    supplierTins: db.collection<SupplierTinDoc>("supplier_tins"),
   };
 }

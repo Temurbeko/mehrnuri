@@ -637,6 +637,7 @@ const uzLatn = {
     soliq_receipt_refunded: "Bu chek bekor qilingan (pul qaytarilgan).",
     soliq_unavailable: "Soliq sayti hozir javob bermayapti. Birozdan so'ng urinib ko'ring.",
     receipt_amount_mismatch: "Chekdagi summa yordam summasidan kam. Aynan shu to'lov chekini yuklang.",
+    receipt_wrong_recipient: "Bu chek boshqa xizmatga to'langan. Aynan shu oilaning kommunal to'lovi chekini yuklang.",
     duplicate_receipt: "Bu chek avval ishlatilgan. Har bir chek bir marta qabul qilinadi.",
     receipt_date_mismatch: "Bu chek boshqa kunga tegishli. Aynan shu to'lovning chekini yuklang.",
     payment_not_paid: "Bu to'lov hali tasdiqlanmagan.",

@@ -63,6 +63,8 @@ export interface BillDoc {
     at: Date | null;
   };
   ownerTokenHash?: string;
+  /** Utility tax id confirmed by an accepted Soliq receipt; later receipts must name it. */
+  supplierTin?: string;
   thanksReactions?: ReactionType[];
   ipHash: string;
   createdAt: Date;
@@ -113,6 +115,14 @@ export interface DonorDoc {
 }
 
 /** Atomic sequence counters (e.g. "bill_code" for MN-1001, MN-1002, ...). */
+/** A utility tax id seen on accepted receipts, with the requests (by utility type) it paid. */
+export interface SupplierTinDoc {
+  _id: string;
+  name?: string;
+  bills?: Partial<Record<UtilityType, string[]>>;
+  lastSeenAt: Date;
+}
+
 export interface CounterDoc {
   _id: string;
   seq: number;

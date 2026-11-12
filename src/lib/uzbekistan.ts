@@ -145,3 +145,12 @@ export function meterUnitFor(utility: UtilityType): "kWh" | "m³" | null {
       return null;
   }
 }
+
+/**
+ * Utility tax ids (TIN) confirmed from real Soliq receipts (paymentDetails[].comitentTin).
+ * Pure data; more are learned automatically (src/lib/payments/recipient.ts).
+ */
+export const KNOWN_SUPPLIER_TINS: Record<string, UtilityType[]> = {
+  // "Issiqquvvat Veolia" (Tashkent heating), receipt of 2026-11-12
+  "306866603": ["heating", "hot_water"],
+};
