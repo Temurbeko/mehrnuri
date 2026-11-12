@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { PRIVATE_METADATA } from "@/lib/seo";
 import Link from "next/link";
 import { Check, ChevronRight, Clock, Receipt } from "lucide-react";
 import { cookies } from "next/headers";
@@ -19,6 +21,8 @@ import { LOCALE_HTML_LANG } from "@/i18n/config";
 import { donorMonthImpact, ensureImpactCode, monthKeyOf, monthLabel, previousMonthKey, type MonthImpact } from "@/lib/impact";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = PRIVATE_METADATA;
 
 export default async function MePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

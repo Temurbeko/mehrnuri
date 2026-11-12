@@ -66,6 +66,10 @@ export function DonatePanel({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [storyOpen, setStoryOpen] = useState(false);
   const closeSheet = useCallback(() => setSheetOpen(false), []);
+  // Coming from the swipe feed ("?help=1"): the amount picker opens straight away.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("help") === "1") setSheetOpen(true);
+  }, []);
 
   /** Opens the share options (Telegram, WhatsApp, copy, the phone's own menu). */
   const [shareOpen, setShareOpen] = useState(false);

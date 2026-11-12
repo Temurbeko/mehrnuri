@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { publicPageMetadata, PRIVATE_METADATA } from "@/lib/seo";
 import { Heart, Trophy } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,6 +9,13 @@ import { topDonors } from "@/lib/donors/leaderboard";
 import type { PublicDonor } from "@/lib/domain";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const { seo } = getDictionary(locale);
+  return publicPageMetadata(locale, "/leaders", seo.leadersTitle, seo.leadersDescription);
+}
 
 export default async function LeadersPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

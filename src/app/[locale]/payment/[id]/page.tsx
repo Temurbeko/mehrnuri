@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { PRIVATE_METADATA } from "@/lib/seo";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isLocale } from "@/i18n/config";
@@ -14,6 +16,8 @@ import { PaymentResultClient } from "@/components/PaymentResultClient";
 import { paymentSignature } from "@/lib/payments/providers";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = PRIVATE_METADATA;
 
 export default async function PaymentResultPage({
   params,

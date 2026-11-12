@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
-import { LOCALES } from "@/i18n/config";
+import { LOCALES, LOCALE_HTML_LANG } from "@/i18n/config";
+import { SITE_URL } from "@/lib/seo";
 
-const BASE = (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+const BASE = SITE_URL;
 
 /** The public pages in every language, each pointing at its translations. */
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -15,7 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${BASE}/${l}${p.path}`,
       changeFrequency: p.changeFrequency,
       priority: p.priority,
-      alternates: { languages: Object.fromEntries(LOCALES.map((x) => [x, `${BASE}/${x}${p.path}`])) },
+      alternates: { languages: Object.fromEntries(LOCALES.map((x) => [LOCALE_HTML_LANG[x], `${BASE}/${x}${p.path}`])) },
     })),
   );
 }

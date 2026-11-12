@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { PRIVATE_METADATA } from "@/lib/seo";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -15,6 +17,8 @@ import { DonatePanel } from "@/components/DonatePanel";
 import { AppBar } from "@/components/AppBar";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = PRIVATE_METADATA;
 
 export default async function BillPage({
   params,

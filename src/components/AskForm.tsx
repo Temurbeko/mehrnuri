@@ -28,7 +28,7 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
   const [utilityType, setUtilityType] = useState<UtilityType>("electricity");
   const [region, setRegion] = useState<Region>("tashkent_city");
   const [district, setDistrict] = useState<string>(DISTRICTS_BY_REGION.tashkent_city[0]!.id);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [accountNumber, setAccountNumber] = useState<string>("");
 
   const [amountOwed, setAmountOwed] = useState("");
@@ -42,7 +42,6 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
   const [taken, setTaken] = useState<{ text: string; billId: string | null } | null>(null);
   const [textError, setTextError] = useState<{ field: "story" | "familyName"; message: string } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -74,49 +73,32 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
     return null;
   }
 
-  async function goNext() {
+  function goNext() {
     setError(null);
     setTaken(null);
-    if (step === 1) setStep(2);
-    else if (step === 2 && step2Valid) {
-      const problem = textProblem();
-      setTextError(problem);
-      if (problem) {
-        setShowExtra(true);
-        return;
-      }
-      // Catch an account that already has an open request before the family fills in the rest.
-      setChecking(true);
-      const res = await api<{ hasOpen?: boolean; openBillId?: string | null; blocked?: boolean }>(
-        `/api/bills/check?utilityType=${utilityType}&accountNumber=${accountDigits}`,
-      );
-      setChecking(false);
-      if (res.ok && res.data.blocked) return setTaken({ text: errorText("account_blocked", dict), billId: null });
-      if (res.ok && res.data.hasOpen) return setTaken({ text: dict.ask.alreadyOpen, billId: res.data.openBillId ?? null });
-      setStep(3);
-    }
+    setStep(2);
   }
 
   function goBack() {
     setError(null);
-    if (step === 3) setStep(2);
-    else if (step === 2) setStep(1);
+    setTaken(null);
+    setStep(1);
   }
 
-  const stepTitle = step === 1 ? dict.ask.step1Title : step === 2 ? dict.ask.step2Title : dict.ask.step3Title;
+  const stepTitle = step === 1 ? dict.ask.step1Title : dict.ask.step2Title;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (step !== 3) {
+    if (step !== 2) {
       goNext();
       return;
     }
     setError(null);
+    setTaken(null);
     const problem = textProblem();
     setTextError(problem);
     if (problem) {
       setShowExtra(true);
-      setStep(2);
       return;
     }
     const digits = accountNumber.replace(/[\s-]/g, "");
@@ -130,6 +112,18 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
       return;
     }
     setSubmitting(true);
+    // Catch an account that already has an open request before creating a second one.
+    const check = await api<{ hasOpen?: boolean; openBillId?: string | null; blocked?: boolean }>(
+      `/api/bills/check?utilityType=${utilityType}&accountNumber=${digits}`,
+    );
+    if (check.ok && check.data.blocked) {
+      setSubmitting(false);
+      return setTaken({ text: errorText("account_blocked", dict), billId: null });
+    }
+    if (check.ok && check.data.hasOpen) {
+      setSubmitting(false);
+      return setTaken({ text: dict.ask.alreadyOpen, billId: check.data.openBillId ?? null });
+    }
     const res = await api<{ id?: string; code?: string; reviewStatus?: string }>("/api/bills", {
       body: {
         utilityType,
@@ -217,14 +211,14 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
           <div className="flex min-h-10 items-center gap-3">
             <div className="ml-auto flex shrink-0 items-center gap-2">
               <div className="flex gap-1.5" aria-hidden="true">
-                {[1, 2, 3].map((n) => (
+                {[1, 2].map((n) => (
                   <span
                     key={n}
                     className={`h-1.5 rounded-full transition-all ${n === step ? "w-8 bg-amber-500" : n < step ? "w-4 bg-amber-500/50" : "w-4 bg-stone-300"}`}
                   />
                 ))}
               </div>
-              <span className="text-sm font-extrabold whitespace-nowrap text-stone-500">{fmt(dict.checkout.stepOf, { n: step })}</span>
+              <span className="text-sm font-extrabold whitespace-nowrap text-stone-500">{step}/2</span>
             </div>
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{stepTitle}</h1>
@@ -356,7 +350,7 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
           <button
             type="button"
             onClick={() => setShowExtra((v) => !v)}
-            className="flex min-h-10 w-full cursor-pointer items-center justify-between gap-2 text-sm font-extrabold text-stone-700 hover:text-stone-900"
+            className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 text-sm font-extrabold text-stone-700 hover:text-stone-900"
           >
             <span className="inline-flex items-center gap-1.5"><Plus size={18} aria-hidden="true" />{dict.ask.moreToggle}</span>
             <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-stone-600">
@@ -460,16 +454,6 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
                 )}
               </div>
             )}
-            <button type="button" onClick={goNext} disabled={!step2Valid || checking} className="btn-primary">
-              <span>{dict.common.next}</span>
-              <ArrowRight size={18} aria-hidden="true" />
-            </button>
-            {!step2Valid && <p className="text-center text-sm font-medium text-stone-500">{dict.ask.needAccountAmount}</p>}
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-4">
             <label
               className={`panel flex cursor-pointer items-start gap-3 text-sm font-medium transition-all active:scale-[0.99] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-amber-500/70 ${
                 consent ? "bg-amber-50 text-stone-800" : "text-stone-600"
@@ -499,10 +483,11 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
               </div>
             )}
 
-            <button type="submit" disabled={submitting || !consent} className="btn-primary">
+            <button type="submit" disabled={submitting || !consent || !step2Valid} className="btn-primary">
               <span>{submitting ? dict.ask.submitting : dict.ask.submit}</span>
               {!submitting && <ArrowRight size={18} aria-hidden="true" />}
             </button>
+            {!step2Valid && <p className="text-center text-sm font-medium text-stone-500">{dict.ask.needAccountAmount}</p>}
           </div>
         )}
         </div>

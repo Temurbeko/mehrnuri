@@ -168,10 +168,10 @@ export function HeroSlider({
             <BuildingArt className="-mr-1.5 -mb-1 h-[150px] w-[112px] shrink-0 min-[380px]:h-[168px] min-[380px]:w-[126px] md:h-[230px] md:w-[172px]" />
           </div>
           <div className="relative mt-5 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 min-[420px]:gap-2.5">
-            <a href="#feed" className="btn-primary min-w-0 px-4">
+            <Link href={`/${locale}/discover`} className="btn-primary min-w-0 px-4">
               <Heart size={20} aria-hidden="true" />
               {dict.home.wantHelp}
-            </a>
+            </Link>
             <Link href={`/${locale}/ask`} className="btn btn-glass min-w-0 px-4">
               <Home size={20} aria-hidden="true" />
               {dict.home.needHelp}

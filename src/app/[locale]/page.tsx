@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { SITE_URL, languageAlternates } from "@/lib/seo";
 import { isLocale } from "@/i18n/config";
 import { fmt, getDictionary } from "@/i18n";
 import { listOpenBills } from "@/lib/bills/service";
@@ -9,6 +11,7 @@ import { LiveFeed } from "@/components/LiveFeed";
 import { LiveTicker } from "@/components/LiveTicker";
 import { ClosedStrip } from "@/components/ClosedStrip";
 import { HeroSlider } from "@/components/HeroSlider";
+import { DiscoverTeaser, WisdomLine } from "@/components/DiscoverTeaser";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +23,13 @@ async function safe<T>(label: string, run: () => Promise<T>, fallback: T): Promi
     console.warn(`[home] ${label} not available:`, err);
     return fallback;
   }
+}
+
+/** Canonical + hreflang for the home page (title and description come from the locale layout). */
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  return { alternates: { canonical: `${SITE_URL}/${locale}`, languages: languageAlternates("") } };
 }
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
@@ -42,6 +52,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <div className="min-w-0">
       <HeroSlider locale={locale} dict={dict} waiting={waiting} weekCount={weekCount} closed={closed} />
 
+      <DiscoverTeaser types={bills.map((b) => b.utilityType)} locale={locale} dict={dict} />
+
       {helps.length > 0 && <LiveTicker helps={helps} dict={dict} />}
 
       <div className="mt-8">
@@ -49,6 +61,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </div>
 
       <ClosedStrip items={closed} dict={dict} />
+
+      <WisdomLine lines={dict.wisdom} className="mt-8" />
 
       <p className="mt-8 text-center text-[13px] text-[var(--ink-soft)]">
         {dict.feed.footNote1}

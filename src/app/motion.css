@@ -259,3 +259,25 @@
   .hs-active .ga-flame, .hs-active .ga-steam, .hs-active .wa-handle, .hs-active .wa-stream, .hs-active .wa-level, .hs-active .wa-drop { animation: none; }
   .hs-active .ga-steam { opacity: 0.9; }
 }
+
+/* ---- Swipe feed (DiscoverFeed): one request per screen, native scroll-snap. ---- */
+.dv-track { height: 100dvh; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
+.dv-track::-webkit-scrollbar { display: none; }
+.dv-slide { height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; }
+.dv-story { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; overflow: hidden; }
+@media (max-height: 680px) { .dv-story { -webkit-line-clamp: 4; font-size: 19px; } }
+.dv-arrow { display: flex; height: 48px; width: 48px; align-items: center; justify-content: center; border-radius: 9999px; background: rgba(255, 255, 255, 0.12); color: #f6efe3; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
+.dv-arrow:hover { background: rgba(255, 255, 255, 0.2); }
+.dv-arrow:disabled { opacity: 0.3; cursor: default; }
+.dv-hint { margin: 10px auto 0; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 800; color: #cfc6b8; opacity: 0.55; cursor: pointer; }
+.dv-hint-on { opacity: 1; animation: dv-nudge 1.6s ease-in-out infinite; }
+@keyframes dv-nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* Home teaser: a fanned stack of request cards. */
+.dt-card { background: #2c3254; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08); transform: translateX(calc(var(--i) * 7px)) rotate(calc(var(--i) * 6deg)) scale(calc(1 - var(--i) * 0.06)); transform-origin: 50% 100%; transition: transform 0.3s ease; }
+a:hover .dt-card { transform: translateX(calc(var(--i) * 11px)) rotate(calc(var(--i) * 9deg)) scale(calc(1 - var(--i) * 0.06)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dv-hint-on { animation: none; }
+  .dt-card { transition: none; }
+}

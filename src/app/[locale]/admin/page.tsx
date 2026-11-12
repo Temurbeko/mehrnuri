@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { PRIVATE_METADATA } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
@@ -6,6 +8,8 @@ import { adminQueues, type AdminBill } from "@/lib/admin/service";
 import { AdminClient } from "@/components/AdminClient";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = PRIVATE_METADATA;
 
 export default async function AdminPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { PRIVATE_METADATA } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
@@ -10,6 +12,8 @@ import { paymentSignature } from "@/lib/payments/providers";
 import { DirectPaymentClient } from "@/components/DirectPaymentClient";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = PRIVATE_METADATA;
 
 export default async function DirectPayPage({
   params,

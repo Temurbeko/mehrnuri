@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
+import { publicPageMetadata, PRIVATE_METADATA } from "@/lib/seo";
 import { ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n";
 import { AskForm } from "@/components/AskForm";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const { seo } = getDictionary(locale);
+  return publicPageMetadata(locale, "/ask", seo.askTitle, seo.askDescription);
+}
 
 export default async function AskPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

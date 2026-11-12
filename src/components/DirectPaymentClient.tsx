@@ -59,7 +59,7 @@ export function DirectPaymentClient({
   const [scanningQr, setScanningQr] = useState(false);
   const [qrStatus, setQrStatus] = useState<"idle" | "extracted" | "not_found">("idle");
 
-  const [step, setStep] = useState<"check" | "pay" | "receipt">(billId ? "check" : "pay");
+  const [step, setStep] = useState<"pay" | "receipt">("pay");
   const [verdictBusy, setVerdictBusy] = useState<VerdictKind | null>(null);
   const [amountOpen, setAmountOpen] = useState(false);
   const [seenAmount, setSeenAmount] = useState("");
@@ -162,14 +162,13 @@ export function DirectPaymentClient({
 
   const f = dict.flow;
   const hasCheck = billId !== null;
-  const stepNo = step === "check" ? 1 : step === "pay" ? 2 : 3;
-  const stepTitle = step === "check" ? f.stepCheck : step === "pay" ? f.stepPay : f.stepReceipt;
+  const stepNo = step === "pay" ? 1 : 2;
+  const stepTitle = step === "pay" ? f.stepPay : f.stepReceipt;
   const billHref = billId ? `/${locale}/bill/${billId}` : `/${locale}`;
 
   function goBack() {
     setError(null);
     if (step === "receipt") setStep("pay");
-    else if (step === "pay" && hasCheck) setStep("check");
     else router.back();
   }
 
@@ -208,6 +207,7 @@ export function DirectPaymentClient({
     }
     setVerdictBusy(null);
     setReportSaved(kind === "amount_differs");
+    setAmountOpen(false);
     setStep("pay");
   }
 
@@ -250,12 +250,6 @@ export function DirectPaymentClient({
     );
   }
 
-  const answers: { kind: VerdictKind; label: string; Icon: LucideIcon; tile: string }[] = [
-    { kind: "match", label: f.yes, Icon: Check, tile: "bg-[rgba(46,154,103,0.13)] text-[var(--hope)]" },
-    { kind: "amount_differs", label: f.differs, Icon: TriangleAlert, tile: "bg-[rgba(246,166,35,0.18)] text-[var(--lamp-deep)]" },
-    { kind: "no_debt", label: f.noDebt, Icon: Ban, tile: "bg-[var(--tone)] text-[var(--ink-soft)]" },
-  ];
-
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4 pb-2">
       {/* Compact app-style header: back, title, progress. */}
@@ -273,45 +267,31 @@ export function DirectPaymentClient({
         <span className="shrink-0 text-sm font-extrabold whitespace-nowrap text-[var(--ink-soft)]">{fmt(t.stepOf, { n: stepNo })}</span>
       </div>
       <div className="flex gap-1.5" aria-hidden="true">
-        {[1, 2, 3].map((n) => (
+        {[1, 2].map((n) => (
           <span key={n} className={`h-1 flex-1 rounded-full transition-colors ${n <= stepNo ? "bg-[var(--lamp)]" : "bg-[var(--tone)]"}`} />
         ))}
       </div>
 
-      {step === "check" && (
-        <div key="check" className="flow-step flex flex-col gap-3.5">
-          <ul className="list">
-            <li>
-              <button type="button" onClick={() => copyValue(accountNumber, "account")} className="list-row-tap py-3">
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium text-[var(--ink-soft)]">
-                    {UTILITY_ICONS[utilityType]} {dict.utility[utilityType]} · {dict.bill.account}
-                  </span>
-                  <span ref={accountRef} className="block text-[22px] leading-tight font-extrabold tracking-wide break-all text-[var(--ink)] tabular-nums select-all">
-                    {accountNumber}
-                  </span>
-                </span>
-                <CopyMark done={copiedField === "account"} />
-              </button>
-            </li>
-            {area && (
-              <li className="list-row justify-between gap-4 py-3">
-                <span className="shrink-0 text-[13px] font-medium text-[var(--ink-soft)]">{dict.ux2.area}</span>
-                <span className="min-w-0 text-right text-[15px] font-bold break-words text-[var(--ink)]">{area}</span>
-              </li>
-            )}
-            <li className="list-row">
-              <span className="min-w-0 flex-1 text-[13px] font-medium text-[var(--ink-soft)]">{t.amount}</span>
-              <span ref={amountRef} className="text-lg font-extrabold whitespace-nowrap text-[var(--ink)] select-all">{formatMoney(amount, dict)}</span>
-            </li>
-          </ul>
-          {copyFailed && (
-            <p role="alert" className="rounded-2xl bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-900">{dict.common.copyFailed}</p>
+      {step === "pay" && (
+        <div key="pay" className="flow-step flex flex-col gap-4">
+          {reportSaved && (
+            <p className="rounded-2xl bg-[rgba(246,166,35,0.13)] px-4 py-2.5 text-sm font-bold text-[var(--ink)]">{f.reportSaved}</p>
           )}
-
-          {appTiles(false)}
-          <p className="px-0.5 text-[14px] leading-snug text-[var(--ink-soft)]">{f.appsHint}</p>
-
+          <div className="pt-4 pb-2 text-center">
+            <div className="text-[30px] leading-tight font-extrabold text-balance text-[var(--ink)]">
+              {fmt(f.payBig, { amount: formatMoney(amount, dict) })}
+            </div>
+            <button type="button" onClick={() => copyValue(accountNumber, "account")} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--tone)] px-4 py-2 text-[15px] font-extrabold text-[var(--ink)] tabular-nums">
+              <span ref={accountRef}>{accountNumber}</span>
+              {copiedField === "account" ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+            </button>
+            {area && <p className="mt-2 text-[13px] font-semibold break-words text-[var(--ink-soft)]">{area}</p>}
+          </div>
+          {appTiles(true)}
+          <p className=" flex items-start gap-2.5 rounded-2xl bg-[rgba(46,154,103,0.1)] px-3.5 py-3 text-left text-[13.5px] leading-snug font-semibold text-[#1f6b47]">
+              <ShieldCheck size={18} aria-hidden="true" className="mt-px shrink-0 text-[var(--hope)]" />
+              <span className="min-w-0">{dict.app.directNote}</span>
+            </p>
           {!isMobile && qrMatrix.length > 0 && (
             <div>
               <button type="button" onClick={() => setShowQr((v) => !v)} className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--ink-soft)] underline-offset-2 hover:underline">
@@ -332,8 +312,9 @@ export function DirectPaymentClient({
             </div>
           )}
 
-          <h2 className="mt-1 px-0.5 text-[17px] font-extrabold text-[var(--ink)]">{f.question}</h2>
-          {amountOpen ? (
+
+          {hasCheck && !reportSaved && (
+            amountOpen ? (
             <div className="surface space-y-2.5 p-4">
               <label className="label" htmlFor="seenAmount">{dict.check.seenLabel}</label>
               <input
@@ -356,57 +337,32 @@ export function DirectPaymentClient({
                 </button>
               </div>
             </div>
-          ) : (
-            <ul className="list">
-              {answers.map(({ kind, label, Icon, tile }) => (
-                <li key={kind}>
-                  <button
-                    type="button"
-                    disabled={verdictBusy !== null}
-                    onClick={() => (kind === "amount_differs" ? setAmountOpen(true) : void answer(kind))}
-                    className="list-row-tap min-h-[60px]"
-                  >
-                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tile}`}>
-                      <Icon size={20} aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0 flex-1 text-left text-[17px] font-extrabold text-[var(--ink)]">{label}</span>
-                    <ChevronRight size={20} aria-hidden="true" className="shrink-0 text-[var(--ink-soft)]" />
+            ) : (
+              <div>
+                <p className="mb-2 px-0.5 text-[13.5px] font-bold text-[var(--ink-soft)]">{f.question}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" disabled={verdictBusy !== null} onClick={() => setAmountOpen(true)} className="btn-tonal min-h-12 w-full text-[14.5px]">
+                    <TriangleAlert size={17} aria-hidden="true" className="shrink-0 text-[var(--lamp-deep)]" />
+                    <span className="min-w-0 truncate">{f.differs}</span>
                   </button>
-                </li>
-              ))}
-            </ul>
+                  <button type="button" disabled={verdictBusy !== null} onClick={() => void answer("no_debt")} className="btn-tonal min-h-12 w-full text-[14.5px]">
+                    <Ban size={17} aria-hidden="true" className="shrink-0 text-[var(--ink-soft)]" />
+                    <span className="min-w-0 truncate">{f.noDebt}</span>
+                  </button>
+                </div>
+              </div>
+            )
           )}
-
-          <div className="text-center">
-            <button type="button" disabled={verdictBusy !== null} onClick={() => setStep("pay")} className="text-sm font-bold text-[var(--ink-soft)] underline underline-offset-2">
-              {f.continueUnchecked}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === "pay" && (
-        <div key="pay" className="flow-step flex flex-col gap-4">
-          {reportSaved && (
-            <p className="rounded-2xl bg-[rgba(246,166,35,0.13)] px-4 py-2.5 text-sm font-bold text-[var(--ink)]">{f.reportSaved}</p>
-          )}
-          <div className="pt-4 pb-2 text-center">
-            <div className="text-[30px] leading-tight font-extrabold text-balance text-[var(--ink)]">
-              {fmt(f.payBig, { amount: formatMoney(amount, dict) })}
-            </div>
-            <button type="button" onClick={() => copyValue(accountNumber, "account")} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--tone)] px-4 py-2 text-[15px] font-extrabold text-[var(--ink)] tabular-nums">
-              <span ref={accountRef}>{accountNumber}</span>
-              {copiedField === "account" ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
-            </button>
-            {area && <p className="mt-2 text-[13px] font-semibold break-words text-[var(--ink-soft)]">{area}</p>}
-          </div>
-          {appTiles(true)}
-          <p className=" flex items-start gap-2.5 rounded-2xl bg-[rgba(46,154,103,0.1)] px-3.5 py-3 text-left text-[13.5px] leading-snug font-semibold text-[#1f6b47]">
-              <ShieldCheck size={18} aria-hidden="true" className="mt-px shrink-0 text-[var(--hope)]" />
-              <span className="min-w-0">{dict.app.directNote}</span>
-            </p>
           <div className="sticky bottom-0 z-30 -mx-4 mt-auto space-y-1 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)] to-transparent px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]">
-            <button type="button" onClick={() => setStep("receipt")} className="btn-primary w-full text-lg">
+            <button
+              type="button"
+              onClick={() => {
+                // Paying means the donor saw the debt in their app: that is the "it matches" answer.
+                if (billId && !reportSaved) void api(`/api/bills/${billId}/verdict`, { body: { kind: "match", seenAmount: null } });
+                setStep("receipt");
+              }}
+              className="btn-primary w-full text-lg"
+            >
               {f.paid}
               <ArrowRight size={20} aria-hidden="true" />
             </button>

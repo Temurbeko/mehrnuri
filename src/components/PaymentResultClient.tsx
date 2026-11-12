@@ -203,6 +203,9 @@ function PaidScreen({
             </Link>
           </div>
         )}
+        <p className="mx-auto mt-4 max-w-[30ch] text-center text-[14.5px] leading-snug font-bold text-balance text-[var(--ink-soft)]">
+          “{dict.wisdom[amount % dict.wisdom.length]}”
+        </p>
       </ResultScreen>
 
       <BottomSheet open={detailsOpen} onClose={closeDetails} labelledBy="details-title">
