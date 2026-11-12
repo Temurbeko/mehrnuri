@@ -114,6 +114,8 @@ export interface PublicBill {
   story: string | null;
   amountOwed: number;
   paidAmount: number;
+  /** Part of paidAmount the family reported as paid outside the app. */
+  familyPaid: number;
   /** Amount still open for new donations (owed - paid - currently reserved). */
   available: number;
   fundingStatus: FundingStatus;

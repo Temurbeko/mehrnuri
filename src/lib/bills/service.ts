@@ -47,6 +47,7 @@ export function toPublicBill(b: BillDoc): PublicBill {
     story: b.story,
     amountOwed: b.amountOwed,
     paidAmount: b.paidAmount,
+    familyPaid: b.familyPaid ?? 0,
     available,
     fundingStatus: fundingStatusOf(b.paidAmount, b.amountOwed),
     verified: b.verification?.verified ?? false,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Heart, Home, Lightbulb, Minus, Plus, Share2, ShieldCheck, Smartphone } from "lucide-react";
+import { Check, Copy, Heart, Home, Lightbulb, Minus, Plus, Share2, ShieldCheck, Smartphone, TrendingDown } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { copyText } from "@/lib/clipboard";
 import { digitsOnly, groupDigits, timeAgo } from "@/lib/format";
@@ -76,6 +76,30 @@ export function DonatePanel({
     setShareOpen(true);
   }
   const [error, setError] = useState<string | null>(null);
+
+  /** "Qarzim kamaydi": the owner lowers the debt shown (paid outside the app). */
+  const [familyOpen, setFamilyOpen] = useState(false);
+  const closeFamily = useCallback(() => setFamilyOpen(false), []);
+  const [familyInput, setFamilyInput] = useState("");
+  const [familySending, setFamilySending] = useState(false);
+  const [familyError, setFamilyError] = useState<string | null>(null);
+  const [familySaved, setFamilySaved] = useState(false);
+  async function sendRemaining(value: number) {
+    setFamilyError(null);
+    setFamilySending(true);
+    const res = await api<{ bill?: PublicBill }>(`/api/bills/${bill.id}/remaining`, { body: { remaining: value } });
+    setFamilySending(false);
+    if (!res.ok) {
+      setFamilyError(errorText(res.data.error, dict, res.data.details));
+      return;
+    }
+    if (res.data.bill) setBill(res.data.bill);
+    setFamilyOpen(false);
+    setFamilyInput("");
+    setFamilySaved(true);
+    window.setTimeout(() => setFamilySaved(false), 4000);
+    router.refresh();
+  }
 
   useEffect(() => {
     const es = new EventSource("/api/bills/stream");
@@ -225,7 +249,56 @@ export function DonatePanel({
             <Share2 size={18} aria-hidden="true" />
             {shared ? dict.bill.linkCopied : dict.bill.share}
           </button>
+          {familySaved && (
+            <p role="status" className="text-center text-[14px] font-bold text-[var(--hope)]">
+              {dict.familyUpdate.saved}
+            </p>
+          )}
+          {bill.fundingStatus !== "fully_paid" && bill.payoutStatus !== "paid_out" && (
+            <button type="button" onClick={() => setFamilyOpen(true)} className="btn-tonal w-full">
+              <TrendingDown size={18} aria-hidden="true" />
+              {dict.familyUpdate.button}
+            </button>
+          )}
         </section>
+      )}
+
+      {isOwner && (
+        <BottomSheet open={familyOpen} onClose={closeFamily} labelledBy="family-update-title">
+          <h2 id="family-update-title" className="mb-1 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">
+            {dict.familyUpdate.title}
+          </h2>
+          <p className="mb-4 text-[14px] text-[var(--ink-soft)]">{dict.familyUpdate.text}</p>
+          <label htmlFor="family-remaining" className="mb-1.5 block text-[13px] font-extrabold text-[var(--ink-soft)]">
+            {dict.familyUpdate.label}
+          </label>
+          <input
+            id="family-remaining"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={groupDigits(familyInput)}
+            onChange={(e) => setFamilyInput(digitsOnly(e.target.value, 9))}
+            className="w-full rounded-[16px] border-0 bg-[var(--paper)] px-4 py-3 text-[22px] font-extrabold tracking-tight text-[var(--ink)] outline-none focus:ring-[3px] focus:ring-[var(--lamp)]"
+          />
+          {familyError && (
+            <div role="alert" className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-700">
+              {familyError}
+            </div>
+          )}
+          <button
+            type="button"
+            disabled={familyInput === "" || familySending}
+            onClick={() => void sendRemaining(Number(familyInput))}
+            className="btn-primary mt-4 w-full"
+          >
+            {dict.familyUpdate.save}
+          </button>
+          <button type="button" disabled={familySending} onClick={() => void sendRemaining(0)} className="btn-ghost mt-2 w-full">
+            {dict.familyUpdate.allPaid}
+          </button>
+          <p className="mt-1.5 text-center text-[12.5px] text-[var(--ink-soft)]">{dict.familyUpdate.allPaidNote}</p>
+        </BottomSheet>
       )}
 
       {/* One compact summary card: what is asked, what is left, who helps. */}
@@ -234,6 +307,12 @@ export function DonatePanel({
           <span aria-hidden="true" className="lamp-dot" />
           <span className="min-w-0 truncate">{dict.ux.asking}</span>
         </p>
+
+        {bill.familyPaid > 0 && (
+          <p className="text-[13px] text-[var(--ink-soft)]">
+            {fmt(dict.familyUpdate.publicNote, { amount: formatMoney(bill.familyPaid, dict) })}
+          </p>
+        )}
 
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">

@@ -95,6 +95,8 @@ export const verdictSchema = z
   })
   .transform((v) => ({ ...v, seenAmount: v.kind === "amount_differs" ? v.seenAmount : null }));
 
+export const remainingSchema = z.object({ remaining: z.number().int().min(0).max(100_000_000) });
+
 export const objectIdSchema = z.string().regex(/^[a-f0-9]{24}$/);
 
 export const adminLoginSchema = z.object({ password: z.string().min(1).max(200) });

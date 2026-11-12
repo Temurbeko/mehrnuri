@@ -44,7 +44,7 @@ export async function adminQueues(): Promise<{ reported: AdminBill[]; pending: A
     bills.find({ reviewStatus: "flagged" }).sort({ updatedAt: -1 }).limit(100).toArray(),
     bills.find({ reviewStatus: "pending_review" }).sort({ createdAt: 1 }).limit(100).toArray(),
     bills
-      .find({ reviewStatus: "approved", "payout.status": "not_paid_out", $expr: { $gte: ["$paidAmount", "$amountOwed"] } })
+      .find({ reviewStatus: "approved", "payout.status": "not_paid_out", familyPaid: { $not: { $gt: 0 } }, $expr: { $gte: ["$paidAmount", "$amountOwed"] } })
       .sort({ updatedAt: 1 })
       .limit(100)
       .toArray(),
@@ -105,7 +105,7 @@ export async function rejectBill(id: ObjectId, reason: string, blockAccount = fa
 export async function markPaidOut(id: ObjectId, reference: string): Promise<void> {
   const { bills } = await collections();
   const r = await bills.updateOne(
-    { _id: id, reviewStatus: "approved", "payout.status": "not_paid_out", $expr: { $gte: ["$paidAmount", "$amountOwed"] } },
+    { _id: id, reviewStatus: "approved", "payout.status": "not_paid_out", familyPaid: { $not: { $gt: 0 } }, $expr: { $gte: ["$paidAmount", "$amountOwed"] } },
     { $set: { payout: { status: "paid_out", reference, at: new Date() }, isOpen: false, updatedAt: new Date() } },
   );
   if (r.matchedCount === 0) throw new HttpError(409, "invalid_state");

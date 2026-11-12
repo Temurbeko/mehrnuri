@@ -43,6 +43,9 @@ export interface BillDoc {
   };
   /** When the bill became fully paid. */
   fundedAt?: Date | null;
+  /** Sum the family reported as paid outside the app (no leaderboard credit, no trust effect). */
+  familyPaid?: number;
+  familyUpdatedAt?: Date | null;
   /** Auto-close date: utility debt is only current for about a month. */
   expiresAt?: Date | null;
   verification: {
