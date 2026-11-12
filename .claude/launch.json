@@ -2,15 +2,31 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "Run everything",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "up"
+      ],
+      "port": 3000,
+      "autoPort": false
+    },
+    {
       "name": "mehrnuri-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
     },
     {
       "name": "mehrnuri-local",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:local"],
+      "runtimeArgs": [
+        "run",
+        "dev:local"
+      ],
       "port": 3000
     }
   ]

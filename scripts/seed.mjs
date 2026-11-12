@@ -1,8 +1,65 @@
 import { pathToFileURL } from "node:url";
+import dns from "node:dns";
 import { MongoClient, ObjectId } from "mongodb";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
 const dbName = process.env.MONGODB_DB || "mehrnuri";
+// Cloud (mongodb+srv) URIs need an SRV lookup, which some Windows resolvers refuse.
+if (uri.startsWith("mongodb+srv:")) dns.setServers(["1.1.1.1", "8.8.8.8"]);
+
+
+/**
+ * The owner's real Olmazor utility accounts, for end-to-end tests (paying a real
+ * small amount in Click/Payme and checking the receipt). Each run makes sure every
+ * one of them has an OPEN request, on any database (local or the test cloud DB).
+ */
+const TEST_ACCOUNTS = [
+  { utilityType: "waste", accountNumber: "101040110778", supplier: "«Maxsustrans» DUK", amount: 30_000 },
+  { utilityType: "electricity", accountNumber: "1281318", supplier: "«Hududiy elektr tarmoqlari» AJ (HET)", amount: 120_000 },
+  { utilityType: "gas", accountNumber: "1008025187", supplier: "«Hududgazta'minot» AJ", amount: 90_000 },
+  { utilityType: "water", accountNumber: "2628018238", supplier: "«Toshkent shahar suv ta'minoti» MChJ", amount: 40_000 },
+  { utilityType: "heating", accountNumber: "08000309282", supplier: "«Veolia Energy Tashkent» MChJ XK", amount: 250_000 },
+];
+
+export async function ensureTestAccounts(db) {
+  const bills = db.collection("bills");
+  const now = new Date();
+  let added = 0;
+  for (const a of TEST_ACCOUNTS) {
+    const open = await bills.findOne({ utilityType: a.utilityType, accountNumber: a.accountNumber, isOpen: true }, { projection: { _id: 1 } });
+    if (open) continue;
+    const _id = new ObjectId();
+    await bills.insertOne({
+      _id,
+      code: `MN-T${_id.toHexString().slice(-5).toUpperCase()}`,
+      utilityType: a.utilityType,
+      region: "tashkent_city",
+      district: "olmazor",
+      soato: "1726280",
+      supplier: a.supplier,
+      paymentPurpose: "main",
+      meterReading: null,
+      accountNumber: a.accountNumber,
+      familyName: null,
+      story: "Test arizasi: haqiqiy hisob raqam, kichik summa bilan to'lab, chekni tekshirish uchun.",
+      amountOwed: a.amount,
+      paidAmount: 0,
+      reservedAmount: 0,
+      isOpen: true,
+      reviewStatus: "approved",
+      trust: { level: "new", matchVotes: 0, mismatchVotes: 0, lastMismatch: null },
+      expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+      rejectReason: null,
+      verification: { provider: "manual", verified: false, holderMasked: null, addressMasked: null, verifiedDebt: null, checkedAt: now },
+      payout: { status: "not_paid_out", reference: null, at: null },
+      ipHash: "seed",
+      createdAt: now,
+      updatedAt: now,
+    });
+    added++;
+  }
+  console.log(`[seed] Test accounts: ${added} new open request(s), ${TEST_ACCOUNTS.length - added} already open.`);
+}
 
 export async function seedDatabase(clientUri = uri, databaseName = dbName, forceReplace = false) {
   const client = new MongoClient(clientUri);
@@ -10,6 +67,8 @@ export async function seedDatabase(clientUri = uri, databaseName = dbName, force
   const db = client.db(databaseName);
   const bills = db.collection("bills");
   const donors = db.collection("donors");
+
+  await ensureTestAccounts(db);
 
   if (forceReplace) {
     await bills.deleteMany({});

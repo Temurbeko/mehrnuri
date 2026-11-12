@@ -10,7 +10,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "seed:remote": "node --env-file=.env.local scripts/seed.mjs",
+    "up": "node scripts/up.mjs"
   },
   "dependencies": {
     "jsqr": "^1.4.0",
