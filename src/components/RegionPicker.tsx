@@ -52,7 +52,7 @@ export function RegionPicker({
           setQuery("");
           setOpen(true);
         }}
-        className="mb-3 flex min-h-[58px] w-full cursor-pointer items-center gap-3 rounded-[18px] bg-white py-2 pr-3.5 pl-2.5 text-left text-[var(--ink)] shadow-[var(--lift)] transition active:scale-[0.99]"
+        className="flex min-h-[52px] w-full cursor-pointer items-center gap-3 rounded-[18px] bg-white py-2 pr-3.5 pl-2.5 text-left text-[var(--ink)] shadow-[var(--lift)] transition active:scale-[0.99]"
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(246,166,35,0.15)] text-[var(--lamp-deep)]">
           <MapPin size={20} aria-hidden="true" />

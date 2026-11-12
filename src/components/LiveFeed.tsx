@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowDownUp, Check, Sparkles } from "lucide-react";
+import { ArrowDownUp, Check, Search, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { UTILITY_ICONS, UTILITY_TYPES, type PublicBill, type Region, type UtilityType } from "@/lib/domain";
 import type { Locale } from "@/i18n/config";
 import { fmt, type Dictionary } from "@/i18n";
 import { BillCard } from "./BillCard";
 import { RegionPicker } from "./RegionPicker";
+import { findDistrict } from "@/lib/uzbekistan";
 import { BottomSheet } from "./BottomSheet";
 
 const SORTS = ["oldest", "newest", "least", "largest"] as const;
@@ -32,11 +33,12 @@ export function LiveFeed({
   const [sort, setSort] = useState<Sort>("oldest");
   const [visible, setVisible] = useState(PAGE);
   const [sortOpen, setSortOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   // Back to the first page whenever the list is filtered or re-sorted.
   useEffect(() => {
     setVisible(PAGE);
-  }, [utilityFilter, regionFilter, sort]);
+  }, [utilityFilter, regionFilter, sort, query]);
   const closeSort = useCallback(() => setSortOpen(false), []);
 
   useEffect(() => {
@@ -82,11 +84,26 @@ export function LiveFeed({
     return () => es.close();
   }, []);
 
+  // Search: request code, account number, district/region, utility, the family's own words.
+  const norm = (v: string) => v.toLowerCase().replace(/[`'ʻʼ‘’]/g, "").replace(/\s+/g, " ").trim();
+  const q = norm(query);
+  const qDigits = query.replace(/\D/g, "");
   const filtered = bills.filter((b) => {
     if (utilityFilter !== "all" && b.utilityType !== utilityFilter) return false;
     if (regionFilter !== "all" && b.region !== regionFilter) return false;
-    return true;
+    if (!q) return true;
+    if (qDigits.length >= 3 && b.accountNumber.includes(qDigits)) return true;
+    const hay = norm(
+      [b.code, dict.districts[findDistrict(b.region, b.district).id], dict.region[b.region], dict.utility[b.utilityType], dict.utilityBill[b.utilityType], b.story ?? "", b.familyName ?? ""].join(" "),
+    );
+    return q.split(" ").every((word) => hay.includes(word));
   });
+  const filtersOn = q !== "" || utilityFilter !== "all" || regionFilter !== "all";
+  function resetFilters() {
+    setQuery("");
+    setUtilityFilter("all");
+    setRegionFilter("all");
+  }
 
   const left = (b: PublicBill) => Math.max(0, b.amountOwed - b.paidAmount);
   const created = (b: PublicBill) => new Date(b.createdAt).getTime();
@@ -107,24 +124,51 @@ export function LiveFeed({
 
   return (
     <section id="feed" className="min-w-0 scroll-mt-20">
-      <h2 className="min-w-0 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">{dict.home.feedTitle}</h2>
-      <div className="mt-1 mb-4 flex items-center justify-between gap-3">
-        <span className="min-w-0 truncate text-[13px] font-bold text-[var(--ink-soft)]">
+      <div className="flex items-end justify-between gap-3">
+        <h2 className="min-w-0 text-[22px] font-extrabold tracking-tight text-[var(--ink)]">{dict.home.feedTitle}</h2>
+        <span className="shrink-0 pb-1 text-[13px] font-bold whitespace-nowrap text-[var(--ink-soft)]">
           {fmt(dict.feed.familiesCount, { count: filtered.length })}
         </span>
-        <button
-          type="button"
-          onClick={() => setSortOpen(true)}
-          aria-label={dict.ux.sortLabel}
-          aria-haspopup="dialog"
-          className="chip max-w-[60%] shrink-0 cursor-pointer"
-        >
-          <ArrowDownUp size={15} aria-hidden="true" className="shrink-0" />
-          <span className="min-w-0 truncate">{sortLabels[sort]}</span>
-        </button>
       </div>
 
-      <RegionPicker value={regionFilter} onChange={setRegionFilter} counts={regionCounts} total={totalOpen} dict={dict} />
+      {/* Find a request: search, where, in what order. One row on desktop. */}
+      <div className="mt-3 mb-3 grid min-w-0 gap-2.5 md:grid-cols-[minmax(0,1fr)_minmax(0,300px)]">
+        <div className="flex min-w-0 gap-2">
+          <label className="search-field min-w-0 flex-1">
+            <Search size={19} aria-hidden="true" className="shrink-0 text-[var(--ink-soft)]" />
+            <input
+              type="search"
+              enterKeyHint="search"
+              autoComplete="off"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={dict.feed.searchPlaceholder}
+              aria-label={dict.feed.searchPlaceholder}
+            />
+            {query !== "" && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label={dict.feed.searchClear}
+                className="-mr-1.5 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--ink-soft)] active:bg-[var(--tone)]"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            )}
+          </label>
+          <button
+            type="button"
+            onClick={() => setSortOpen(true)}
+            aria-label={`${dict.ux.sortLabel}: ${sortLabels[sort]}`}
+            aria-haspopup="dialog"
+            title={sortLabels[sort]}
+            className="flex h-[52px] w-[52px] shrink-0 cursor-pointer items-center justify-center rounded-[18px] bg-white text-[var(--ink)] shadow-[var(--lift)] transition active:scale-95"
+          >
+            <ArrowDownUp size={19} aria-hidden="true" />
+          </button>
+        </div>
+        <RegionPicker value={regionFilter} onChange={setRegionFilter} counts={regionCounts} total={totalOpen} dict={dict} />
+      </div>
 
       <div className="relative">
         <div
@@ -162,7 +206,12 @@ export function LiveFeed({
       {filtered.length === 0 ? (
         <div className="card mt-4 space-y-2 py-12 text-center">
           <Sparkles size={32} aria-hidden="true" className="mx-auto text-amber-500" />
-          <p className="text-sm font-bold text-stone-600">{dict.home.empty}</p>
+          <p className="mx-auto max-w-[32ch] px-4 text-sm font-bold text-stone-600">{filtersOn ? dict.feed.noResults : dict.home.empty}</p>
+          {filtersOn && (
+            <button type="button" onClick={resetFilters} className="btn-tonal mx-auto mt-2 w-auto px-5">
+              {dict.feed.resetFilters}
+            </button>
+          )}
         </div>
       ) : (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">

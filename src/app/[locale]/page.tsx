@@ -11,6 +11,7 @@ import { LiveFeed } from "@/components/LiveFeed";
 import { LiveTicker } from "@/components/LiveTicker";
 import { ClosedStrip } from "@/components/ClosedStrip";
 import { HeroSlider } from "@/components/HeroSlider";
+import { spotlightOrder } from "@/lib/bills/spotlight";
 import { DiscoverTeaser, WisdomLine } from "@/components/DiscoverTeaser";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <div className="min-w-0">
       <HeroSlider locale={locale} dict={dict} waiting={waiting} weekCount={weekCount} closed={closed} />
 
-      <DiscoverTeaser types={bills.map((b) => b.utilityType)} locale={locale} dict={dict} />
+      <DiscoverTeaser bills={spotlightOrder(bills.filter((b) => b.available > 0)).slice(0, 5)} locale={locale} dict={dict} />
 
       {helps.length > 0 && <LiveTicker helps={helps} dict={dict} />}
 

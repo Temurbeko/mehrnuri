@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Plus, Trophy, User } from "lucide-react";
+import { Home, Plus, Trophy, User, HeartHandshake } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BRAND } from "@/config/brand";
@@ -80,6 +80,13 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
           </Link>
 
           <nav className="hidden items-center gap-1 rounded-2xl bg-slate-100/90 p-1 md:flex">
+            <Link
+              href={`/${locale}/discover`}
+              className="nav-orb flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-extrabold text-[#3b2508] transition-all active:scale-95"
+            >
+              <HeartHandshake size={16} aria-hidden="true" />
+              {dict.nav.discover}
+            </Link>
             {navItems.map((item) => {
               const active = item.match(pathname);
               return (
@@ -132,8 +139,19 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
         aria-label="Mobile Navigation"
         className="fixed inset-x-0 bottom-0 z-40 bg-white/90 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-16px_rgba(28,25,23,0.25)] backdrop-blur-xl md:hidden"
       >
-        <div className="mx-auto grid max-w-md grid-cols-4 gap-1 py-1.5">
-          {navItems.map((item) => {
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-0.5 py-1.5">
+          {[navItems[0]!, navItems[1]!, null, navItems[2]!, navItems[3]!].map((item) => {
+            if (!item) {
+              // The centre of the bar: the swipe feed, one family per screen.
+              return (
+                <Link key="discover" href={`/${locale}/discover`} className="group relative flex flex-col items-center justify-end gap-0.5 pb-1.5 text-xs font-extrabold text-[var(--lamp-deep)]">
+                  <span className="nav-orb absolute -top-6 flex h-[54px] w-[54px] items-center justify-center rounded-full text-[#3b2508] transition-transform group-active:scale-90">
+                    <HeartHandshake size={25} aria-hidden="true" strokeWidth={2.3} />
+                  </span>
+                  <span className="max-w-[76px] truncate">{dict.nav.discover}</span>
+                </Link>
+              );
+            }
             const active = item.match(pathname);
             return (
               <Link

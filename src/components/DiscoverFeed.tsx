@@ -195,6 +195,12 @@ export function DiscoverFeed({ bills, locale, dict }: { bills: PublicBill[]; loc
                         {dict.districts[district.id]} · {timeAgo(b.createdAt, dict.time)}
                       </span>
                     </p>
+                    {checked && (
+                      <p className="mt-1.5 flex items-center gap-1 text-[13px] font-extrabold text-[#8fe0b6]">
+                        <ShieldCheck size={15} aria-hidden="true" className="shrink-0" />
+                        <span className="min-w-0 truncate">{b.trustLevel === "proven" ? dict.check.badgeProven : dict.check.badgeChecked}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -220,12 +226,6 @@ export function DiscoverFeed({ bills, locale, dict }: { bills: PublicBill[]; loc
                       </div>
                       <div className="mt-1.5 text-[14px] font-bold text-[#cfc6b8]">{t.needed}</div>
                     </div>
-                    {checked && (
-                      <span className="mb-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-[rgba(46,154,103,0.22)] px-2.5 py-1 text-[12.5px] font-extrabold text-[#8fe0b6]">
-                        <ShieldCheck size={14} aria-hidden="true" />
-                        {b.trustLevel === "proven" ? dict.check.badgeProven : dict.check.badgeChecked}
-                      </span>
-                    )}
                   </div>
                   <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.14)]" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
                     <div className="h-full rounded-full bg-[linear-gradient(90deg,var(--lamp),#ffc04d)]" style={{ width: `${Math.max(pct, b.paidAmount > 0 ? 4 : 0)}%` }} />

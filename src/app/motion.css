@@ -281,3 +281,32 @@ a:hover .dt-card { transform: translateX(calc(var(--i) * 11px)) rotate(calc(var(
   .dv-hint-on { animation: none; }
   .dt-card { transition: none; }
 }
+
+/* ---- Home live deck (DiscoverTeaser): real requests, the front one lifts away for the next. ---- */
+.pd-back { position: absolute; left: 0; right: 0; top: 0; height: 60px; border-radius: 24px; background: var(--night); }
+.pd-back-1 { margin: 8px 12px 0; opacity: 0.55; }
+.pd-back-2 { margin: 0 26px; opacity: 0.28; }
+.pd-front { box-shadow: 0 14px 30px -14px rgba(21, 24, 38, 0.55); animation: pd-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes pd-in { from { opacity: 0; transform: translateY(26px) scale(0.96); } to { opacity: 1; transform: none; } }
+.pd-story { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
+.pd-go { box-shadow: 0 0 0 0 rgba(255, 201, 79, 0.55); animation: pd-pulse 2.4s ease-out infinite; }
+@keyframes pd-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 201, 79, 0.55); } 70%, 100% { box-shadow: 0 0 0 14px rgba(255, 201, 79, 0); } }
+.pd-chev { animation: pd-chev 1.6s ease-in-out infinite; }
+.pd-chev-2 { animation-delay: 0.2s; opacity: 0.55; }
+@keyframes pd-chev { 0%, 100% { transform: translateY(2px); } 50% { transform: translateY(-2px); } }
+.pd:active .pd-front { transform: scale(0.985); }
+
+/* The swipe-feed button: the glowing centre of the tab bar (and its desktop twin). */
+.nav-orb { background: linear-gradient(180deg, #ffd166, var(--lamp)); box-shadow: 0 8px 20px -6px rgba(246, 166, 35, 0.75), 0 0 0 5px rgba(255, 255, 255, 0.95); }
+nav .nav-orb.rounded-xl { box-shadow: 0 4px 12px -4px rgba(246, 166, 35, 0.7); }
+
+/* Feed search field */
+.search-field { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; border-radius: 18px; background: #fff; box-shadow: var(--lift); transition: box-shadow 0.2s; }
+.search-field:focus-within { box-shadow: var(--lift), 0 0 0 3px var(--lamp); }
+.search-field input { min-width: 0; flex: 1; border: 0; background: transparent; outline: none; font-size: 16px; font-weight: 700; color: var(--ink); }
+.search-field input::placeholder { color: var(--ink-soft); font-weight: 600; opacity: 0.8; }
+.search-field input::-webkit-search-cancel-button { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-front, .pd-go, .pd-chev { animation: none; }
+}

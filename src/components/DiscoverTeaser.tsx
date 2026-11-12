@@ -1,40 +1,73 @@
 "use client";
 
-import { ArrowRight, Quote } from "lucide-react";
+import { ChevronUp, MapPin, Quote } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { UTILITY_ICONS, type UtilityType } from "@/lib/domain";
+import { UTILITY_ICONS, type PublicBill } from "@/lib/domain";
+import { findDistrict } from "@/lib/uzbekistan";
+import { groupDigits } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n";
 
-/** Home entry to the swipe feed: a fanned stack of the first requests, one tap opens it. */
-export function DiscoverTeaser({ types, locale, dict }: { types: UtilityType[]; locale: Locale; dict: Dictionary }) {
+/**
+ * Home entry to the swipe feed: a small live deck of real requests. The front
+ * card lifts away every few seconds and the next one comes up, so it is obvious
+ * what a tap opens. One link; the whole deck is the button.
+ */
+export function DiscoverTeaser({ bills, locale, dict }: { bills: PublicBill[]; locale: Locale; dict: Dictionary }) {
   const t = dict.discover;
-  const stack = types.slice(0, 3);
-  if (stack.length === 0) return null;
+  const deck = bills.slice(0, 5);
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    if (deck.length < 2) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = setInterval(() => {
+      if (!document.hidden) setI((n) => (n + 1) % deck.length);
+    }, 3800);
+    return () => clearInterval(timer);
+  }, [deck.length]);
+
+  if (deck.length === 0) return null;
+  const b = deck[i % deck.length]!;
+  const remaining = Math.max(0, b.amountOwed - b.paidAmount);
+  const district = findDistrict(b.region, b.district);
+
   return (
-    <Link
-      href={`/${locale}/discover`}
-      className="group mt-3 flex min-w-0 items-center gap-4 rounded-[24px] bg-[var(--night)] p-4 text-[#f6efe3] shadow-[var(--lift)] transition active:scale-[0.99]"
-    >
-      <span aria-hidden="true" className="relative h-[72px] w-[64px] shrink-0">
-        {stack.map((type, i) => (
-          <span
-            key={i}
-            className="dt-card absolute inset-0 flex items-center justify-center rounded-[16px] text-[26px]"
-            style={{ ["--i" as string]: i, zIndex: 3 - i }}
-          >
-            {UTILITY_ICONS[type]}
+    <Link href={`/${locale}/discover`} aria-label={t.open} className="pd group mt-4 block min-w-0">
+      <div className="mb-2.5 flex items-end justify-between gap-3 px-0.5">
+        <h2 className="min-w-0 text-[20px] leading-tight font-extrabold tracking-tight text-balance text-[var(--ink)]">{t.teaserTitle}</h2>
+        <span className="shrink-0 pb-0.5 text-[13px] font-extrabold text-[var(--lamp-deep)]">{t.open}</span>
+      </div>
+
+      <div className="relative pt-4">
+        {/* the cards waiting behind */}
+        <span aria-hidden="true" className="pd-back pd-back-2" />
+        <span aria-hidden="true" className="pd-back pd-back-1" />
+
+        <div key={b.id} className="pd-front relative flex min-w-0 items-center gap-3.5 rounded-[24px] bg-[var(--night)] p-4 text-[#f6efe3]">
+          <span className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[18px] bg-[rgba(255,201,79,0.16)] text-[28px]">
+            {UTILITY_ICONS[b.utilityType]}
           </span>
-        ))}
-      </span>
-      <span className="min-w-0 flex-1">
-        <b className="block text-[17px] leading-snug font-extrabold text-balance">{t.teaserTitle}</b>
-        <span className="mt-0.5 block text-[13.5px] leading-snug text-[#cfc6b8]">{t.teaserText}</span>
-      </span>
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--glow)] text-[#3b2508] transition-transform group-hover:translate-x-0.5">
-        <ArrowRight size={20} aria-hidden="true" />
-      </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1 text-[13px] font-bold text-[#cfc6b8]">
+              <MapPin size={13} aria-hidden="true" className="shrink-0" />
+              <span className="min-w-0 truncate">
+                {dict.utility[b.utilityType]} · {dict.districts[district.id]}
+              </span>
+            </span>
+            <b className="mt-0.5 block text-[22px] leading-tight font-extrabold whitespace-nowrap text-[var(--glow)] tabular-nums">
+              {groupDigits(String(remaining))} <small className="text-[13px] font-bold text-[#e6dccb]">{dict.common.som}</small>
+            </b>
+            <span className="pd-story mt-0.5 block text-[13.5px] leading-snug text-[#e6dccb]">{b.story ? `“${b.story}”` : t.noStory}</span>
+          </span>
+          <span aria-hidden="true" className="pd-go flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-full bg-[var(--glow)] text-[#3b2508]">
+            <ChevronUp size={18} className="pd-chev" />
+            <ChevronUp size={18} className="pd-chev pd-chev-2 -mt-3" />
+          </span>
+        </div>
+      </div>
+      <p className="mt-2 px-0.5 text-[13px] text-[var(--ink-soft)]">{t.teaserText}</p>
     </Link>
   );
 }

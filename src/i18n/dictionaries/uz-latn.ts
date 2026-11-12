@@ -10,6 +10,7 @@ const uzLatn = {
       "Elektr, gaz va suv to'lovida qiynalgan oilalarga 1 000 so'mdan yordam bering. Pul to'g'ridan-to'g'ri kommunal hisobga tushadi.",
   },
   nav: {
+    discover: "Oilalar",
     home: "To'lovlar",
     ask: "Ariza",
     leaders: "Saxiylar",
@@ -243,6 +244,10 @@ const uzLatn = {
     day: "{n} kun oldin",
   },
   feed: {
+    searchPlaceholder: "Ariza kodi, hisob raqam yoki tuman",
+    searchClear: "Tozalash",
+    noResults: "Hech narsa topilmadi. Boshqa so'z yoki filtrni sinab ko'ring.",
+    resetFilters: "Filtrlarni tozalash",
     heroWeek: "Bu hafta {count} ta xonadonga yordam yetdi. Keyingisi sizning yordamingiz.",
     heroWeekNone: "Har bir yordam bitta xonadonga yorug'lik va iliqlik qaytaradi. Birinchisi sizniki bo'lsin.",
     helped: "{amount} yordam berdi",
@@ -695,9 +700,9 @@ const uzLatn = {
     "Yaxshilikning kattasi-kichigi bo'lmaydi."
   ],
   discover: {
-    open: "Oilalarni ko'rish",
-    teaserTitle: "Bitta surish — bitta oila",
-    teaserText: "Arizalarni birma-bir ko'ring, ko'nglingizga yaqiniga yordam bering.",
+    open: "Oilalar",
+    teaserTitle: "Bugun kimning chirog'ini yoqasiz?",
+    teaserText: "Bosing — oilalar bilan birma-bir tanishasiz.",
     swipeHint: "Tepaga suring",
     help: "Yordam berish",
     needed: "kerak",
