@@ -468,8 +468,8 @@ const uzLatn = {
   },
   ask: {
     title: "Yordam so'rash",
-    intro: "Kvitansiyadagi hisob raqamni kiriting. Telefoningiz hech kimga ko'rsatilmaydi.",
-    trust: "Arizangiz darhol ko'rinadi. Telefoningizni hech kim ko'rmaydi. Saxiylar pulni to'g'ri hisobingizga to'laydi.",
+    intro: "Kvitansiyadagi hisob raqamni kiriting.",
+    trust: "Arizangiz darhol ko'rinadi. Saxiylar pulni to'g'ri hisobingizga to'laydi.",
     utility: "Xizmat turi",
     region: "Viloyat",
     district: "Tuman",
@@ -575,6 +575,11 @@ const uzLatn = {
     backToFeed: "Barcha arizalar",
   },
   admin: {
+    tabReported: "Shikoyatlar",
+    tabPending: "To'xtatilgan",
+    tabPayouts: "O'tkazmalar",
+    emptyTitle: "Hammasi joyida",
+    open: "Arizani ochish",
     title: "Moderator paneli",
     password: "Parol",
     login: "Kirish",
@@ -596,7 +601,7 @@ const uzLatn = {
     phone: "Telefon",
     entered: "So'ralgan",
     verifiedDebt: "Tekshirilgan qarz",
-    empty: "Navbat bo'sh.",
+    empty: "Ko'rib chiqadigan ariza yo'q.",
   },
   familyUpdate: {
     button: "Qarzim kamaydi",

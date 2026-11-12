@@ -33,6 +33,7 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
       initialReported={reported}
       initialPending={pending}
       initialPayouts={payouts}
+      locale={locale}
       dict={dict}
     />
   );
