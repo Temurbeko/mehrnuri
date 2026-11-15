@@ -68,6 +68,8 @@ export const MISMATCH_LIMIT_ACCOUNT = 3;
 
 /** A posted request goes stale: utility debt changes every month. */
 export const BILL_TTL_DAYS = 30;
+/** A payment without a verified receipt is held this long, then goes back to the request. */
+export const UNCONFIRMED_TTL_HOURS = 72;
 
 /**
  * Posting limits per network (hashed IP). Mobile carriers share IPs (CGNAT),
@@ -123,7 +125,9 @@ export interface PublicBill {
   paidAmount: number;
   /** Part of paidAmount the family reported as paid outside the app. */
   familyPaid: number;
-  /** Amount still open for new donations (owed - paid - currently reserved). */
+  /** Paid by donors without a verified receipt yet: held, not counted as paid. */
+  unconfirmedAmount: number;
+  /** Amount still open for new donations (owed - paid - unconfirmed - currently reserved). */
   available: number;
   fundingStatus: FundingStatus;
   verified: boolean;

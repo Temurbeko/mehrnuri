@@ -83,7 +83,7 @@ export function RegionPicker({
         {options.length === 0 ? (
           <p className="px-3 py-4 text-[var(--ink-soft)]">{dict.common.nothingFound}</p>
         ) : (
-          <ul role="listbox" aria-label={dict.feed.regionLabel} className="max-h-[min(52vh,420px)] overflow-y-auto overscroll-contain">
+          <ul role="listbox" aria-label={dict.feed.regionLabel} className="max-h-[min(52dvh,420px)] overflow-y-auto overscroll-contain">
             {options.map((o) => {
               const selected = o.value === value;
               return (

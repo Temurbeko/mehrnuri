@@ -51,6 +51,7 @@ async function ensureIndexes(db: Db): Promise<void> {
       { key: { billId: 1, status: 1 } },
       { key: { status: 1, expiresAt: 1 } },
       { key: { donorId: 1, createdAt: -1 } },
+      { key: { paidAt: 1 }, partialFilterExpression: { unconfirmedHeld: { $gt: 0 } }, name: "unconfirmed_held" },
       { key: { receiptKey: 1 }, unique: true, partialFilterExpression: { receiptKey: { $type: "string" } } },
       { key: { shareCode: 1 }, unique: true, partialFilterExpression: { shareCode: { $type: "string" } } },
     ]),

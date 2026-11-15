@@ -45,7 +45,7 @@ export const POST = handler(async (req: NextRequest, ctx: { params: Promise<{ id
     { _id: new ObjectId(id) },
     {
       $addToSet: { thanksReactions: reaction },
-      $set: { updatedAt: new Date() },
+      $set: { updatedAt: new Date(), thanksAt: new Date() },
     },
     { returnDocument: "after" },
   );

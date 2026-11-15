@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import { PRIVATE_METADATA } from "@/lib/seo";
 import Link from "next/link";
-import { Check, ChevronRight, Clock, Receipt } from "lucide-react";
+import { Check, ChevronRight, Clock, Heart, Receipt } from "lucide-react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { OWNER_COOKIE, ownedBillIds } from "@/lib/bills/owner";
 import { getBillsByIds, toPublicBill } from "@/lib/bills/service";
 import { MyRequests, type MyRequest } from "@/components/MyRequests";
 import { isLocale } from "@/i18n/config";
-import { getDictionary } from "@/i18n";
+import { fmt, getDictionary } from "@/i18n";
 import { currentDonor, currentRecoveryCode } from "@/lib/donors/session";
 import { ProfileClient } from "@/components/ProfileClient";
 import { ProfileTabs } from "@/components/ProfileTabs";
 import { donorHistory, donorOpenPayments, type DonorOpenPayment, type HistoryItem } from "@/lib/payments/core";
+import { thanksForPayments, type PaymentThanks } from "@/lib/payments/thanks";
 import { UTILITY_ICONS } from "@/lib/domain";
 import { formatMoney } from "@/i18n";
 import { timeAgo } from "@/lib/format";
@@ -34,6 +35,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
   let myRequests: MyRequest[] = [];
   let openPayments: DonorOpenPayment[] = [];
   let history: HistoryItem[] = [];
+  let thanks: Record<string, PaymentThanks> = {};
   let impact: (MonthImpact & { code: string }) | null = null;
   try {
     const jar = await cookies();
@@ -48,6 +50,7 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
       // paid ones without a receipt show in the history with an "add receipt" badge
       openPayments = open.filter((p) => p.kind === "unconfirmed");
       history = past;
+      thanks = await thanksForPayments(past.map((h) => h.id)).catch(() => ({}));
       if (past.length > 0) {
         const thisMonth = monthKeyOf(new Date());
         let m = await donorMonthImpact(d._id, thisMonth);
@@ -62,11 +65,18 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
   }
 
 
+  const recentFamilies = new Set(Object.values(thanks).filter((t) => t.recent).map((t) => t.billId)).size;
   const hasHelps = openPayments.length > 0 || history.length > 0;
   const hasRequests = myRequests.length > 0;
 
   const helpsNode = hasHelps ? (
     <div className="space-y-5">
+      {recentFamilies > 0 && (
+        <div className="flex items-center gap-3 rounded-[20px] bg-rose-50 px-4 py-3 text-[14px] font-extrabold text-rose-700">
+          <Heart size={18} aria-hidden="true" className="shrink-0 fill-rose-400 text-rose-400" />
+          {dict.thanks2.summary.replace("{n}", String(recentFamilies))}
+        </div>
+      )}
       {impact && (
         <ImpactCard
           code={impact.code}
@@ -124,6 +134,12 @@ export default async function MePage({ params }: { params: Promise<{ locale: str
                       {h.district ? `${dict.districts[h.district as keyof typeof dict.districts] ?? ""} · ` : ""}
                       {timeAgo(h.at, dict.time)}
                     </small>
+                    {thanks[h.id] && (
+                      <small className="mt-0.5 flex items-start gap-1 text-[12px] font-bold text-rose-600">
+                        <Heart size={12} aria-hidden="true" className="mt-0.5 shrink-0 fill-rose-400 text-rose-400" />
+                        <span className="min-w-0">{fmt(dict.thanks2.familyLine, { text: thanks[h.id]!.reactions.map((r) => dict.reactions.items[r].replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "")).join(", ") })}</span>
+                      </small>
+                    )}
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
                     <b className="text-[15px] whitespace-nowrap text-[var(--ink)] tabular-nums">{formatMoney(h.amount, dict)}</b>

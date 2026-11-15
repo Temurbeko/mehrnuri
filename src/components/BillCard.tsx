@@ -4,7 +4,7 @@ import { ArrowRight, Check, Heart, MapPin } from "lucide-react";
 import { UTILITY_ICONS, type PublicBill, type UtilityType } from "@/lib/domain";
 import { findDistrict } from "@/lib/uzbekistan";
 import type { Locale } from "@/i18n/config";
-import { fmt, type Dictionary } from "@/i18n";
+import { fmt, formatMoney, type Dictionary } from "@/i18n";
 import { groupDigits, timeAgo } from "@/lib/format";
 import { TrustBadge } from "./DebtCheck";
 
@@ -113,6 +113,9 @@ export function StatusBadge({ bill, dict }: { bill: PublicBill; dict: Dictionary
 export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Locale; dict: Dictionary }) {
   const pct = Math.min(100, Math.round((bill.paidAmount / Math.max(1, bill.amountOwed)) * 100));
   const remaining = Math.max(0, bill.amountOwed - bill.paidAmount);
+  // paid without a receipt yet: shown as a lighter striped piece of the bar, never as paid
+  const unconfirmed = Math.min(bill.unconfirmedAmount ?? 0, remaining);
+  const unconfirmedPct = Math.min(100 - pct, Math.round((unconfirmed / Math.max(1, bill.amountOwed)) * 100));
   const isDone = bill.fundingStatus === "fully_paid";
   const districtInfo = findDistrict(bill.region, bill.district);
   const checked = bill.trustLevel === "donor_checked" || bill.trustLevel === "proven";
@@ -147,7 +150,7 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
           </div>
         </div>
         <div
-          className="mt-2.5 h-2 overflow-hidden rounded-full bg-[var(--tone)]"
+          className="mt-2.5 flex h-2 overflow-hidden rounded-full bg-[var(--tone)]"
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
@@ -157,7 +160,15 @@ export function BillCard({ bill, locale, dict }: { bill: PublicBill; locale: Loc
             className="h-full rounded-full bg-[linear-gradient(90deg,var(--lamp),#ffc04d)] transition-all duration-700"
             style={{ width: `${Math.max(pct, bill.paidAmount > 0 ? 4 : 0)}%` }}
           />
+          {unconfirmed > 0 && (
+            <div className="h-full bg-[repeating-linear-gradient(135deg,#ffc04d_0_4px,#ffe6b5_4px_8px)] opacity-60 transition-all duration-700" style={{ width: `${Math.max(unconfirmedPct, 4)}%` }} />
+          )}
         </div>
+        {unconfirmed > 0 && (
+          <p className="mt-1.5 text-xs font-semibold text-[var(--ink-soft)]">
+            {fmt(dict.unconfirmed.note, { amount: formatMoney(unconfirmed, dict) })}
+          </p>
+        )}
         {bill.thanksReactions && bill.thanksReactions.length > 0 && (
           <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold whitespace-nowrap text-[var(--hope)]">
             <Heart size={12} aria-hidden="true" />

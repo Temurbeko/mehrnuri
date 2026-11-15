@@ -210,6 +210,9 @@ export function DonatePanel({
   const fullyCloses = amount >= bill.available;
   const percent = Math.max(1, Math.round((amount / Math.max(1, bill.amountOwed)) * 100));
   const pct = Math.min(100, Math.round((bill.paidAmount / Math.max(1, bill.amountOwed)) * 100));
+  // paid without a receipt yet: a lighter striped piece of the bar, never counted as paid
+  const unconfirmed = Math.min(bill.unconfirmedAmount ?? 0, remaining);
+  const unconfirmedPct = Math.min(100 - pct, Math.round((unconfirmed / Math.max(1, bill.amountOwed)) * 100));
   const showReviewRow = reviewBadge !== null || bill.trustLevel !== "new";
 
   const helpers3 = recentHelps.slice(0, 3);
@@ -354,7 +357,7 @@ export function DonatePanel({
           </div>
         </div>
         <div
-          className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[var(--tone)]"
+          className="mt-3 flex h-2.5 w-full overflow-hidden rounded-full bg-[var(--tone)]"
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
@@ -364,7 +367,15 @@ export function DonatePanel({
             className="h-full rounded-full bg-[linear-gradient(90deg,var(--lamp),#ffc04d)] transition-all duration-700"
             style={{ width: `${Math.max(pct, bill.paidAmount > 0 ? 3 : 0)}%` }}
           />
+          {unconfirmed > 0 && (
+            <div className="h-full bg-[repeating-linear-gradient(135deg,#ffc04d_0_4px,#ffe6b5_4px_8px)] opacity-60 transition-all duration-700" style={{ width: `${Math.max(unconfirmedPct, 3)}%` }} />
+          )}
         </div>
+        {unconfirmed > 0 && (
+          <p className="mt-1.5 text-[12.5px] font-semibold text-[var(--ink-soft)]">
+            {fmt(dict.unconfirmed.note, { amount: formatMoney(unconfirmed, dict) })}
+          </p>
+        )}
 
         <div className="mt-3 flex min-w-0 items-center">
           <HelpersLine bill={bill} dict={dict} />
@@ -476,7 +487,7 @@ export function DonatePanel({
           // Not paid yet: other donors have the rest reserved and are paying now.
           <div className="space-y-1 rounded-2xl bg-[var(--tone)] px-4 py-6 text-center">
             <div className="text-4xl">⏳</div>
-            <p className="text-sm font-extrabold text-stone-700">{dict.donate.reserved}</p>
+            <p className="text-sm font-extrabold text-stone-700">{bill.amountOwed - bill.paidAmount - bill.unconfirmedAmount <= 0 ? dict.unconfirmed.allHeld : dict.donate.reserved}</p>
           </div>
         ) : null}
 

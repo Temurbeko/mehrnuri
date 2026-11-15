@@ -177,7 +177,7 @@ export function Combobox({
           />
           <div
             onKeyDown={onKeyDown}
-            className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[70vh] flex-col rounded-t-3xl bg-white p-3 shadow-[var(--lift-hover)] sm:absolute sm:inset-x-auto sm:bottom-auto ${variant === "chip" ? "sm:left-0 sm:w-64" : "sm:left-0 sm:right-0"} sm:top-full sm:mt-1.5 sm:max-h-80 sm:rounded-2xl sm:p-2`}
+            className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[70dvh] flex-col rounded-t-3xl bg-white p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] sm:pb-2 shadow-[var(--lift-hover)] sm:absolute sm:inset-x-auto sm:bottom-auto ${variant === "chip" ? "sm:left-0 sm:w-64" : "sm:left-0 sm:right-0"} sm:top-full sm:mt-1.5 sm:max-h-80 sm:rounded-2xl sm:p-2`}
           >
             <div aria-hidden="true" className="mx-auto mb-2 h-1.5 w-10 shrink-0 rounded-full bg-stone-300 sm:hidden" />
             <div className="relative shrink-0">

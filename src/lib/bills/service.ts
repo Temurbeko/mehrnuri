@@ -29,7 +29,9 @@ export function maskAccount(acc: string): string {
 export function toPublicBill(b: BillDoc): PublicBill {
   // Money another donor is paying right now (a reservation) is not available,
   // or this donor picks an amount the server then refuses as "already collected".
-  const available = Math.max(0, b.amountOwed - b.paidAmount - (b.reservedAmount ?? 0));
+  // Unconfirmed payments (no receipt yet) are held too, so two donors do not pay the same debt.
+  const unconfirmedAmount = Math.max(0, b.unconfirmedAmount ?? 0);
+  const available = Math.max(0, b.amountOwed - b.paidAmount - unconfirmedAmount - (b.reservedAmount ?? 0));
   const d = findDistrict(b.region, b.district);
   return {
     id: b._id.toHexString(),
@@ -50,6 +52,7 @@ export function toPublicBill(b: BillDoc): PublicBill {
     amountOwed: b.amountOwed,
     paidAmount: b.paidAmount,
     familyPaid: b.familyPaid ?? 0,
+    unconfirmedAmount,
     available,
     fundingStatus: fundingStatusOf(b.paidAmount, b.amountOwed),
     verified: b.verification?.verified ?? false,

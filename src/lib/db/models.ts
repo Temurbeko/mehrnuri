@@ -30,6 +30,12 @@ export interface BillDoc {
   phone?: string | null;
   amountOwed: number;
   paidAmount: number;
+  /**
+   * Money donors said they paid but no Soliq receipt has proven yet. Held away
+   * from other donors (so nobody pays the same debt twice) but never counted as
+   * paid: it cannot close the request. Missing on old bills (= 0).
+   */
+  unconfirmedAmount?: number;
   reservedAmount: number;
   isOpen: boolean;
   reviewStatus: ReviewStatus;
@@ -66,6 +72,8 @@ export interface BillDoc {
   /** Utility tax id confirmed by an accepted Soliq receipt; later receipts must name it. */
   supplierTin?: string;
   thanksReactions?: ReactionType[];
+  /** When the family last sent a thank-you (donors see recent ones). */
+  thanksAt?: Date | null;
   ipHash: string;
   createdAt: Date;
   updatedAt: Date;
@@ -95,6 +103,18 @@ export interface PaymentDoc {
    * gets its receiptKey and leaderboard credit.
    */
   receiptPending?: { raw: string; nextTryAt: Date; until: Date; tries: number } | null;
+  /**
+   * Part of this payment still sitting in the bill's `unconfirmedAmount`
+   * (paid without a verified receipt). 0 once a receipt proved it, the family
+   * confirmed it, or it was released. Missing on payments from before this
+   * field existed: those were counted straight into `paidAmount`.
+   */
+  unconfirmedHeld?: number;
+  /** Part of this payment the family confirmed through "Qarzim kamaydi" (already in the bill's paidAmount). */
+  familyConfirmedAmount?: number;
+  familyConfirmedAt?: Date | null;
+  /** No receipt within UNCONFIRMED_TTL_HOURS: the held amount went back to the request. */
+  unconfirmedReleasedAt?: Date | null;
   /** Random code for the public share link (never the payment id). */
   shareCode?: string;
   createdAt: Date;

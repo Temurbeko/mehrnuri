@@ -3,13 +3,27 @@ import { MongoServerError, ObjectId } from "mongodb";
 import { env } from "@/config/env";
 import { collections } from "@/lib/db/mongo";
 import type { BillDoc, DonorDoc, PaymentDoc } from "@/lib/db/models";
-import type { PaymentProviderId, PaymentStatus } from "@/lib/domain";
+import { UNCONFIRMED_TTL_HOURS, type PaymentProviderId, type PaymentStatus } from "@/lib/domain";
 import { HttpError } from "@/lib/security/http";
 import { isRetryableReceiptError, verifyAndLockReceipt } from "@/lib/payments/verifyReceipt";
 import { markAccountProven } from "@/lib/bills/verdicts";
 import { notify } from "@/lib/notify";
 
 const OPEN_STATES: PaymentStatus[] = ["created", "processing"];
+
+/** Old bills have no unconfirmedAmount: read it as 0 inside Mongo expressions. */
+const UNCONFIRMED = { $ifNull: ["$unconfirmedAmount", 0] };
+
+/** Second pipeline stage: a bill closes only on confirmed money (paidAmount), never on unconfirmed. */
+const CLOSE_WHEN_PAID = {
+  $set: {
+    isOpen: { $cond: [{ $gte: ["$paidAmount", "$amountOwed"] }, false, "$isOpen"] },
+    // when the bill became fully paid (feeds "this week N homes" and "recently closed")
+    fundedAt: {
+      $cond: [{ $and: [{ $gte: ["$paidAmount", "$amountOwed"] }, { $not: ["$fundedAt"] }] }, "$$NOW", "$fundedAt"],
+    },
+  },
+};
 
 export function getPayment(id: string): Promise<PaymentDoc | null> {
   if (!/^[a-f0-9]{24}$/.test(id)) return Promise.resolve(null);
@@ -31,16 +45,27 @@ export async function createPayment(args: {
   const { bills, payments } = await collections();
   await sweepExpired();
 
+  // Only this donor's own unfinished attempts on this request: another donor's
+  // open checkout is their payment in progress, never ours to cancel.
   const staleCreated = await payments
-    .find({ billId: bill._id, status: "created" }, { projection: { _id: 1 } })
+    .find({ billId: bill._id, donorId: donor._id, status: "created" }, { projection: { _id: 1 } })
     .toArray();
   for (const prev of staleCreated) {
     await markUnsuccessful(prev._id, "cancelled");
   }
 
+  // A claim without a receipt holds money on a request for up to 72h. One such open
+  // hold per donor (and two per network) stops a single person freezing the feed.
+  const openHold = { unconfirmedHeld: { $gt: 0 }, receiptPending: { $in: [null, undefined] } } as const;
+  const [donorHolds, netHolds] = await Promise.all([
+    payments.countDocuments({ donorId: donor._id, ...openHold } as never),
+    ipHash ? payments.countDocuments({ ipHash, ...openHold } as never) : Promise.resolve(0),
+  ]);
+  if (donorHolds >= 1 || netHolds >= 2) throw new HttpError(409, "unconfirmed_hold_open");
+
   const fresh = await bills.findOne({ _id: bill._id });
   if (!fresh || fresh.reviewStatus !== "approved" || !fresh.isOpen) throw new HttpError(409, "bill_not_open");
-  const available = fresh.amountOwed - fresh.paidAmount - fresh.reservedAmount;
+  const available = fresh.amountOwed - fresh.paidAmount - Math.max(0, fresh.unconfirmedAmount ?? 0) - fresh.reservedAmount;
   if (amount < MIN_DONATION_UZS && amount !== available) throw new HttpError(422, "amount_too_small", undefined, { min: MIN_DONATION_UZS });
 
   const reserved = await bills.findOneAndUpdate(
@@ -48,7 +73,7 @@ export async function createPayment(args: {
       _id: bill._id,
       reviewStatus: "approved",
       isOpen: true,
-      $expr: { $lte: [{ $add: ["$paidAmount", "$reservedAmount", amount] }, "$amountOwed"] },
+      $expr: { $lte: [{ $add: ["$paidAmount", UNCONFIRMED, "$reservedAmount", amount] }, "$amountOwed"] },
     },
     { $inc: { reservedAmount: amount }, $set: { updatedAt: new Date() } },
     { returnDocument: "after" },
@@ -92,13 +117,25 @@ type TxPatch = Partial<Pick<PaymentDoc, "receiptKey" | "receiptLabel" | "leaderb
 export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<PaymentDoc> {
   const { payments, bills, donors } = await collections();
   const now = new Date();
+  // Only a verified Soliq receipt counts as paid. Without one the amount is held
+  // as unconfirmed: other donors cannot pick it, but it cannot close the request.
+  const verified = typeof set.receiptKey === "string" && set.receiptKey.length > 0;
+  const fields: Record<string, unknown> = { ...set, status: "paid", paidAt: now, updatedAt: now };
   let before: PaymentDoc | null;
   try {
     // "expired" is accepted too: paying inside a bank app can take longer than
     // the reservation, and that money has already reached the utility account.
     before = await payments.findOneAndUpdate(
       { _id: paymentId, status: { $in: [...OPEN_STATES, "expired"] } },
-      { $set: { ...set, status: "paid", paidAt: now, updatedAt: now } },
+      // a pipeline, so the held amount is the payment's own amount in the same atomic write
+      [
+        {
+          $set: {
+            ...Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, { $literal: v }])),
+            ...(verified ? {} : { unconfirmedHeld: "$amount" }),
+          },
+        },
+      ],
       { returnDocument: "before" },
     );
   } catch (err) {
@@ -122,20 +159,14 @@ export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<
     [
       {
         $set: {
-          paidAmount: { $add: ["$paidAmount", p.amount] },
+          ...(verified
+            ? { paidAmount: { $add: ["$paidAmount", p.amount] } }
+            : { unconfirmedAmount: { $add: [UNCONFIRMED, p.amount] } }),
           reservedAmount: { $max: [0, { $subtract: ["$reservedAmount", release] }] },
           updatedAt: "$$NOW",
         },
       },
-      {
-        $set: {
-          isOpen: { $cond: [{ $gte: ["$paidAmount", "$amountOwed"] }, false, "$isOpen"] },
-          // when the bill became fully paid (feeds "this week N homes" and "recently closed")
-          fundedAt: {
-            $cond: [{ $and: [{ $gte: ["$paidAmount", "$amountOwed"] }, { $not: ["$fundedAt"] }] }, "$$NOW", "$fundedAt"],
-          },
-        },
-      },
+      CLOSE_WHEN_PAID,
     ],
     { returnDocument: "after" },
   );
@@ -161,7 +192,7 @@ export async function markPaid(paymentId: ObjectId, set: TxPatch = {}): Promise<
       }).catch((err: unknown) => console.warn("[trust] markAccountProven failed", err));
     }
     void notify({ type: "payment_received", code: bill.code, amount: p.amount, nickname: p.donorNickname });
-    if (bill.paidAmount >= bill.amountOwed) {
+    if (verified && bill.paidAmount >= bill.amountOwed) {
       void notify({ type: "bill_funded", code: bill.code, amount: bill.amountOwed });
     }
   }
@@ -191,7 +222,135 @@ export async function sweepExpired(force = false): Promise<void> {
   const { payments } = await collections();
   const expired = await payments.find({ status: "created", expiresAt: { $lt: new Date() } }, { projection: { _id: 1 } }).limit(200).toArray();
   for (const p of expired) await markUnsuccessful(p._id, "expired");
+  await releaseStaleUnconfirmed();
+  await reconcileUnconfirmed();
   void retryPendingReceipts().catch((err: unknown) => console.warn("[receipts] retry failed", err));
+}
+
+/**
+ * Unconfirmed money that got no receipt in time goes back to the request, so
+ * the family's debt is asked for again. Each payment is released once: the
+ * conditional write on the payment is the claim, the bill follows.
+ */
+/**
+ * Safety net: the payment write and the bill write are separate, so a crash in
+ * between could leave bill.unconfirmedAmount off. Recompute it from the payments
+ * that still hold money, for the bills that claim to have some.
+ */
+export async function reconcileUnconfirmed(): Promise<void> {
+  const { bills, payments } = await collections();
+  const suspects = await bills
+    .find({ unconfirmedAmount: { $gt: 0 } }, { projection: { _id: 1, unconfirmedAmount: 1 } })
+    .limit(200)
+    .toArray();
+  if (suspects.length === 0) return;
+  const sums = await payments
+    .aggregate<{ _id: ObjectId; held: number }>([
+      { $match: { billId: { $in: suspects.map((b) => b._id) }, unconfirmedHeld: { $gt: 0 } } },
+      { $group: { _id: "$billId", held: { $sum: "$unconfirmedHeld" } } },
+    ])
+    .toArray();
+  const held = new Map(sums.map((s) => [s._id.toHexString(), s.held]));
+  for (const b of suspects) {
+    const real = held.get(b._id.toHexString()) ?? 0;
+    if (real !== b.unconfirmedAmount) {
+      // only fix if nobody changed it meanwhile
+      await bills.updateOne({ _id: b._id, unconfirmedAmount: b.unconfirmedAmount }, { $set: { unconfirmedAmount: real } });
+    }
+  }
+}
+
+export async function releaseStaleUnconfirmed(): Promise<number> {
+  const { payments, bills } = await collections();
+  const cutoff = new Date(Date.now() - UNCONFIRMED_TTL_HOURS * 60 * 60_000);
+  const stale = await payments
+    .find({ unconfirmedHeld: { $gt: 0 }, paidAt: { $lt: cutoff } }, { projection: { _id: 1 } })
+    .limit(200)
+    .toArray();
+  let released = 0;
+  for (const s of stale) {
+    const before = await payments.findOneAndUpdate(
+      { _id: s._id, unconfirmedHeld: { $gt: 0 }, paidAt: { $lt: cutoff } },
+      { $set: { unconfirmedHeld: 0, unconfirmedReleasedAt: new Date(), updatedAt: new Date() } },
+      { returnDocument: "before" },
+    );
+    const held = before?.unconfirmedHeld ?? 0;
+    if (!before || held <= 0) continue;
+    await bills.updateOne({ _id: before.billId }, [
+      { $set: { unconfirmedAmount: { $subtract: [UNCONFIRMED, held] }, updatedAt: "$$NOW" } },
+    ]);
+    released += 1;
+  }
+  return released;
+}
+
+export interface FamilyClaim {
+  id: ObjectId;
+  take: number;
+}
+
+/**
+ * "Qarzim kamaydi": the family says the debt dropped. Up to `limit` of the
+ * bill's unconfirmed payments (oldest first) are taken as confirmed by the
+ * family. Only the payments are claimed here; the caller moves the returned
+ * total from the bill's unconfirmedAmount into paidAmount, or calls
+ * `undoFamilyClaims` when its bill write loses a race.
+ */
+export async function claimUnconfirmedForFamily(billId: ObjectId, limit: number): Promise<FamilyClaim[]> {
+  const { payments } = await collections();
+  const claims: FamilyClaim[] = [];
+  let left = limit;
+  const held = await payments
+    .find({ billId, unconfirmedHeld: { $gt: 0 } }, { projection: { unconfirmedHeld: 1 } })
+    .sort({ paidAt: 1 })
+    .toArray();
+  for (const h of held) {
+    if (left <= 0) break;
+    const take = Math.min(left, h.unconfirmedHeld ?? 0);
+    if (take <= 0) continue;
+    // exact match on the held amount: a receipt or a release that got there first makes this a no-op
+    const res = await payments.updateOne(
+      { _id: h._id, unconfirmedHeld: h.unconfirmedHeld },
+      { $inc: { unconfirmedHeld: -take, familyConfirmedAmount: take }, $set: { familyConfirmedAt: new Date(), updatedAt: new Date() } },
+    );
+    if (res.modifiedCount !== 1) continue;
+    claims.push({ id: h._id, take });
+    left -= take;
+  }
+  return claims;
+}
+
+/** Puts family claims back when the bill write they belonged to did not happen. */
+export async function undoFamilyClaims(billId: ObjectId, claims: FamilyClaim[]): Promise<void> {
+  const { payments, bills } = await collections();
+  for (const c of claims) {
+    const res = await payments.updateOne(
+      { _id: c.id, receiptKey: { $in: [null, undefined] } as never, familyConfirmedAmount: { $gte: c.take } },
+      [
+        {
+          $set: {
+            unconfirmedHeld: { $add: [{ $ifNull: ["$unconfirmedHeld", 0] }, c.take] },
+            familyConfirmedAmount: { $subtract: ["$familyConfirmedAmount", c.take] },
+            familyConfirmedAt: { $cond: [{ $gt: [{ $subtract: ["$familyConfirmedAmount", c.take] }, 0] }, "$familyConfirmedAt", null] },
+          },
+        },
+      ],
+    );
+    if (res.modifiedCount === 1) continue;
+    // A receipt arrived in between and treated `take` as already counted in
+    // paidAmount; the bill never got it, so settle that part here.
+    const p = await payments.findOne({ _id: c.id }, { projection: { amount: 1 } });
+    await bills.updateOne({ _id: billId }, [
+      {
+        $set: {
+          unconfirmedAmount: { $subtract: [UNCONFIRMED, c.take] },
+          paidAmount: { $add: ["$paidAmount", Math.min(c.take, p?.amount ?? c.take)] },
+          updatedAt: "$$NOW",
+        },
+      },
+      CLOSE_WHEN_PAID,
+    ]);
+  }
 }
 
 /** How long a receipt Soliq has not seen yet keeps being re-checked. */
@@ -205,8 +364,8 @@ export function pendingReceipt(raw: string, tries = 0): NonNullable<PaymentDoc["
 }
 
 /**
- * Adds a fiscal receipt to a payment that is already counted as paid but has
- * none yet (donor skipped it, or Soliq did not have it at the time). Gives the
+ * Adds a fiscal receipt to a payment that is already marked paid but has
+ * none yet: its amount moves from the bill's unconfirmed money into paidAmount (donor skipped it, or Soliq did not have it at the time). Gives the
  * donor their leaderboard credit and proves the account, exactly as if the
  * receipt had come with the confirmation. Returns "pending" when Soliq still
  * does not know the receipt; it is then re-checked in the background.
@@ -243,6 +402,8 @@ export async function attachReceipt(paymentId: ObjectId, raw: string): Promise<"
           receiptLabel: verified.receiptLabel,
           leaderboardCredited: true,
           receiptPending: null,
+          // in the same write as the receipt, so the family claim and the 72 h release cannot also take it
+          unconfirmedHeld: 0,
           updatedAt: new Date(),
           ...(lower !== null ? { amount: lower, claimedAmount: p.amount } : {}),
         },
@@ -256,16 +417,40 @@ export async function attachReceipt(paymentId: ObjectId, raw: string): Promise<"
   if (!updated) return "verified"; // another request attached it first
 
   const real = lower ?? p.amount;
-  if (lower !== null) {
+  if (typeof updated.unconfirmedHeld === "number") {
+    // Take what is still held out of unconfirmed, and count the real (receipt)
+    // amount as paid, minus whatever the family already confirmed of it. A
+    // released payment (held 0) is simply counted now that it is proven.
+    const held = Math.max(0, updated.unconfirmedHeld);
+    const add = Math.max(0, real - (updated.familyConfirmedAmount ?? 0));
+    const after = await bills.findOneAndUpdate(
+      { _id: p.billId },
+      [
+        {
+          $set: {
+            unconfirmedAmount: { $subtract: [UNCONFIRMED, held] },
+            paidAmount: { $add: ["$paidAmount", add] },
+            updatedAt: "$$NOW",
+          },
+        },
+        CLOSE_WHEN_PAID,
+      ],
+      { returnDocument: "after" },
+    );
+    if (after && add > 0 && after.paidAmount >= after.amountOwed && after.paidAmount - add < after.amountOwed) {
+      void notify({ type: "bill_funded", code: after.code, amount: after.amountOwed });
+    }
+  } else if (lower !== null) {
+    // (a payment from before unconfirmed money existed: it sits in paidAmount already)
     // the bill counted the tapped amount; give the difference back to the family's request
     await bills.updateOne({ _id: p.billId }, [
       {
         $set: {
           paidAmount: { $max: [0, { $subtract: ['$paidAmount', p.amount - lower] }] },
-          updatedAt: '$NOW',
+          updatedAt: '$$NOW',
         },
       },
-      { $set: { isOpen: { $cond: [{ $and: [{ $lt: ['$paidAmount', '$amountOwed'] }, { $gt: ['$expiresAt', '$NOW'] }] }, true, '$isOpen'] } } },
+      { $set: { isOpen: { $cond: [{ $and: [{ $lt: ['$paidAmount', '$amountOwed'] }, { $gt: ['$expiresAt', '$$NOW'] }] }, true, '$isOpen'] } } },
     ]);
   }
   if (updated.leaderboardCredited !== true) {

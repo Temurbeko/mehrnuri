@@ -368,3 +368,24 @@ input:focus-visible + .switch { outline: 3px solid var(--lamp); outline-offset: 
 .ticker-text.out { opacity: 0; transform: translateY(6px); }
 .thanks-strip::-webkit-scrollbar { display: none; }
 .thanks-strip { scrollbar-width: none; }
+
+/* ---- iPhone polish ---- */
+/* 16px+ inputs on phones: iOS Safari zooms the page on focus below that. */
+@media (max-width: 767px) {
+  /* only fields that would otherwise be smaller (text-xs/text-sm or no size class); big amount inputs keep their size */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([class*="text-["]):not([class*="text-lg"]):not([class*="text-xl"]):not([class*="text-2xl"]):not([class*="text-3xl"]),
+  select:not([class*="text-lg"]),
+  textarea:not([class*="text-lg"]) {
+    font-size: 16px;
+  }
+}
+/* no 300ms double-tap delay */
+button, a, [role="button"], summary, label, select, input {
+  touch-action: manipulation;
+}
+/* installed to the home screen: keep the header clear of the status bar */
+@media (display-mode: standalone) {
+  .app-header {
+    padding-top: env(safe-area-inset-top);
+  }
+}

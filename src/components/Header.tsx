@@ -64,7 +64,7 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   return (
     <>
       {!inner && (
-      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
+      <header className="app-header sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex h-15 max-w-4xl items-center justify-between gap-2 px-4">
           <Link
             href={`/${locale}`}
