@@ -389,3 +389,6 @@ button, a, [role="button"], summary, label, select, input {
     padding-top: env(safe-area-inset-top);
   }
 }
+
+/* Netlify free-plan badge (test hosting only): it covered the phone tab bar. */
+#nl-badge-frame { display: none !important; }
