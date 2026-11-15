@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, Check, ChevronUp, MapPin, Plus, Share2, UserRound, Wallet, FileText } from "lucide-react";
+import { ArrowRight, Building2, Check, ChevronUp, CircleAlert, MapPin, Plus, Share2, UserRound, Wallet, FileText } from "lucide-react";
 import { digitsOnly, groupDigits } from "@/lib/format";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -42,6 +42,7 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tried, setTried] = useState(false);
   const [taken, setTaken] = useState<{ text: string; billId: string | null } | null>(null);
   const [textError, setTextError] = useState<{ field: "story" | "familyName"; message: string } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -57,12 +58,29 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
 
   const accountDigits = accountNumber.replace(/[\s-]/g, "");
   const amountNum = Number(amountOwed.replace(/\s/g, ""));
-  const step2Valid =
-    /^\d{5,20}$/.test(accountDigits) &&
-    amountOwed.trim() !== "" &&
-    Number.isInteger(amountNum) &&
-    amountNum >= 1000 &&
-    amountNum <= 5000000;
+  const accountOk = /^\d{5,20}$/.test(accountDigits);
+  const amountOk = amountOwed.trim() !== "" && Number.isInteger(amountNum) && amountNum >= 1000 && amountNum <= 5000000;
+  // Problems are shown only after the first tap on the button, then clear as each field is fixed.
+  const accountErr = tried && !accountOk ? dict.ask.accountError : null;
+  const amountErr = tried && !amountOk ? dict.ask.amountError : null;
+  const consentErr = tried && !consent ? dict.ask.consentError : null;
+
+  function focusField(id: string) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+
+  function fieldError(id: string, message: string | null) {
+    if (!message) return null;
+    return (
+      <p id={id} role="alert" className="mt-1.5 flex items-start gap-1.5 text-[13px] font-bold break-words text-rose-700">
+        <CircleAlert size={15} aria-hidden="true" className="mt-0.5 shrink-0" />
+        {message}
+      </p>
+    );
+  }
 
   /** Same rule as the server: no links or contacts in the free text. Shown under the field. */
   function textProblem(): { field: "story" | "familyName"; message: string } | null {
@@ -95,22 +113,19 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
     }
     setError(null);
     setTaken(null);
+    setTried(true);
+    if (!accountOk) return focusField("accountNumber");
+    if (!amountOk) return focusField("amountOwed");
+    if (!consent) return focusField("consent");
     const problem = textProblem();
     setTextError(problem);
     if (problem) {
       setShowExtra(true);
+      window.setTimeout(() => focusField(problem.field), 0);
       return;
     }
-    const digits = accountNumber.replace(/[\s-]/g, "");
-    if (!/^\d{5,20}$/.test(digits)) {
-      setError(dict.ask.accountHint);
-      return;
-    }
-    const amt = Number(amountOwed.replace(/\s/g, ""));
-    if (!Number.isFinite(amt) || amt < 1000) {
-      setError(dict.ask.amountHint);
-      return;
-    }
+    const digits = accountDigits;
+    const amt = amountNum;
     setSubmitting(true);
     // Catch an account that already has an open request before creating a second one.
     const check = await api<{ hasOpen?: boolean; openBillId?: string | null; blocked?: boolean }>(
@@ -149,6 +164,10 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
         "max" in res.data.details
       ) {
         setError(fmt(dict.ask.amountTooHigh, { max: formatMoney(Number((res.data.details as { max: number }).max), dict) }));
+      } else if (res.data.error === "owner_has_open_bill" || res.data.error === "owner_open_limit") {
+        const d = res.data.details;
+        const billId = d && typeof d === "object" && "billId" in d && typeof (d as { billId: unknown }).billId === "string" ? (d as { billId: string }).billId : null;
+        setTaken({ text: errorText(res.data.error, dict, d), billId });
       } else {
         setError(errorText(res.data.error, dict, res.data.details));
       }
@@ -192,7 +211,7 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-lg">
+    <form onSubmit={handleSubmit} noValidate className="mx-auto max-w-lg">
       <AppBar title={dict.ask.title} locale={locale} backLabel={dict.common.back} onBack={step > 1 && !submitting ? goBack : undefined} />
       {intro && <div className="mb-4">{intro}</div>}
       <input
@@ -308,8 +327,11 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
                 placeholder={dict.ask.accountHint}
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
+                aria-invalid={accountErr !== null}
+                aria-describedby={accountErr ? "accountNumber-error" : undefined}
                 className="field tabular-nums text-lg font-extrabold tracking-[0.15em]"
               />
+              {fieldError("accountNumber-error", accountErr)}
             </div>
 
             <div>
@@ -326,12 +348,15 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
                   placeholder="150 000"
                   value={groupDigits(amountOwed)}
                   onChange={(e) => setAmountOwed(digitsOnly(e.target.value, 7))}
+                  aria-invalid={amountErr !== null}
+                  aria-describedby={amountErr ? "amountOwed-error" : undefined}
                   className="field pl-11 pr-16 tabular-nums text-lg font-extrabold"
                 />
                 <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-500">
                   {dict.common.som}
                 </span>
               </div>
+              {fieldError("amountOwed-error", amountErr)}
               <div className="mt-2 flex flex-wrap gap-2">
                 {[100000, 200000, 500000].map((v) => (
                   <button
@@ -449,7 +474,7 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
                 {taken.text}
                 {taken.billId && (
                   <Link href={`/${locale}/bill/${taken.billId}`} className="mt-1 block underline underline-offset-2">
-                    {dict.ask.viewOpen}
+                    {dict.ask.openOwn}
                   </Link>
                 )}
               </div>
@@ -460,10 +485,12 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
               }`}
             >
               <input
+                id="consent"
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                required
+                aria-invalid={consentErr !== null}
+                aria-describedby={consentErr ? "consent-error" : undefined}
                 className="peer sr-only"
               />
               <span
@@ -476,6 +503,7 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
               </span>
               <span className="min-w-0">{dict.ask.consent}</span>
             </label>
+            {fieldError("consent-error", consentErr)}
 
             {error && (
               <div role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-700">
@@ -483,11 +511,10 @@ export function AskForm({ locale, dict, intro }: { locale: Locale; dict: Diction
               </div>
             )}
 
-            <button type="submit" disabled={submitting || !consent || !step2Valid} className="btn-primary">
+            <button type="submit" disabled={submitting} className="btn-primary">
               <span>{submitting ? dict.ask.submitting : dict.ask.submit}</span>
               {!submitting && <ArrowRight size={18} aria-hidden="true" />}
             </button>
-            {!step2Valid && <p className="text-center text-sm font-medium text-stone-500">{dict.ask.needAccountAmount}</p>}
           </div>
         )}
         </div>

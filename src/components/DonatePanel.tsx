@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Heart, Home, Lightbulb, Minus, Plus, Share2, ShieldCheck, Smartphone, TrendingDown } from "lucide-react";
+import { Check, CircleAlert, Copy, Heart, Home, Lightbulb, Minus, Plus, Share2, ShieldCheck, Smartphone, TrendingDown } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { copyText } from "@/lib/clipboard";
 import { digitsOnly, groupDigits, timeAgo } from "@/lib/format";
@@ -83,10 +83,14 @@ export function DonatePanel({
 
   /** "Qarzim kamaydi": the owner lowers the debt shown (paid outside the app). */
   const [familyOpen, setFamilyOpen] = useState(false);
-  const closeFamily = useCallback(() => setFamilyOpen(false), []);
+  const closeFamily = useCallback(() => {
+    setFamilyOpen(false);
+    setFamilyTried(false);
+  }, []);
   const [familyInput, setFamilyInput] = useState("");
   const [familySending, setFamilySending] = useState(false);
   const [familyError, setFamilyError] = useState<string | null>(null);
+  const [familyTried, setFamilyTried] = useState(false);
   const [familySaved, setFamilySaved] = useState(false);
   async function sendRemaining(value: number) {
     setFamilyError(null);
@@ -289,8 +293,16 @@ export function DonatePanel({
             autoComplete="off"
             value={groupDigits(familyInput)}
             onChange={(e) => setFamilyInput(digitsOnly(e.target.value, 9))}
+            aria-invalid={familyTried && familyInput === ""}
+            aria-describedby={familyTried && familyInput === "" ? "family-remaining-error" : undefined}
             className="w-full rounded-[16px] border-0 bg-[var(--paper)] px-4 py-3 text-[22px] font-extrabold tracking-tight text-[var(--ink)] outline-none focus:ring-[3px] focus:ring-[var(--lamp)]"
           />
+          {familyTried && familyInput === "" && (
+            <p id="family-remaining-error" role="alert" className="mt-1.5 flex items-start gap-1.5 text-[13px] font-bold break-words text-rose-700">
+              <CircleAlert size={15} aria-hidden="true" className="mt-0.5 shrink-0" />
+              {dict.familyUpdate.needAmount}
+            </p>
+          )}
           {familyError && (
             <div role="alert" className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-700">
               {familyError}
@@ -298,8 +310,15 @@ export function DonatePanel({
           )}
           <button
             type="button"
-            disabled={familyInput === "" || familySending}
-            onClick={() => void sendRemaining(Number(familyInput))}
+            disabled={familySending}
+            onClick={() => {
+              if (familyInput === "") {
+                setFamilyTried(true);
+                document.getElementById("family-remaining")?.focus();
+                return;
+              }
+              void sendRemaining(Number(familyInput));
+            }}
             className="btn-primary mt-4 w-full"
           >
             {dict.familyUpdate.save}

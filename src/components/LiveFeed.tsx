@@ -85,7 +85,17 @@ export function LiveFeed({
   }, []);
 
   // Search: request code, account number, district/region, utility, the family's own words.
-  const norm = (v: string) => v.toLowerCase().replace(/[`'ʻʼ‘’]/g, "").replace(/\s+/g, " ").trim();
+  // New alphabet (ö ğ ş ç) and old spelling (o' g' sh ch) fold to the same form, so "Toshkent" finds "Toşkent".
+  const norm = (v: string) =>
+    v
+      .toLowerCase()
+      .replace(/ö/g, "o")
+      .replace(/ğ/g, "g")
+      .replace(/ş/g, "sh")
+      .replace(/ç/g, "ch")
+      .replace(/[`'ʻʼ‘’]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   const q = norm(query);
   const qDigits = query.replace(/\D/g, "");
   const filtered = bills.filter((b) => {

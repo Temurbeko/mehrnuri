@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BRAND } from "@/config/brand";
 import { isLocale, LOCALE_HTML_LANG, type Locale } from "@/i18n/config";
-import { getDictionary } from "@/i18n";
+import { getDictionary, fmt } from "@/i18n";
 import { OG_LOCALE, SITE_URL } from "@/lib/seo";
 import { Suspense } from "react";
 import { NavProgress } from "@/components/NavProgress";
@@ -57,7 +57,7 @@ export default async function LocaleLayout({
         <p className="font-bold text-stone-500">
           {BRAND.name} — {dict.common.tagline}
         </p>
-        <p className="mx-auto mt-1 max-w-sm">{dict.seo.trust}</p>
+        <p className="mx-auto mt-1 max-w-sm">{fmt(dict.feed.footNote2, { brand: BRAND.name })}</p>
       </footer>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, Check, CircleCheck, ExternalLink, Eye, Flag, LogOut, Shield, X } from "lucide-react";
+import { Ban, Check, CircleAlert, CircleCheck, ExternalLink, Eye, Flag, LogOut, Shield, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -40,7 +40,11 @@ export function AdminClient({
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<"reported" | "pending" | "payouts">("reported");
   const [rejectId, setRejectId] = useState<string | null>(null);
-  const closeReject = useCallback(() => setRejectId(null), []);
+  const [reasonTried, setReasonTried] = useState(false);
+  const closeReject = useCallback(() => {
+    setRejectId(null);
+    setReasonTried(false);
+  }, []);
 
   async function refreshQueues() {
     const res = await api<{ reported?: AdminBill[]; pending?: AdminBill[]; payouts?: AdminBill[] }>("/api/admin/bills");
@@ -326,8 +330,16 @@ export function AdminClient({
           type="text"
           value={rejectId ? (rejectReasons[rejectId] ?? "") : ""}
           onChange={(e) => rejectId && setRejectReasons({ ...rejectReasons, [rejectId]: e.target.value })}
+          aria-invalid={reasonTried && rejectReason.length < 3}
+          aria-describedby={reasonTried && rejectReason.length < 3 ? "reject-reason-error" : undefined}
           className="field"
         />
+        {reasonTried && rejectReason.length < 3 && (
+          <p id="reject-reason-error" role="alert" className="mt-1.5 flex items-start gap-1.5 text-[13px] font-bold break-words text-rose-700">
+            <CircleAlert size={15} aria-hidden="true" className="mt-0.5 shrink-0" />
+            {dict.admin.reasonShort}
+          </p>
+        )}
         <label className="relative mt-3 flex cursor-pointer items-center justify-between gap-3 px-0.5 py-1 text-[15px] font-bold text-[var(--ink)]">
           <span className="min-w-0">{dict.admin.blockAccountLabel}</span>
           <input
@@ -341,11 +353,16 @@ export function AdminClient({
         </label>
         <button
           type="button"
-          disabled={busy || rejectReason.length < 3}
+          disabled={busy}
           onClick={async () => {
             if (!rejectId) return;
+            if (rejectReason.length < 3) {
+              setReasonTried(true);
+              document.getElementById("reject-reason")?.focus();
+              return;
+            }
             await act(rejectId, { action: "reject", reason: rejectReason, blockAccount: blockAccount[rejectId] === true });
-            setRejectId(null);
+            closeReject();
           }}
           className="btn-primary mt-4 w-full"
         >

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SITE_URL, languageAlternates } from "@/lib/seo";
 import { isLocale } from "@/i18n/config";
-import { fmt, getDictionary } from "@/i18n";
+import { getDictionary } from "@/i18n";
 import { listOpenBills } from "@/lib/bills/service";
 import { sweepExpired } from "@/lib/payments/core";
 import type { PublicBill, Region } from "@/lib/domain";
@@ -65,11 +65,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       <WisdomLine lines={dict.wisdom} className="mt-8" />
 
-      <p className="mt-8 text-center text-[13px] text-[var(--ink-soft)]">
-        {dict.feed.footNote1}
-        <br />
-        {fmt(dict.feed.footNote2)}
-      </p>
     </div>
   );
 }

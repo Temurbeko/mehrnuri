@@ -75,8 +75,10 @@ export const UNCONFIRMED_TTL_HOURS = 72;
  * Posting limits per network (hashed IP). Mobile carriers share IPs (CGNAT),
  * so these are generous: they stop floods, not neighbours.
  */
-export const MAX_OPEN_BILLS_PER_NETWORK = 3;
-export const MAX_BILLS_PER_NETWORK_30D = 8;
+export const MAX_OPEN_BILLS_PER_NETWORK = 5;
+export const MAX_BILLS_PER_NETWORK_30D = 10;
+/** One browser: one open request per utility (gas and electricity are separate needs), a few in total. */
+export const MAX_OPEN_BILLS_PER_OWNER = 3;
 
 /**
  * Largest believable household debt per utility, in so'm. Above this a request

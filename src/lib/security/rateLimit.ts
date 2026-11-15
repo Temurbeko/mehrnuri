@@ -66,7 +66,7 @@ export async function rateLimit(key: string, limit: number, windowSec: number): 
 }
 
 export const POLICIES = {
-  billCreate: { limit: 3, windowSec: 60 * 60 },
+  billCreate: { limit: 6, windowSec: 60 * 60 },
   donorCreate: { limit: 5, windowSec: 60 * 60 },
   donorRestore: { limit: 10, windowSec: 15 * 60 },
   checkout: { limit: 20, windowSec: 10 * 60 },

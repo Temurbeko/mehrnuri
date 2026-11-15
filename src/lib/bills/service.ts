@@ -9,6 +9,7 @@ import {
   isPlausibleAmount,
   MAX_BILLS_PER_NETWORK_30D,
   MAX_OPEN_BILLS_PER_NETWORK,
+  MAX_OPEN_BILLS_PER_OWNER,
   type PublicBill,
   type Region,
   type TrustLevel,
@@ -134,24 +135,30 @@ export async function createBill(input: CreateBillInput, ip: string, ownedIds: s
   // An account donors kept reporting stays out, whatever name or phone is used next.
   if (account?.blocked) throw new HttpError(403, "account_blocked");
 
-  // This browser already has an open request (signed owner cookie).
+  // This browser's open requests (signed owner cookie): one per utility, a few in total.
+  // The error carries the request's id so the form can link straight to it.
   if (ownedIds.length > 0) {
-    const ownOpen = await bills.findOne(
-      { _id: { $in: ownedIds.map((id) => new ObjectId(id)) }, isOpen: true },
-      { projection: { _id: 1 } },
-    );
-    if (ownOpen) throw new HttpError(409, "owner_has_open_bill");
+    const ownOpen = await bills
+      .find({ _id: { $in: ownedIds.map((id) => new ObjectId(id)) }, isOpen: true }, { projection: { _id: 1, utilityType: 1 } })
+      .toArray();
+    const same = ownOpen.find((b) => b.utilityType === input.utilityType);
+    if (same) throw new HttpError(409, "owner_has_open_bill", undefined, { billId: same._id.toHexString() });
+    if (ownOpen.length >= MAX_OPEN_BILLS_PER_OWNER) {
+      throw new HttpError(409, "owner_open_limit", undefined, { billId: ownOpen[0]!._id.toHexString() });
+    }
   }
 
-  // Generous per-network caps (carriers share IPs).
+  // Generous per-network caps (carriers share IPs). Off in local development,
+  // where every test device shares one address; always on in production.
   const ipHash = hashIp(ip);
+  const enforceNetwork = process.env.NODE_ENV === "production";
   const sinceWindow = new Date(Date.now() - 30 * 24 * 60 * 60_000);
   const [openForNetwork, recentForNetwork] = await Promise.all([
     bills.countDocuments({ ipHash, isOpen: true }),
     bills.countDocuments({ ipHash, createdAt: { $gte: sinceWindow } }),
   ]);
-  if (openForNetwork >= MAX_OPEN_BILLS_PER_NETWORK) throw new HttpError(409, "network_has_open_bills");
-  if (recentForNetwork >= MAX_BILLS_PER_NETWORK_30D) throw new HttpError(429, "network_limit_reached");
+  if (enforceNetwork && openForNetwork >= MAX_OPEN_BILLS_PER_NETWORK) throw new HttpError(409, "network_has_open_bills");
+  if (enforceNetwork && recentForNetwork >= MAX_BILLS_PER_NETWORK_30D) throw new HttpError(429, "network_limit_reached");
 
   const d = findDistrict(input.region, input.district);
   const supplier = officialSupplierName(input.utilityType, input.region);

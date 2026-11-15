@@ -5,7 +5,7 @@ import "./globals.css";
 import "./motion.css";
 
 const manrope = Manrope({
-  subsets: ["latin", "cyrillic"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
   // One typeface, three weights: medium (text), bold (actions), extrabold (headings, amounts).
   weight: ["500", "700", "800"],
   variable: "--font-manrope",

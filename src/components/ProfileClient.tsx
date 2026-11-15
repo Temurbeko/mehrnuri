@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronRight, KeyRound, LogOut, Pencil, Shield } from "lucide-react";
+import { Check, ChevronRight, CircleAlert, KeyRound, LogOut, Pencil, Shield } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -52,9 +52,15 @@ export function ProfileClient({
   const [renaming, setRenaming] = useState(false);
   const [renameInput, setRenameInput] = useState("");
   const [renameError, setRenameError] = useState<string | null>(null);
+  const [renameTried, setRenameTried] = useState(false);
   async function handleRename(e: React.FormEvent) {
     e.preventDefault();
     setRenameError(null);
+    if (renameInput.trim().length < 3) {
+      setRenameTried(true);
+      document.getElementById("rename")?.focus();
+      return;
+    }
     setBusy(true);
     const res = await api<{ donor?: PublicDonor }>("/api/donors", { method: "PATCH", body: { nickname: renameInput.trim() } });
     setBusy(false);
@@ -169,6 +175,7 @@ export function ProfileClient({
                 onClick={() => {
                   setRenameInput(donor.nickname);
                   setRenameError(null);
+                  setRenameTried(false);
                   setRenaming(true);
                 }}
                 aria-label={dict.me.rename}
@@ -180,21 +187,27 @@ export function ProfileClient({
             )}
           </div>
           {renaming && (
-            <form onSubmit={handleRename} className="mt-4 space-y-2.5">
+            <form onSubmit={handleRename} noValidate className="mt-4 space-y-2.5">
               <label htmlFor="rename" className="block text-[13px] font-extrabold text-[var(--ink-soft)]">
                 {dict.me.rename}
               </label>
               <input
                 id="rename"
                 type="text"
-                required
-                minLength={3}
                 maxLength={24}
                 autoFocus
                 value={renameInput}
                 onChange={(e) => setRenameInput(e.target.value)}
+                aria-invalid={renameTried && renameInput.trim().length < 3}
+                aria-describedby={renameTried && renameInput.trim().length < 3 ? "rename-error" : undefined}
                 className="field"
               />
+              {renameTried && renameInput.trim().length < 3 && (
+                <p id="rename-error" role="alert" className="flex items-start gap-1.5 text-[13px] font-bold break-words text-rose-700">
+                  <CircleAlert size={15} aria-hidden="true" className="mt-0.5 shrink-0" />
+                  {dict.me.renameShort}
+                </p>
+              )}
               {renameError && (
                 <div role="alert" className="rounded-2xl bg-rose-50 px-4 py-2.5 text-center text-sm font-bold text-rose-700">
                   {renameError}
@@ -204,7 +217,7 @@ export function ProfileClient({
                 <button type="button" onClick={() => setRenaming(false)} className="btn-ghost">
                   {dict.me.renameCancel}
                 </button>
-                <button type="submit" disabled={busy || renameInput.trim().length < 3} className="btn-primary">
+                <button type="submit" disabled={busy} className="btn-primary">
                   {dict.me.renameSave}
                 </button>
               </div>

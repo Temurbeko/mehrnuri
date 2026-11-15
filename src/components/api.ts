@@ -43,7 +43,8 @@ export function errorText(code: string | undefined, dict: Dictionary, details?: 
   const vars: Record<string, string> = {};
   if (details && typeof details === "object") {
     for (const [k, v] of Object.entries(details as Record<string, unknown>)) {
-      if (typeof v === "number") vars[k] = formatMoney(v, dict);
+      if (k === "retryAfterSec" && typeof v === "number") vars.minutes = String(Math.max(1, Math.ceil(v / 60)));
+      else if (typeof v === "number") vars[k] = formatMoney(v, dict);
     }
   }
   const text = fmt(template, vars);
