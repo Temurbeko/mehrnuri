@@ -14,11 +14,11 @@ if (uri.startsWith("mongodb+srv:")) dns.setServers(["1.1.1.1", "8.8.8.8"]);
  * one of them has an OPEN request, on any database (local or the test cloud DB).
  */
 const TEST_ACCOUNTS = [
-  { utilityType: "waste", accountNumber: "101040110778", supplier: "«Maxsustrans» DUK", amount: 30_000 },
-  { utilityType: "electricity", accountNumber: "1281318", supplier: "«Hududiy elektr tarmoqlari» AJ (HET)", amount: 120_000 },
-  { utilityType: "gas", accountNumber: "1008025187", supplier: "«Hududgazta'minot» AJ", amount: 90_000 },
-  { utilityType: "water", accountNumber: "2628018238", supplier: "«Toshkent shahar suv ta'minoti» MChJ", amount: 40_000 },
-  { utilityType: "heating", accountNumber: "08000309282", supplier: "«Veolia Energy Tashkent» MChJ XK", amount: 250_000 },
+  { utilityType: "waste", accountNumber: "101040110778", supplier: "«Maxsustrans» DUK", amount: 30_000, story: "Chiqindi uchun qarz yig'ilib, jarima ham qo'shildi. Bu oy imkonim bo'lmadi." },
+  { utilityType: "electricity", accountNumber: "1281318", supplier: "«Hududiy elektr tarmoqlari» AJ (HET)", amount: 120_000, story: "Qishda isitgichsiz o'tirolmaymiz, elektr qarzi oshib ketdi. Uch farzandim bor." },
+  { utilityType: "gas", accountNumber: "1008025187", supplier: "«Hududgazta'minot» AJ", amount: 90_000, story: "Uyda kichik farzandlarimiz bor, gaz uzilib qolishidan qo'rqamiz." },
+  { utilityType: "water", accountNumber: "2628018238", supplier: "«Toshkent shahar suv ta'minoti» MChJ", amount: 40_000, story: "Sovuq suvdan qarz yig'ilib qoldi, yopishga yordam so'raymiz." },
+  { utilityType: "heating", accountNumber: "08000309282", supplier: "«Veolia Energy Tashkent» MChJ XK", amount: 250_000, story: "Yolg'iz nafaqaxo'rman, issiqlik to'lovini qoplashga kuchim yetmayapti." },
 ];
 
 export async function ensureTestAccounts(db) {
@@ -41,7 +41,7 @@ export async function ensureTestAccounts(db) {
       meterReading: null,
       accountNumber: a.accountNumber,
       familyName: null,
-      story: "Test arizasi: haqiqiy hisob raqam, kichik summa bilan to'lab, chekni tekshirish uchun.",
+      story: a.story,
       amountOwed: a.amount,
       paidAmount: 0,
       reservedAmount: 0,
