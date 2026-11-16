@@ -284,7 +284,7 @@ export async function listOpenBills(q: FeedQuery = {}): Promise<PublicBill[]> {
   const docs = await bills
     .find(filter)
     .sort({ paidAmount: 1, createdAt: 1 })
-    .limit(Math.min(q.limit ?? 50, 100))
+    .limit(Math.min(q.limit ?? 50, 300))
     .toArray();
   // helper counts + initials for each card
   return withHelpers(docs.map(toPublicBill));

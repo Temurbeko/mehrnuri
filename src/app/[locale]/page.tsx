@@ -40,7 +40,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   await safe("sweep", () => sweepExpired(), undefined);
   const [bills, helps, weekCount, closed, regionCounts] = await Promise.all([
-    safe<PublicBill[]>("bills", () => listOpenBills({ limit: 50 }), []),
+    safe<PublicBill[]>("bills", () => listOpenBills({ limit: 200 }), []),
     safe<RecentHelp[]>("recent helps", () => recentHelps(8), []),
     safe<number>("week count", () => homesLitThisWeek(), 0),
     safe<ClosedThanks[]>("closed", () => recentlyClosedWithThanks(6), []),
